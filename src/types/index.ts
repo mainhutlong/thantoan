@@ -20,7 +20,19 @@ export type PeriodStatus =
   | 'submitted'   // Đã trình phê duyệt
   | 'locked';     // Đã chốt kỳ & khóa thanh toán
 
-export type DepartmentUnit = 'all' | 'dao_tao' | 'khao_thi' | 'tuyen_sinh' | 'nckh' | 'co_van_hoc_tap' | 'cong_tac_khac';
+export interface PaymentPeriod {
+  id: string;
+  name: string; // e.g. "Học kỳ 1 2026-2027"
+  semester: string; // "Học kỳ 1"
+  academicYear: string; // "2026 - 2027"
+  status: 'active' | 'locked' | 'archived';
+  submissionDeadline?: string;
+  isCurrent?: boolean;
+  totalRecords?: number;
+  note?: string;
+}
+
+export type DepartmentUnit = 'all' | 'dao_tao' | 'khao_thi' | 'do_an' | 'tuyen_sinh' | 'nckh' | 'co_van_hoc_tap' | 'cong_tac_khac';
 
 export interface FeedbackItem {
   id: string;
@@ -108,6 +120,25 @@ export interface TeachingRecord {
   soLuong?: number;         // Số lượng (số ca, số bài, số đề)
   ghiChuThongTin?: string;  // Ghi chú thông tin (phòng thi, môn thi, hình thức...)
   tongSoGioTheoCV?: number; // Tổng số giờ theo công việc (= Quy đổi số giờ * Số lượng)
+
+  // 4. Fields for Thesis & Projects (Đồ án, Khóa luận tốt nghiệp)
+  soDeTaiHuongDan?: number; // Số đề tài / sinh viên hướng dẫn
+  soLuotChamHoiDong?: number; // Số lượt chấm / phản biện / hội đồng
+  vaiTroDoAn?: string;      // Hướng dẫn, Phản biện, Chủ tịch, Thư ký
+
+  // 5. Fields for Advisor (Cố vấn học tập)
+  lopCVHT?: string;
+  soLopCVHT?: number;
+  xepLoaiCVHT?: string;     // Xuất sắc, Hoàn thành tốt, Hoàn thành
+  soHocKyCVHT?: number;
+
+  // 6. Fields for Admissions (Tuyển sinh)
+  soNgayCongTac?: number;
+  diaBanTuyenSinh?: string;
+
+  // 7. Fields for Other / Quality Assurance (Công tác kiêm nhiệm & ĐBCL)
+  nhiemVuKiemNhiem?: string;
+  soNhiemVuKiemNhiem?: number;
 }
 
 export interface PaymentRuleConfig {

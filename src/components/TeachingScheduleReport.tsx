@@ -11,9 +11,11 @@ import {
   FileSpreadsheet,
   X,
   Edit3,
-  Eye
+  Eye,
+  MoreVertical
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { OtherDutiesSection, DEFAULT_OTHER_DUTIES_DATA } from './OtherDutiesSection';
 
 export interface TeachingScheduleRow {
   id: string;
@@ -39,6 +41,9 @@ interface TeachingScheduleReportProps {
   isModal?: boolean;
   onClose?: () => void;
   academicYear?: string;
+  viewMode?: 'excel_sheet' | 'compact_table';
+  onViewModeChange?: (mode: 'excel_sheet' | 'compact_table') => void;
+  compactContent?: React.ReactNode;
 }
 
 export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
@@ -50,6 +55,9 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
   isModal = false,
   onClose,
   academicYear = '2025 - 2026',
+  viewMode,
+  onViewModeChange,
+  compactContent,
 }) => {
   // Find lecturer info
   const lecturerRecords = useMemo(() => {
@@ -73,6 +81,19 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
   const [namHoc, setNamHoc] = useState(academicYear);
   const [isEditable, setIsEditable] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+  const [internalViewMode, setInternalViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
+  const [selectedReportSection, setSelectedReportSection] = useState<'all' | 'teaching' | 'other_duties'>('all');
+  const [otherDutiesTotalHours, setOtherDutiesTotalHours] = useState<number>(0);
+
+  const activeViewMode = viewMode || internalViewMode;
+  const handleSetViewMode = (mode: 'excel_sheet' | 'compact_table') => {
+    setInternalViewMode(mode);
+    if (onViewModeChange) {
+      onViewModeChange(mode);
+    }
+  };
 
   // Sync state if maGV changes
   useEffect(() => {
@@ -258,7 +279,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
     });
 
     headerRows.push([
-      'Tổng số giờ giảng dạy',
+      'Tổng số giờ giảng dạy (A)',
       '',
       '',
       '',
@@ -268,6 +289,64 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
       '',
       '',
       grandTotalQC > 0 ? grandTotalQC : '-',
+      '',
+    ]);
+
+    // SECTION B: CÔNG TÁC KHÁC
+    headerRows.push([]);
+    headerRows.push(['B. CÔNG TÁC KHÁC']);
+    headerRows.push([
+      'STT',
+      'Nhóm công việc',
+      'Mã CV',
+      'Tên công việc',
+      'Điều kiện',
+      'Quy đổi số giờ',
+      'Số Lượng',
+      'Ghi chú thông tin',
+      'Tổng số giờ theo công việc',
+      'Xác nhận của các đơn vị',
+    ]);
+
+    DEFAULT_OTHER_DUTIES_DATA.forEach((r) => {
+      headerRows.push([
+        r.stt,
+        r.nhom,
+        r.maCV,
+        r.tenCV,
+        r.dieuKien,
+        r.quyDoi > 0 ? r.quyDoi : '',
+        r.soLuong !== '' ? r.soLuong : '',
+        r.ghiChu || '',
+        r.tongGio !== null ? r.tongGio : '-',
+        r.xacNhan || '',
+      ]);
+    });
+
+    headerRows.push([
+      'Tổng số giờ công tác khác (B)',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      otherDutiesTotalHours > 0 ? otherDutiesTotalHours : '-',
+      '',
+    ]);
+
+    headerRows.push([]);
+    headerRows.push([
+      'TỔNG CỘNG SỐ GIỜ NGHĨA VỤ / GIỜ QUY CHUẨN (A + B)',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      Number((grandTotalQC + otherDutiesTotalHours).toFixed(2)),
       '',
     ]);
 
@@ -383,18 +462,18 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-full flex flex-col bg-white ${isModal ? 'p-0' : 'p-3 sm:p-5'}`}>
+    <div className={`w-full max-w-full min-w-0 flex flex-col bg-white ${isModal ? 'p-0' : 'p-3 sm:p-4'}`}>
       {/* 1. TOP ACTION TOOLBAR (Hidden when printing) */}
-      <div className="print:hidden bg-slate-50 border border-slate-300 rounded-md p-2.5 mb-4 flex items-center justify-between flex-wrap gap-2.5">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="print:hidden w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-md p-2.5 mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <FileSpreadsheet className="w-4 h-4 text-[#005325]" />
+            <FileSpreadsheet className="w-4 h-4 text-[#005325] shrink-0" />
             <span>Biểu mẫu: Bảng thống kê công tác giảng dạy</span>
           </div>
 
           {/* Lecturer Selector if provided */}
           {allLecturers && allLecturers.length > 0 && onSelectLecturer && (
-            <div className="flex items-center gap-1.5 ml-2">
+            <div className="flex items-center gap-1.5 ml-1">
               <span className="text-xs text-slate-500">Giảng viên:</span>
               <select
                 value={maGV}
@@ -411,7 +490,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {saveSuccess && (
             <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-300 px-2 py-1 rounded flex items-center gap-1 animate-pulse">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -419,45 +498,142 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
             </span>
           )}
 
-          <button
-            onClick={() => setIsEditable(!isEditable)}
-            className={`px-2.5 py-1 text-xs rounded border cursor-pointer flex items-center gap-1 transition-colors ${
-              isEditable
-                ? 'bg-amber-50 text-amber-800 border-amber-300 font-medium'
-                : 'bg-white text-slate-700 border-slate-300'
-            }`}
-            title="Bật/tắt chế độ nhập trực tiếp vào ô vàng"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>{isEditable ? 'Đang bật nhập liệu' : 'Chế độ xem'}</span>
-          </button>
+          {/* Chế độ hiển thị (Eye icon next to 3 dots) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsViewMenuOpen((prev) => !prev);
+                setIsActionMenuOpen(false);
+              }}
+              className="w-8 h-8 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer flex items-center justify-center transition-colors shadow-2xs"
+              title="Chế độ hiển thị"
+            >
+              <Eye className="w-4 h-4 text-slate-700" />
+            </button>
 
-          <button
-            onClick={handleSave}
-            className="px-3 py-1 text-xs rounded bg-[#005325] hover:bg-[#00421e] text-white font-medium cursor-pointer flex items-center gap-1 shadow-2xs transition-colors"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>Lưu bảng</span>
-          </button>
+            {isViewMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsViewMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 flex flex-col">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                    Chế độ hiển thị
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetViewMode('excel_sheet');
+                      setIsViewMenuOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors ${
+                      activeViewMode === 'excel_sheet'
+                        ? 'text-[#005325] font-semibold bg-emerald-50/50'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    <span>Mẫu Bảng thống kê chuẩn</span>
+                    {activeViewMode === 'excel_sheet' && <CheckCircle2 className="w-3.5 h-3.5 text-[#005325]" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetViewMode('compact_table');
+                      setIsViewMenuOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors ${
+                      activeViewMode === 'compact_table'
+                        ? 'text-[#005325] font-semibold bg-emerald-50/50'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    <span>Danh sách rút gọn</span>
+                    {activeViewMode === 'compact_table' && <CheckCircle2 className="w-3.5 h-3.5 text-[#005325]" />}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
-          <button
-            onClick={handleExportExcel}
-            className="px-3 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium cursor-pointer flex items-center gap-1 shadow-2xs transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Xuất Excel</span>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsActionMenuOpen((prev) => !prev);
+                setIsViewMenuOpen(false);
+              }}
+              className="w-8 h-8 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer flex items-center justify-center transition-colors shadow-2xs"
+              title="Tùy chọn thao tác"
+            >
+              <MoreVertical className="w-4 h-4 text-slate-700" />
+            </button>
 
-          <button
-            onClick={handlePrint}
-            className="px-3 py-1 text-xs rounded bg-slate-700 hover:bg-slate-800 text-white font-medium cursor-pointer flex items-center gap-1 shadow-2xs transition-colors"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>In biểu mẫu</span>
-          </button>
+            {isActionMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsActionMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditable(!isEditable);
+                      setIsActionMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
+                  >
+                    <Edit3 className={`w-3.5 h-3.5 ${isEditable ? 'text-amber-600' : 'text-slate-500'}`} />
+                    <span className={isEditable ? 'font-medium text-amber-800' : ''}>
+                      {isEditable ? 'Đang bật nhập liệu' : 'Chế độ xem'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSave();
+                      setIsActionMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
+                  >
+                    <Save className="w-3.5 h-3.5 text-[#005325]" />
+                    <span>Lưu bảng</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExportExcel();
+                      setIsActionMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Xuất Excel</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handlePrint();
+                      setIsActionMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-slate-600" />
+                    <span>In biểu mẫu</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           {isModal && onClose && (
             <button
+              type="button"
               onClick={onClose}
               className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors ml-1"
               title="Đóng cửa sổ"
@@ -468,140 +644,79 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
         </div>
       </div>
 
-      {/* 2. THE EXACT EXCEL SPREADSHEET SHEET */}
-      <div className="overflow-x-auto w-full bg-white print:p-0 print:overflow-visible">
-        <div className="min-w-[1050px] mx-auto p-4 sm:p-6 bg-white font-sans text-black border border-slate-300 shadow-xs print:border-none print:shadow-none">
+      {/* 2. THE EXACT EXCEL SPREADSHEET SHEET OR COMPACT TABLE */}
+      {activeViewMode === 'compact_table' && compactContent ? (
+        <div className="w-full max-w-full min-w-0 overflow-x-auto bg-white border border-slate-200 rounded-md">
+          {compactContent}
+        </div>
+      ) : (
+      <div className="w-full max-w-full min-w-0 overflow-x-auto bg-white print:p-0 print:overflow-visible">
+        <div className="w-full min-w-[760px] mx-auto p-3 sm:p-5 bg-white font-sans text-black border border-slate-300 shadow-xs print:border-none print:shadow-none">
           {/* TITLE CENTERED */}
-          <div className="text-center mb-6">
-            <h1 className="text-[17px] sm:text-[19px] font-bold tracking-wide uppercase text-black font-serif">
+          <div className="text-center mb-4 pb-2.5 border-b border-slate-200">
+            <h1 className="text-[18px] sm:text-[20px] font-bold tracking-wide uppercase text-slate-900 font-sans">
               BẢNG THỐNG KÊ CÔNG TÁC GIẢNG DẠY
             </h1>
-            <h2 className="text-[14px] sm:text-[15px] font-bold text-black font-serif mt-1">
+            <h2 className="text-[13.5px] sm:text-[14px] font-semibold text-slate-700 font-sans mt-0.5">
               NĂM HỌC {namHoc}
             </h2>
+            <div className="text-[12px] text-slate-600 font-sans mt-1">
+              Giảng viên: <strong className="text-slate-900 font-semibold">{hoTen}</strong> ({maGV}) — {donVi}
+            </div>
           </div>
 
-          {/* TOP METADATA BLOCK & INSTRUCTION NOTE */}
-          <div className="flex items-start justify-between gap-6 mb-3">
-            {/* Left Info Table (5 rows, gray label, yellow value) */}
-            <div className="w-[380px] shrink-0">
-              <table className="w-full border-collapse border border-black text-[12px]">
-                <tbody>
-                  {/* Đơn vị */}
-                  <tr>
-                    <td className="w-[140px] px-2.5 py-1 border border-black bg-[#bfbfbf] font-medium text-black">
-                      Đơn vị:
-                    </td>
-                    <td className={`px-2 py-0.5 border border-black text-black ${donVi ? 'bg-[#ffff99]' : 'bg-[#ffff99]'}`}>
-                      {isEditable ? (
-                        <input
-                          type="text"
-                          value={donVi}
-                          onChange={(e) => setDonVi(e.target.value)}
-                          className="w-full bg-transparent border-none outline-none text-[12px] font-normal text-black"
-                          placeholder="Nhập tên khoa/bộ môn..."
-                        />
-                      ) : (
-                        <span className="font-normal">{donVi}</span>
-                      )}
-                    </td>
-                  </tr>
+          {/* INSTRUCTION NOTE */}
+          <div className="flex items-center gap-2 px-3 py-2 mb-3 bg-amber-50/90 border border-amber-200/80 rounded text-[12px] text-amber-900 print:hidden">
+            <span className="font-bold text-amber-800 shrink-0">Lưu ý:</span>
+            <span>Quý thầy cô nhập thống kê tại các ô màu vàng nhạt; khi hoàn tất ô sẽ tự động đổi màu và hệ thống tính quy chuẩn số giờ.</span>
+          </div>
 
-                  {/* Họ tên giảng viên */}
-                  <tr>
-                    <td className="px-2.5 py-1 border border-black bg-[#bfbfbf] font-medium text-black">
-                      Họ tên giảng viên:
-                    </td>
-                    <td className={`px-2 py-0.5 border border-black text-black ${hoTen ? 'bg-[#ffff99]' : 'bg-[#ffff99]'}`}>
-                      {isEditable ? (
-                        <input
-                          type="text"
-                          value={hoTen}
-                          onChange={(e) => setHoTen(e.target.value)}
-                          className="w-full bg-transparent border-none outline-none text-[12px] font-medium text-black"
-                          placeholder="Họ và tên..."
-                        />
-                      ) : (
-                        <span className="font-medium">{hoTen}</span>
-                      )}
-                    </td>
-                  </tr>
-
-                  {/* Chức danh */}
-                  <tr>
-                    <td className="px-2.5 py-1 border border-black bg-[#bfbfbf] font-medium text-black">
-                      Chức danh:
-                    </td>
-                    <td className="px-2 py-0.5 border border-black bg-[#ffff99] text-center text-black">
-                      {isEditable ? (
-                        <input
-                          type="text"
-                          value={chucDanh}
-                          onChange={(e) => setChucDanh(e.target.value.toUpperCase())}
-                          className="w-full bg-transparent border-none outline-none text-[12px] text-center uppercase font-medium text-black"
-                        />
-                      ) : (
-                        <span className="font-medium uppercase">{chucDanh}</span>
-                      )}
-                    </td>
-                  </tr>
-
-                  {/* Ngạch giảng viên */}
-                  <tr>
-                    <td className="px-2.5 py-1 border border-black bg-[#bfbfbf] font-medium text-black">
-                      Ngạch giảng viên:
-                    </td>
-                    <td className="px-2 py-0.5 border border-black bg-[#ffff99] text-center text-black">
-                      {isEditable ? (
-                        <input
-                          type="text"
-                          value={ngachGV}
-                          onChange={(e) => setNgachGV(e.target.value.toUpperCase())}
-                          className="w-full bg-transparent border-none outline-none text-[12px] text-center uppercase font-medium text-black"
-                        />
-                      ) : (
-                        <span className="font-medium uppercase">{ngachGV}</span>
-                      )}
-                    </td>
-                  </tr>
-
-                  {/* Năm học */}
-                  <tr>
-                    <td className="px-2.5 py-1 border border-black bg-[#bfbfbf] font-medium text-black">
-                      Năm học:
-                    </td>
-                    <td className="px-2 py-0.5 border border-black bg-[#ffff99] text-center text-black font-medium">
-                      {isEditable ? (
-                        <input
-                          type="text"
-                          value={namHoc}
-                          onChange={(e) => setNamHoc(e.target.value)}
-                          className="w-full bg-transparent border-none outline-none text-[12px] text-center text-black font-medium"
-                        />
-                      ) : (
-                        <span>{namHoc}</span>
-                      )}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Right Note (Exact text matching image) */}
-            <div className="flex-1 text-[12px] text-black pt-2 pr-4 leading-relaxed text-right sm:text-left">
-              <span className="font-bold">Lưu ý: </span>
-              <span>
-                Quý thầy cô nhập thống kê của mình tại những ô màu vàng có ghi chú, khi nhập xong sẽ đổi màu, đề nghị quý thầy cô nhập đầy đủ
-              </span>
-            </div>
+          {/* SECTION SWITCH TABS (Print: hidden) */}
+          <div className="flex items-center gap-1.5 mb-3 print:hidden">
+            <span className="text-[11.5px] font-semibold text-slate-500 mr-1">Hiển thị phần:</span>
+            <button
+              type="button"
+              onClick={() => setSelectedReportSection('all')}
+              className={`px-3 py-1 rounded text-[11.5px] font-medium cursor-pointer transition-colors ${
+                selectedReportSection === 'all'
+                  ? 'bg-[#005325] text-white shadow-2xs font-semibold'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              Tất cả (A + B)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedReportSection('teaching')}
+              className={`px-3 py-1 rounded text-[11.5px] font-medium cursor-pointer transition-colors ${
+                selectedReportSection === 'teaching'
+                  ? 'bg-[#005325] text-white shadow-2xs font-semibold'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              A. Giờ giảng dạy
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedReportSection('other_duties')}
+              className={`px-3 py-1 rounded text-[11.5px] font-medium cursor-pointer transition-colors ${
+                selectedReportSection === 'other_duties'
+                  ? 'bg-[#005325] text-white shadow-2xs font-semibold'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              B. Công tác khác (40 mục)
+            </button>
           </div>
 
           {/* SECTION HEADER: A. GIẢNG DẠY */}
-          <div className="border-t-2 border-black pt-1 mb-0.5">
-            <h3 className="text-[13px] font-bold text-red-600 uppercase tracking-wide">
-              A. GIẢNG DẠY
-            </h3>
-          </div>
+          {(selectedReportSection === 'all' || selectedReportSection === 'teaching') && (
+            <>
+              <div className="border-t-2 border-black pt-1 mb-0.5">
+                <h3 className="text-[13px] font-bold text-red-600 uppercase tracking-wide">
+                  A. GIẢNG DẠY
+                </h3>
+              </div>
 
           {/* MAIN SPREADSHEET TABLE */}
           <div className="w-full border-t border-black">
@@ -942,7 +1057,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                 {/* FOOTER ROW: TỔNG SỐ GIỜ GIẢNG DẠY */}
                 <tr className="bg-white font-bold h-[28px]">
                   <td colSpan={9} className="px-2 py-1 text-center font-bold text-blue-700 border border-black text-[12px]">
-                    Tổng số giờ giảng dạy
+                    Tổng số giờ giảng dạy (A)
                   </td>
                   <td className="px-1 py-1 text-center font-bold text-black border border-black text-[12px]">
                     {grandTotalQC > 0 ? grandTotalQC.toFixed(grandTotalQC % 1 === 0 ? 0 : 2) : '-'}
@@ -952,6 +1067,33 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
               </tbody>
             </table>
           </div>
+          </>
+          )}
+
+          {/* SECTION B: CÔNG TÁC KHÁC (40 MỤC CHUẨN FORM TRƯỜNG ĐH TÂY ĐÔ) */}
+          {(selectedReportSection === 'all' || selectedReportSection === 'other_duties') && (
+            <OtherDutiesSection
+              isEditable={isEditable}
+              onTotalHoursChange={(total) => setOtherDutiesTotalHours(total)}
+            />
+          )}
+
+          {/* GRAND SUMMARY BANNER (A + B) */}
+          {selectedReportSection === 'all' && (
+            <div className="mt-5 p-3.5 bg-emerald-50/80 border-2 border-[#005325] rounded-md flex items-center justify-between font-sans">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-[13px] text-[#005325] uppercase tracking-wide">
+                  TỔNG CỘNG KHỐI LƯỢNG CÔNG TÁC QUY CHUẨN (PHẦN A + PHẦN B):
+                </span>
+                <span className="text-[12px] text-slate-600">
+                  (Giảng dạy: {grandTotalQC.toFixed(grandTotalQC % 1 === 0 ? 0 : 2)}h + Công tác khác: {otherDutiesTotalHours.toFixed(otherDutiesTotalHours % 1 === 0 ? 0 : 2)}h)
+                </span>
+              </div>
+              <div className="text-[16px] font-bold text-red-700 shrink-0">
+                {(grandTotalQC + otherDutiesTotalHours).toFixed((grandTotalQC + otherDutiesTotalHours) % 1 === 0 ? 0 : 2)} giờ QC
+              </div>
+            </div>
+          )}
 
           {/* SIGNATURE SECTION (For clean printing) */}
           <div className="hidden print:grid grid-cols-3 gap-4 mt-8 text-center text-[12px] text-black">
@@ -976,6 +1118,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

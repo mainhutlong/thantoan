@@ -1,27 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --app-zoom: 1.25;
-  --modal-zoom: 0.8;
+  --app-zoom: 1.0;
+  --modal-zoom: 1.0;
 }
 
 @layer base {
   html {
-    zoom: var(--app-zoom, 1.25);
+    zoom: var(--app-zoom, 1.0);
     height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
-    height: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
     margin: 0;
     padding: 0;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: #1e293b;
     background-color: #f1f5f9;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
     height: 100%;
+    min-height: 100dvh;
   }
 
   table,
@@ -31,86 +38,112 @@
   table thead,
   table tbody,
   table tfoot,
+  table span,
+  table div,
+  table button,
   .table-content {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
   }
 }
 
 /* ========================================================
    TỰ ĐỘNG ĐIỀU CHỈNH CÁC POPUP / MODAL VỪA VẶN VỚI MÀN HÌNH
-   Khắc phục hiện tượng popup bị quá to khi giao diện chính zoom 125%
+   Khắc phục hiện tượng popup bị quá to khi giao diện chính zoom
    ======================================================== */
 .fixed.inset-0.z-50,
 .modal-overlay,
 [role="dialog"] {
-  zoom: var(--modal-zoom, 0.8) !important;
+  zoom: var(--modal-zoom, 1.0) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 1rem !important;
+  padding: 0.75rem !important;
   overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 .fixed.inset-0.z-50 > div,
 .modal-overlay > div {
-  max-height: 90vh !important;
-  max-width: 95vw !important;
+  max-height: 92vh !important;
+  max-height: 92dvh !important;
 }
 
-/* Thiết lập màu chữ nội dung bảng trong các tab theo yêu cầu: oklch(37.2% 0.044 257.287) */
+/* Smooth touch scrolling for all scroll containers */
+.overflow-auto,
+.overflow-x-auto,
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================================
+   ĐỒNG NHẤT FONT CHỮ BẢNG NỘI DUNG VỚI THANH TASKBAR:
+   - Font Plus Jakarta Sans đồng nhất với thanh taskbar
+   - Tiêu đề cột (thead) giữ nguyên (in đậm, màu đậm #1e293b)
+   - Chữ trong nội dung (tbody) mỏng (font-weight: 400) và nhạt lại (#475569), không nền màu
+   ======================================================== */
 table,
+.table-content {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
 table thead,
 table thead tr,
 table thead th,
-table tbody,
-table tbody tr,
-table tbody td,
 table tfoot,
 table tfoot tr,
 table tfoot th,
-table tfoot td,
-.table-content {
-  color: oklch(37.2% 0.044 257.287);
+table tfoot td {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
 }
 
-/* Áp dụng ưu tiên cao để các text trong bảng (kể cả có class text-black hay text-slate-800) đều mang màu oklch(37.2% 0.044 257.287) */
-table thead th,
-table thead th.text-black,
-table thead th .text-black,
-table thead tr.text-black,
 table tbody,
-table tbody.text-black,
-table tbody.text-slate-800,
-table tbody tr.text-black,
-table tbody td,
-table tbody td.text-black,
-table tbody td.text-slate-800,
-table tbody td.text-slate-700,
-table tbody td .text-black,
-table tbody td .text-slate-800,
-table tbody td span.text-black,
-table tbody td span.text-slate-800,
-table tbody td div.text-black,
-table tbody td div.text-slate-800,
-table tbody td p.text-black,
-table tbody td strong.text-black,
-table tfoot td,
-table tfoot td.text-black,
-table tfoot td .text-black {
-  color: oklch(37.2% 0.044 257.287) !important;
+table tbody tr,
+table tbody td {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  color: #475569 !important;
+  font-weight: 400 !important;
 }
 
-/* Bảo toàn các màu trạng thái đặc thù và nút hành động nếu có */
-table tbody td [class*="text-emerald"]:not(.text-black),
-table tbody td [class*="text-green"]:not(.text-black),
-table tbody td [class*="text-red"]:not(.text-black),
-table tbody td [class*="text-rose"]:not(.text-black),
-table tbody td [class*="text-amber"]:not(.text-black),
-table tbody td [class*="text-yellow"]:not(.text-black),
-table tbody td [class*="text-blue"]:not(.text-black),
-table tbody td [class*="text-indigo"]:not(.text-black),
-table tbody td [class*="text-purple"]:not(.text-black),
-table tbody td [class*="text-white"]:not(.text-black),
-table tbody td [class*="text-[#005325]"]:not(.text-black) {
-  color: revert !important;
+table tbody td span,
+table tbody td a,
+table tbody td p,
+table tbody td strong,
+table tbody td button:not([title*="Xem"]):not([title*="Sửa"]):not([title*="Chỉnh sửa"]):not([title*="Xóa"]):not([title*="Kỳ thanh toán"]) {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-weight: 400 !important;
+  color: #475569 !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ========================================================
+   THANH CUỘN NGANG VÀ DỌC RÕ RÀNG TRÊN WINDOWS / CHROMIUM
+   Hiển thị thanh cuộn nổi bật, dễ nhìn, dễ thao tác kéo trượt
+   ======================================================== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 5px;
+  border: 2px solid #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
 }

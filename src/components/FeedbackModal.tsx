@@ -43,14 +43,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       <div className="bg-white rounded shadow-2xl w-full max-w-lg overflow-hidden border border-slate-300">
         {/* Header #005325 */}
         <div className="bg-[#005325] text-white px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-emerald-300" />
-            <h3 className="font-semibold text-[13.5px]">
-              Gửi phản hồi / Khiếu nại sai sót giờ giảng
-            </h3>
-          </div>
-          <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded cursor-pointer">
-            <X className="w-4 h-4" />
+          <h3 className="font-semibold text-[13.5px]">
+            Gửi phản hồi / Khiếu nại sai sót giờ giảng
+          </h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white text-[12px] font-medium px-2 py-0.5 rounded cursor-pointer">
+            Đóng
           </button>
         </div>
 
@@ -96,8 +93,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             />
           </div>
 
-          <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800 text-[11.5px] flex items-start gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-800 text-[11.5px]">
             <span>Phản hồi sẽ được chuyển trực tiếp đến Đại diện Khoa và Chuyên viên tổng hợp Phòng Đào tạo TDU để kiểm tra, đối soát và điều chỉnh theo quy trình.</span>
           </div>
 
@@ -111,9 +107,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-[#005325] hover:bg-[#00421e] text-white rounded font-medium flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="px-4 py-1.5 bg-[#005325] hover:bg-[#00421e] text-white rounded font-medium shadow-sm cursor-pointer"
             >
-              <Send className="w-3.5 h-3.5" />
               <span>Gửi phản hồi</span>
             </button>
           </div>

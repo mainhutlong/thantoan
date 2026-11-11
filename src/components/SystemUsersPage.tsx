@@ -15,7 +15,8 @@ import {
   Award,
   BookOpen,
   Briefcase,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowLeft
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SystemUserProfile } from '../types';
@@ -388,6 +389,133 @@ export const SystemUsersPage: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-[#f8fafc] overflow-y-auto">
+      {isDetailModalOpen && viewingUser ? (
+        <div className="flex-1 flex flex-col bg-[#f8fafc]">
+          {/* Top Bar */}
+          <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setIsDetailModalOpen(false)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Quay lại danh sách nhân sự</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  handleOpenEdit(viewingUser);
+                }}
+                className="h-[32px] px-3.5 rounded-lg bg-[#005325] hover:bg-[#00421e] text-white text-[12px] font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                <span>Chỉnh sửa hồ sơ</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Inline Detail Card */}
+          <div className="p-6 max-w-[960px] w-full mx-auto space-y-4">
+            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-[#005325] to-emerald-800 text-white p-5 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl text-white border border-white/30">
+                    {viewingUser.hoTen.slice(0, 1)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[18px] leading-tight">{viewingUser.hoTen}</h3>
+                    <p className="text-[12.5px] text-emerald-100 mt-0.5 font-semibold">
+                      {viewingUser.chucVu} • {viewingUser.donVi}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-2 text-[12px] font-bold">
+                      <span className="bg-white/20 px-2.5 py-0.5 rounded text-white">
+                        Mã NS: {viewingUser.maNhanSu}
+                      </span>
+                      {viewingUser.hocHam && (
+                        <span className="bg-white/20 px-2.5 py-0.5 rounded text-white">
+                          Học hàm: {viewingUser.hocHam}
+                        </span>
+                      )}
+                      <span className="bg-white/20 px-2.5 py-0.5 rounded text-white">
+                        Học vị: {viewingUser.hocVi}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5 text-[13px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Giới tính</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.gioiTinh}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Ngày, tháng, năm sinh</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.ngaySinh}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Chuyên môn đào tạo</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.chuyenMon}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm tốt nghiệp ĐH</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namTotNghiep}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm tuyển dụng</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namTuyenDung}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Ngày ký HĐLĐ chính thức</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.ngayKyHDLD}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm công nhận học hàm PGS</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namCongNhanPGS || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm công nhận học hàm GS</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namCongNhanGS || '—'}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Chứng chỉ sư phạm (CCSP)</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.ccsp}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Trình độ ngoại ngữ / Anh văn</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.anhVan}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Trình độ tin học</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.tinHoc}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Nhiệm vụ kiêm nhiệm</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">
+                      {viewingUser.kiemNhiem || 'Không có nhiệm vụ kiêm nhiệm'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11.5px] font-semibold">Đơn vị kiêm nhiệm</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.donViKiemNhiem || '—'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* 1. Header Zone */}
       <div className="bg-white border-b border-slate-200 px-6 py-4 shrink-0 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -585,134 +713,110 @@ export const SystemUsersPage: React.FC = () => {
                   </tr>
                 ) : (
                   filteredUsers.map((user, idx) => (
-                    <tr key={user.id} className="h-[38px] hover:bg-blue-50/40 transition-colors">
-                      <td className="px-2.5 text-center font-mono text-slate-500 border-r border-slate-200">
+                    <tr key={user.id} className="h-[38px] hover:bg-blue-50/40 transition-colors font-normal text-slate-600">
+                      <td className="px-2.5 text-center border-r border-slate-200">
                         {idx + 1}
                       </td>
 
                       {/* Họ tên */}
-                      <td className="px-3 font-semibold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         <button
                           onClick={() => handleOpenDetail(user)}
-                          className="hover:text-blue-600 hover:underline cursor-pointer text-left"
+                          className="hover:text-[#005325] hover:underline cursor-pointer text-left font-normal"
                         >
                           {user.hoTen}
                         </button>
                       </td>
 
                       {/* Mã nhân sự */}
-                      <td className="px-2.5 font-mono text-blue-700 font-semibold border-r border-slate-200 whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">
-                          {user.maNhanSu}
-                        </span>
+                      <td className="px-2.5 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                        {user.maNhanSu}
                       </td>
 
                       {/* Chức vụ */}
-                      <td className="px-3 text-slate-800 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.chucVu}
                       </td>
 
                       {/* Đơn vị */}
-                      <td className="px-3 text-slate-700 border-r border-slate-200 whitespace-nowrap font-medium">
+                      <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.donVi}
                       </td>
 
                       {/* Giới tính */}
-                      <td className="px-2 text-center border-r border-slate-200 whitespace-nowrap">
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                            user.gioiTinh === 'Nữ'
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : 'bg-slate-100 text-slate-700 border border-slate-200'
-                          }`}
-                        >
-                          {user.gioiTinh}
-                        </span>
+                      <td className="px-2 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                        {user.gioiTinh}
                       </td>
 
                       {/* Ngày sinh */}
-                      <td className="px-2.5 text-center font-mono text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2.5 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.ngaySinh}
                       </td>
 
                       {/* Học hàm */}
-                      <td className="px-2.5 border-r border-slate-200 whitespace-nowrap">
-                        {user.hocHam ? (
-                          <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                            {user.hocHam}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
+                      <td className="px-2.5 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                        {user.hocHam || '—'}
                       </td>
 
                       {/* Học vị */}
-                      <td className="px-2.5 border-r border-slate-200 whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-[#005325] border border-emerald-200">
-                          {user.hocVi}
-                        </span>
+                      <td className="px-2.5 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                        {user.hocVi}
                       </td>
 
                       {/* Chuyên môn */}
-                      <td className="px-3 text-slate-800 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.chuyenMon}
                       </td>
 
                       {/* Năm tuyển dụng */}
-                      <td className="px-2 text-center font-mono text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.namTuyenDung}
                       </td>
 
                       {/* Ngày ký HĐLĐ chính thức */}
-                      <td className="px-2.5 text-center font-mono text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2.5 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.ngayKyHDLD}
                       </td>
 
                       {/* Năm tốt nghiệp */}
-                      <td className="px-2 text-center font-mono text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.namTotNghiep}
                       </td>
 
                       {/* Năm PGS */}
-                      <td className="px-2 text-center font-mono text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.namCongNhanPGS || '—'}
                       </td>
 
                       {/* Năm GS */}
-                      <td className="px-2 text-center font-mono text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.namCongNhanGS || '—'}
                       </td>
 
                       {/* CCSP */}
-                      <td className="px-2.5 text-center border-r border-slate-200 whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 rounded text-[10.5px] bg-slate-100 text-slate-700 border border-slate-200">
-                          {user.ccsp}
-                        </span>
+                      <td className="px-2.5 text-center font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                        {user.ccsp}
                       </td>
 
                       {/* Anh văn */}
-                      <td className="px-2.5 text-slate-800 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2.5 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.anhVan}
                       </td>
 
                       {/* Tin học */}
-                      <td className="px-2.5 text-slate-800 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-2.5 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         <span className="truncate block max-w-[140px]" title={user.tinHoc}>
                           {user.tinHoc}
                         </span>
                       </td>
 
                       {/* Kiêm nhiệm */}
-                      <td className="px-3 text-slate-800 border-r border-slate-200 whitespace-nowrap">
-                        {user.kiemNhiem ? (
-                          <span className="text-amber-800 font-medium">{user.kiemNhiem}</span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
+                      <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
+                        {user.kiemNhiem || '—'}
                       </td>
 
                       {/* Đơn vị kiêm nhiệm */}
-                      <td className="px-3 text-slate-700 border-r border-slate-200 whitespace-nowrap">
+                      <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         {user.donViKiemNhiem || '—'}
                       </td>
 
@@ -750,6 +854,8 @@ export const SystemUsersPage: React.FC = () => {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* 5. Modal: Add / Edit User (Covering all 20 columns) */}
       {isFormModalOpen && (
@@ -1037,130 +1143,6 @@ export const SystemUsersPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* 6. Modal: View Detail User Profile Card */}
-      {isDetailModalOpen && viewingUser && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[650px] overflow-hidden border border-slate-200">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#005325] to-emerald-800 text-white p-5 flex items-start justify-between">
-              <div className="flex items-center gap-3.5">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl text-white border border-white/30 shadow-inner">
-                  {viewingUser.hoTen.slice(0, 1)}
-                </div>
-                <div>
-                  <h3 className="font-bold text-[17px] leading-tight">{viewingUser.hoTen}</h3>
-                  <p className="text-[12px] text-emerald-200 mt-0.5">
-                    {viewingUser.chucVu} • {viewingUser.donVi}
-                  </p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="font-mono text-[11px] bg-white/20 px-2 py-0.5 rounded text-white">
-                      {viewingUser.maNhanSu}
-                    </span>
-                    {viewingUser.hocHam && (
-                      <span className="text-[11px] bg-purple-500/80 px-2 py-0.5 rounded text-white font-medium">
-                        {viewingUser.hocHam}
-                      </span>
-                    )}
-                    <span className="text-[11px] bg-emerald-600 px-2 py-0.5 rounded text-white font-medium">
-                      {viewingUser.hocVi}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsDetailModalOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Profile Content */}
-            <div className="p-5 space-y-3.5 text-[12.5px] max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Giới tính</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.gioiTinh}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Ngày sinh</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.ngaySinh}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Chuyên môn đào tạo</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.chuyenMon}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Năm tốt nghiệp ĐH</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.namTotNghiep}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Năm tuyển dụng</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.namTuyenDung}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Ngày ký HĐLĐ chính thức</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.ngayKyHDLD}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Năm công nhận PGS</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.namCongNhanPGS || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Năm công nhận GS</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.namCongNhanGS || '—'}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 pb-3 border-b border-slate-100">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Chứng chỉ sư phạm</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.ccsp}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Trình độ ngoại ngữ</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.anhVan}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Trình độ tin học</span>
-                  <span className="font-semibold text-slate-800">{viewingUser.tinHoc}</span>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
-                <span className="text-amber-800 font-bold block text-[11.5px] uppercase tracking-wide">
-                  Chế độ kiêm nhiệm
-                </span>
-                <div className="mt-1 text-slate-800 font-medium">
-                  {viewingUser.kiemNhiem ? (
-                    <div>
-                      <span>Nhiệm vụ: {viewingUser.kiemNhiem}</span>
-                      <span className="block text-slate-600 text-[12px]">
-                        Tại đơn vị: {viewingUser.donViKiemNhiem}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-slate-500 italic">Không có nhiệm vụ kiêm nhiệm</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

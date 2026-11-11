@@ -38,8 +38,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
     onFilterChange({
       ...filters,
       faculty: 'all',
-      academicYear: '2023 - 2024',
-      semester: 'Học kỳ 2',
+      academicYear: '2026 - 2027',
+      semester: 'Học kỳ 1',
       lecturerName: '',
       subjectName: '',
     });
@@ -96,6 +96,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
               className="w-full h-[34px] px-2.5 pr-7 border border-[#cbd5e1] rounded-lg bg-white text-slate-800 text-[12.5px] appearance-none focus:outline-none focus:border-[#005325] focus:ring-1 focus:ring-[#005325] transition-colors font-normal"
             >
               <option value="all">-- Tất cả năm học --</option>
+              <option value="2026 - 2027">2026 - 2027 (Hiện hành)</option>
+              <option value="2025 - 2026">2025 - 2026</option>
               <option value="2024 - 2025">2024 - 2025</option>
               <option value="2023 - 2024">2023 - 2024</option>
               <option value="2022 - 2023">2022 - 2023</option>

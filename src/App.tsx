@@ -20,13 +20,15 @@ import { MinutesPageView } from './components/MinutesPageView';
 import { TotalPaymentPage } from './components/TotalPaymentPage';
 import { LecturerVerificationPage } from './components/LecturerVerificationPage';
 import { FinanceDisbursementPage } from './components/FinanceDisbursementPage';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { AccountPermissionPage } from './components/AccountPermissionPage';
-import { TeachingScheduleModal } from './components/TeachingScheduleModal';
-import { ResearchScheduleModal } from './components/ResearchScheduleModal';
+import { TeachingScheduleReport } from './components/TeachingScheduleReport';
+import { ResearchScheduleReport } from './components/ResearchScheduleReport';
 import { SystemUsersPage } from './components/SystemUsersPage';
 import { SystemRoleGroupPage } from './components/SystemRoleGroupPage';
-import { SystemConfigPage } from './components/SystemConfigPage';
+import { SystemConfigPage, DEFAULT_PERIODS } from './components/SystemConfigPage';
 import { SystemAuditLogPage } from './components/SystemAuditLogPage';
+import { UserProfileView } from './components/UserProfileView';
 import { INITIAL_VBCC_DATA, INITIAL_TEACHING_DATA, INITIAL_ACCOUNTS } from './data/mockData';
 import {
   VbccRecord,
@@ -39,6 +41,7 @@ import {
   PaymentRuleConfig,
   DepartmentUnit,
   UserAccount,
+  PaymentPeriod,
 } from './types';
 
 export default function App() {
@@ -52,8 +55,10 @@ export default function App() {
   const [currentAccount, setCurrentAccount] = useState<UserAccount>(INITIAL_ACCOUNTS[0]);
   const [selectedLecturerMa, setSelectedLecturerMa] = useState<string>('TDU00128');
 
-  // Sidebar state - Default to 1st menu: Thanh toán giờ giảng
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  // Sidebar state - Default: Open on Desktop (>=1024px), Closed on Mobile (<1024px)
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('ke_khai_upload');
 
   // Department Unit Selection ('all' | 'dao_tao' | 'khao_thi' | 'tuyen_sinh' | 'nckh' | 'cong_tac_khac')
@@ -63,8 +68,8 @@ export default function App() {
   const [filters, setFilters] = useState<FilterState>({
     department: 'all',
     faculty: 'all',
-    academicYear: '2023 - 2024',
-    semester: 'Học kỳ 2',
+    academicYear: '2026 - 2027',
+    semester: 'Học kỳ 1',
     paymentPhase: 'all',
     degreeLevel: 'all',
     activityType: 'all',
@@ -72,6 +77,10 @@ export default function App() {
     lecturerName: '',
     subjectName: '',
   });
+
+  // Payment periods management (Lưu trữ và phân loại dữ liệu theo đợt)
+  const [periods, setPeriods] = useState<PaymentPeriod[]>(DEFAULT_PERIODS);
+  const [currentPeriodId, setCurrentPeriodId] = useState<string>('period-hk1-2026-2027');
 
   // Column level filter inputs
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
@@ -141,6 +150,8 @@ export default function App() {
   // Modal dialog states
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [editingRecord, setEditingRecord] = useState<VbccRecord | TeachingRecord | null>(null);
+  const [isAddingInline, setIsAddingInline] = useState<boolean>(false);
+  const [inlineNotice, setInlineNotice] = useState<string | null>(null);
   const [isExcelImportOpen, setIsExcelImportOpen] = useState<boolean>(false);
   const [isAppendMode, setIsAppendMode] = useState<boolean>(false);
   const [isMinutesOpen, setIsMinutesOpen] = useState<boolean>(false);
@@ -151,10 +162,12 @@ export default function App() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [selectedScheduleMaGV, setSelectedScheduleMaGV] = useState<string | null>(null);
   const [selectedResearchScheduleMaGV, setSelectedResearchScheduleMaGV] = useState<string | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
   // Role switching
   const handleChangeRole = (role: UserRole) => {
     setCurrentRole(role);
+    setIsProfileOpen(false);
     // If switched to lecturer, preset filter to that lecturer for demo ease and open lecturer verification page
     if (role === 'lecturer') {
       setColumnFilters((prev) => ({ ...prev, hoTen: 'Mai Như Long' }));
@@ -168,6 +181,7 @@ export default function App() {
   // Switch account user with auto role & view routing
   const handleSwitchUser = (acc: UserAccount) => {
     setCurrentAccount(acc);
+    setIsProfileOpen(false);
     if (acc.role === 'admin') {
       setCurrentRole('admin');
     } else if (acc.role === 'tai_chinh') {
@@ -188,6 +202,9 @@ export default function App() {
   // Sidebar item selection with sub-department handling
   const handleSelectSidebarItem = (itemKey: string, department?: DepartmentUnit) => {
     setActiveSidebarItem(itemKey);
+    setIsProfileOpen(false);
+    setSelectedScheduleMaGV(null);
+    setSelectedResearchScheduleMaGV(null);
     if (department) {
       setSelectedDepartment(department);
     }
@@ -224,12 +241,20 @@ export default function App() {
         return false;
       }
       // Filter by Academic Year (Năm học)
-      if (filters.academicYear !== 'all' && !item.dotThanhToan?.includes(filters.academicYear)) {
-        return false;
+      if (filters.academicYear !== 'all') {
+        const yearNorm = filters.academicYear.replace(/\s+/g, '');
+        const itemDot = (item.dotThanhToan || '').replace(/\s+/g, '');
+        if (!itemDot.includes(yearNorm) && !itemDot.includes(filters.academicYear)) {
+          return false;
+        }
       }
       // Filter by Semester (Học kỳ)
-      if (filters.semester !== 'all' && !item.dotThanhToan?.includes(filters.semester)) {
-        return false;
+      if (filters.semester !== 'all') {
+        const semNorm = filters.semester.replace(/\s+/g, '').toLowerCase();
+        const itemDot = (item.dotThanhToan || '').replace(/\s+/g, '').toLowerCase();
+        if (!itemDot.includes(semNorm) && !itemDot.includes(filters.semester.toLowerCase())) {
+          return false;
+        }
       }
       // Filter by Lecturer Name (Họ tên Giảng viên)
       if (filters.lecturerName && !item.hoTen.toLowerCase().includes(filters.lecturerName.trim().toLowerCase())) {
@@ -304,11 +329,62 @@ export default function App() {
     };
   }, [teachingList]);
 
-  // Pagination slice
+  // Group by lecturer: Mỗi người chỉ đúng 1 hàng dữ liệu theo yêu cầu
+  const lecturerGroups = useMemo(() => {
+    const map = new Map<string, TeachingRecord[]>();
+    filteredTeaching.forEach((r) => {
+      const key = (r.maGV || r.hoTen || r.id).trim();
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    });
+    return Array.from(map.entries()).map(([key, recs]) => {
+      const primary = recs[0];
+      const uniqueSubjects = new Set(
+        recs
+          .map((r) => (r.tenHocPhan || r.noiDungNCKH || r.tenCongViec || '').trim())
+          .filter(Boolean)
+      );
+      const tongSoMon = uniqueSubjects.size || recs.length;
+      const tongSoSinhVien = recs.reduce((sum, r) => sum + (Number(r.soSinhVien) || 0), 0);
+      const tongSoTiet = recs.reduce(
+        (sum, r) =>
+          sum +
+          ((Number(r.soTietLT) || 0) + (Number(r.soTietTH) || 0) ||
+            Number(r.soGioMonHoc) ||
+            Number(r.tongTietQC) ||
+            0),
+        0
+      );
+      const tongGioGiangDay = recs.reduce(
+        (sum, r) =>
+          sum +
+          (Number(r.soGioThucGiang) ||
+            ((Number(r.soTietLT) || 0) + (Number(r.soTietTH) || 0)) ||
+            Number(r.tongTietQC) ||
+            0),
+        0
+      );
+
+      return {
+        key,
+        maGV: primary.maGV,
+        hoTen: primary.hoTen,
+        records: recs,
+        primaryRecord: primary,
+        tongSoMon,
+        tongSoSinhVien,
+        tongSoTiet,
+        tongGioGiangDay,
+      };
+    });
+  }, [filteredTeaching]);
+
+  // Pagination slice of lecturers
   const currentTeachingSlice = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return filteredTeaching.slice(start, start + pageSize);
-  }, [filteredTeaching, currentPage, pageSize]);
+    const slicedLecturers = lecturerGroups.slice(start, start + pageSize);
+    return slicedLecturers.flatMap((l) => l.records);
+  }, [lecturerGroups, currentPage, pageSize]);
 
   // Pending feedback count
   const pendingFeedbackCount = useMemo(() => {
@@ -317,28 +393,43 @@ export default function App() {
 
   // Selection handlers
   const handleToggleSelectAll = () => {
-    if (selectedIds.length === currentTeachingSlice.length) {
-      setSelectedIds([]);
+    const currentPageRecordIds = currentTeachingSlice.map((r) => r.id);
+    const isAllSelected =
+      currentPageRecordIds.length > 0 &&
+      currentPageRecordIds.every((id) => selectedIds.includes(id));
+    if (isAllSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !currentPageRecordIds.includes(id)));
     } else {
-      setSelectedIds(currentTeachingSlice.map((item) => item.id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...currentPageRecordIds])));
     }
   };
 
   const handleToggleSelectRow = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter((item) => item !== id));
+    const target = teachingList.find((r) => r.id === id);
+    const relatedIds = target?.maGV
+      ? teachingList.filter((r) => r.maGV === target.maGV).map((r) => r.id)
+      : [id];
+
+    const isSelected = relatedIds.some((rId) => selectedIds.includes(rId));
+    if (isSelected) {
+      setSelectedIds((prev) => prev.filter((rId) => !relatedIds.includes(rId)));
     } else {
-      setSelectedIds([...selectedIds, id]);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...relatedIds])));
     }
   };
 
   // CRUD actions
   const handleSaveTeaching = (record: TeachingRecord) => {
-    const exists = teachingList.some((r) => r.id === record.id);
+    const currentPeriod = periods.find((p) => p.id === currentPeriodId);
+    const withPeriod = {
+      ...record,
+      dotThanhToan: record.dotThanhToan || currentPeriod?.name || 'Học kỳ 1 2026-2027',
+    };
+    const exists = teachingList.some((r) => r.id === withPeriod.id);
     if (exists) {
-      setTeachingList((prev) => prev.map((r) => (r.id === record.id ? record : r)));
+      setTeachingList((prev) => prev.map((r) => (r.id === withPeriod.id ? withPeriod : r)));
     } else {
-      setTeachingList((prev) => [record, ...prev]);
+      setTeachingList((prev) => [withPeriod, ...prev]);
     }
   };
 
@@ -350,9 +441,20 @@ export default function App() {
   };
 
   const handleDeleteRecord = (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bản ghi này khỏi hệ thống thanh toán?')) {
-      setTeachingList((prev) => prev.filter((item) => item.id !== id));
-      setSelectedIds((prev) => prev.filter((item) => item !== id));
+    const target = teachingList.find((item) => item.id === id);
+    if (!target) return;
+    if (
+      window.confirm(
+        `Bạn có chắc chắn muốn xóa toàn bộ dữ liệu giảng dạy của giảng viên ${target.hoTen} (${target.maGV}) khỏi hệ thống?`
+      )
+    ) {
+      const maGV = target.maGV;
+      setTeachingList((prev) =>
+        prev.filter((item) => (maGV ? item.maGV !== maGV : item.id !== id))
+      );
+      setSelectedIds((prev) =>
+        prev.filter((item) => (maGV ? item !== maGV : item !== id))
+      );
     }
   };
 
@@ -451,179 +553,711 @@ export default function App() {
 
   // Excel Template Download per Department
   const handleDownloadTemplate = () => {
-    let headers: string[] = [];
-    let sampleRow: any[] = [];
-    let fileName = '';
+    const wb = XLSX.utils.book_new();
 
     if (selectedDepartment === 'khao_thi') {
-      headers = [
+      const headers = [
         'TT',
-        'Mã GV',
-        'Họ và tên Giảng viên',
+        'Mã GV (*)',
+        'Họ và tên Giảng viên (*)',
         'Ngày sinh',
         'Số CCCD',
         'Học vị',
-        'Khoa',
-        'Tên học phần thi',
+        'Khoa / Bộ môn',
+        'Tên học phần thi (*)',
         'Số ca coi thi',
         'Số bài chấm thi',
         'Số đề thi ra',
         'Đợt thi',
+        'Ghi chú',
       ];
-      sampleRow = [
-        1,
-        'TDU00128',
-        'TS. Mai Như Long',
-        '18/09/1982',
-        '092082001245',
-        'TS',
-        'Khoa CNTT',
-        'Hệ thống thông tin doanh nghiệp',
-        4,
-        120,
-        2,
-        'Học kỳ 2 (2023 - 2024)',
+      const sampleRows = [
+        [
+          1,
+          'TDU00128',
+          'TS. Mai Như Long',
+          '18/09/1982',
+          '092082001245',
+          'TS',
+          'Khoa CNTT',
+          'Hệ thống thông tin doanh nghiệp',
+          4,
+          120,
+          2,
+          'Học kỳ 1 2026-2027',
+          'Coi thi ca sáng + Chấm thi tự luận',
+        ],
       ];
-      fileName = 'Mau_Khao_Thi_Coi_Cham_Thi_TDU_2024.xlsx';
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 26 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 10 },
+        { wch: 22 },
+        { wch: 34 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 32 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Khao_Thi');
+      XLSX.writeFile(wb, 'Mau_Khao_Thi_Coi_Cham_Thi_TDU_2026_2027.xlsx');
     } else if (selectedDepartment === 'tuyen_sinh') {
-      headers = [
+      const headers = [
         'TT',
-        'Mã GV',
-        'Họ và tên Giảng viên',
+        'Mã GV (*)',
+        'Họ và tên Giảng viên (*)',
         'Ngày sinh',
         'Số CCCD',
         'Học vị',
-        'Khoa',
-        'Nội dung công tác tuyển sinh',
+        'Khoa / Bộ môn',
+        'Nội dung công tác tuyển sinh (*)',
         'Số ngày công tác',
         'Địa bàn / Trường THPT',
         'Đợt tuyển sinh',
+        'Ghi chú',
       ];
-      sampleRow = [
-        1,
-        'TDU00318',
-        'ThS. Nguyễn Thị Cẩm Tú',
-        '22/11/1988',
-        '092088005671',
-        'ThS',
-        'Khoa QTKD',
-        'Tư vấn hướng nghiệp tuyển sinh ĐBSCL',
-        5,
-        'Cụm trường THPT Hậu Giang & Sóc Trăng',
-        'Đợt 1 (2024)',
+      const sampleRows = [
+        [
+          1,
+          'TDU00318',
+          'ThS. Nguyễn Thị Cẩm Tú',
+          '22/11/1988',
+          '092088005671',
+          'ThS',
+          'Khoa QTKD',
+          'Tư vấn hướng nghiệp tuyển sinh ĐBSCL',
+          5,
+          'Cụm trường THPT Hậu Giang & Sóc Trăng',
+          'Học kỳ 1 2026-2027',
+          'Tư vấn trực tiếp tại các trường THPT',
+        ],
       ];
-      fileName = 'Mau_Tuyen_Sinh_Truyen_Thong_TDU_2024.xlsx';
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 26 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 10 },
+        { wch: 22 },
+        { wch: 38 },
+        { wch: 16 },
+        { wch: 38 },
+        { wch: 22 },
+        { wch: 32 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Tuyen_Sinh');
+      XLSX.writeFile(wb, 'Mau_Tuyen_Sinh_Truyen_Thong_TDU_2026_2027.xlsx');
     } else if (selectedDepartment === 'nckh') {
-      headers = [
+      const headers = [
         'TT',
-        'Mã GV',
-        'Họ và tên Giảng viên',
+        'Mã GV (*)',
+        'Họ và tên Giảng viên (*)',
         'Học vị',
-        'Khoa',
-        'Tên đề tài / Bài báo ISI / Luận văn',
-        'Mã đề tài',
-        'Số giờ quy đổi',
-        'Vai trò / Ghi chú',
+        'Khoa / Bộ môn',
+        'Tên đề tài / Bài báo ISI / Luận văn (*)',
+        'Thể loại NCKH',
+        'Mã đề tài / Số ISSN',
+        'Số giờ quy đổi (*)',
+        'Mức độ hoàn thành',
+        'Ghi chú / Vai trò',
       ];
-      sampleRow = [
-        1,
-        'TDU00089',
-        'PGS.TS. Trần Thanh Dũng',
-        'PGS.TS',
-        'Khoa Dược',
-        'Nghiên cứu hoạt tính sinh học từ dược liệu ĐBSCL',
-        'NCKH_DUOC_01',
-        120,
-        'Tác giả chính (Scopus Q1)',
+      const sampleRows = [
+        // Giảng viên 1: PGS.TS. Trần Thanh Dũng (2 hàng: 1 đề tài cấp Bộ + 1 bài báo Scopus Q1)
+        [
+          1,
+          'TDU00089',
+          'PGS.TS. Trần Thanh Dũng',
+          'PGS.TS',
+          'Khoa Dược - Điều dưỡng',
+          'Chủ nhiệm đề tài NCKH cấp Bộ: "Khảo sát và chiết xuất hoạt chất chống oxy hóa từ thảo dược Cần Thơ"',
+          'Đề tài NCKH cấp Bộ',
+          'NCKH_DUOC_01',
+          220,
+          'Hoàn thành',
+          'Chủ nhiệm đề tài (Nghiệm thu Đạt)',
+        ],
+        [
+          2,
+          'TDU00089',
+          'PGS.TS. Trần Thanh Dũng',
+          'PGS.TS',
+          'Khoa Dược - Điều dưỡng',
+          'Bài báo khoa học ISI/Scopus: "Bioactive compounds from Mekong Delta medicinal plants"',
+          'Bài báo quốc tế ISI/Scopus (Q1)',
+          'ISSN 1872-2040',
+          180,
+          'Hoàn thành',
+          'Tác giả chính (First Author)',
+        ],
+        // Giảng viên 2: TS. Mai Như Long (2 hàng: 1 bài Scopus + 1 hướng dẫn Thạc sĩ)
+        [
+          3,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          'Bài báo khoa học quốc tế: "AI and Cloud Architectures in Modern University Management"',
+          'Bài báo quốc tế ISI/Scopus (Q1)',
+          'NCKH_SCOPUS_01',
+          180,
+          'Hoàn thành',
+          'Tác giả chính (Q1)',
+        ],
+        [
+          4,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          'Hướng dẫn 02 Học viên cao học bảo vệ thành công Luận văn Thạc sĩ ngành HTTT',
+          'Hướng dẫn luận văn Thạc sĩ',
+          'SDH_CH_HTTT12',
+          40,
+          'Hoàn thành',
+          'Cán bộ hướng dẫn chính',
+        ],
+        // Giảng viên 3: ThS. Nguyễn Thị Cẩm Tú (1 hàng)
+        [
+          5,
+          'TDU00318',
+          'ThS. Nguyễn Thị Cẩm Tú',
+          'ThS',
+          'Khoa Kinh tế - Quản trị kinh doanh',
+          'Bài báo: "Nghiên cứu các yếu tố ảnh hưởng đến quyết định mua sắm trực tuyến của người tiêu dùng trẻ"',
+          'Bài báo tạp chí chuyên ngành trong nước',
+          'NCKH_KTE_02',
+          60,
+          'Hoàn thành',
+          'Tác giả',
+        ],
       ];
-      fileName = 'Mau_NCKH_Sau_Dai_Hoc_TDU_2024.xlsx';
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 26 },
+        { wch: 12 },
+        { wch: 25 },
+        { wch: 55 },
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 35 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_NCKH');
+      XLSX.writeFile(wb, 'Mau_NCKH_Sau_Dai_Hoc_TDU_2026_2027.xlsx');
     } else if (selectedDepartment === 'co_van_hoc_tap') {
-      headers = [
+      const headers = [
         'TT',
-        'Mã GV',
-        'Họ và tên Giảng viên',
+        'Mã GV (*)',
+        'Họ và tên Giảng viên (*)',
         'Học vị',
-        'Khoa',
-        'Lớp phụ trách CVHT',
+        'Khoa / Bộ môn',
+        'Lớp phụ trách CVHT (*)',
         'Số sinh viên lớp',
-        'Thời gian cố vấn (Học kỳ / Năm học)',
+        'Thời gian cố vấn',
         'Số tiết định mức QC',
         'Đơn giá tiết (VNĐ)',
         'Ghi chú',
       ];
-      sampleRow = [
-        1,
-        'TDU00128',
-        'TS. Mai Như Long',
-        'TS',
-        'Khoa CNTT',
-        'CNTT14A',
-        65,
-        'Học kỳ 2 (2023 - 2024)',
-        20,
-        180000,
-        'Theo Quyết định phân công Cố vấn học tập TDU',
+      const sampleRows = [
+        [
+          1,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'TS',
+          'Khoa CNTT',
+          'CNTT14A',
+          65,
+          'Học kỳ 1 2026-2027',
+          20,
+          180000,
+          'Theo Quyết định phân công Cố vấn học tập TDU',
+        ],
       ];
-      fileName = 'Mau_Co_Van_Hoc_Tap_TDU_2024.xlsx';
-    } else if (selectedDepartment === 'cong_tac_khac') {
-      headers = [
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 26 },
+        { wch: 10 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 24 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 36 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Co_Van_Hoc_Tap');
+      XLSX.writeFile(wb, 'Mau_Co_Van_Hoc_Tap_TDU_2026_2027.xlsx');
+    } else if (selectedDepartment === 'do_an') {
+      const headers = [
         'TT',
-        'Mã GV',
-        'Họ và tên Giảng viên',
+        'Mã GV (*)',
+        'Họ và tên Giảng viên (*)',
         'Học vị',
-        'Khoa',
-        'Nhiệm vụ công tác kiêm nhiệm',
+        'Khoa / Bộ môn',
+        'Nhiệm vụ / Học phần (*)',
+        'Mã học phần / Lớp',
+        'Số sinh viên / Đề tài',
+        'Số lượt chấm / HĐ',
+        'Vai trò (HD, PB, CTHD, TKHD)',
+        'Số giờ quy chuẩn (*)',
+        'Ghi chú',
+      ];
+      const sampleRows = [
+        [
+          1,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          'Hướng dẫn Khóa luận tốt nghiệp đại học ngành HTTT',
+          'KLTN_HTTT_K14',
+          2,
+          0,
+          'Hướng dẫn chính',
+          24,
+          '12 giờ quy đổi / 1 SV',
+        ],
+        [
+          2,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          'Phản biện Khóa luận tốt nghiệp đại học K14',
+          'PB_KLTN_K14',
+          0,
+          3,
+          'Cán bộ phản biện',
+          9,
+          '3 giờ quy đổi / 1 SV',
+        ],
+        [
+          3,
+          'TDU00089',
+          'PGS.TS. Trần Thanh Dũng',
+          'PGS.TS',
+          'Khoa Dược - Điều dưỡng',
+          'Chủ tịch Hội đồng khóa luận tốt nghiệp Dược sĩ',
+          'HD_KLTN_DUOC',
+          0,
+          4,
+          'Chủ tịch hội đồng',
+          6,
+          '1.5 giờ quy đổi / 1 SV',
+        ],
+      ];
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 26 },
+        { wch: 10 },
+        { wch: 24 },
+        { wch: 42 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 28 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Do_An_Khoa_Luan');
+      XLSX.writeFile(wb, 'Mau_Do_An_Khoa_Luan_Tot_Nghiep_TDU_2026_2027.xlsx');
+    } else if (selectedDepartment === 'cong_tac_khac') {
+      const headers = [
+        'TT',
+        'Mã GV (*)',
+        'Họ và tên Giảng viên (*)',
+        'Học vị',
+        'Khoa / Bộ môn',
+        'Nhiệm vụ công tác kiêm nhiệm (*)',
         'Thời gian / Căn cứ phân công',
         'Số tiết QC quy đổi',
         'Ghi chú',
       ];
-      sampleRow = [
-        1,
-        'TDU00215',
-        'ThS. Nguyễn Văn Hải',
-        'ThS',
-        'Khoa CNTT',
-        'Ban Thanh tra thi HK2 & Giám sát',
-        'HK2 (QĐ số 118/QĐ-ĐHTĐ)',
-        12,
-        'Theo Quy chế chi tiêu nội bộ TDU',
+      const sampleRows = [
+        [
+          1,
+          'TDU00215',
+          'ThS. Nguyễn Văn Hải',
+          'ThS',
+          'Khoa CNTT',
+          'Ban Thanh tra thi HK1 & Giám sát',
+          'HK1 (QĐ số 118/QĐ-ĐHTĐ)',
+          12,
+          'Theo Quy chế chi tiêu nội bộ TDU',
+        ],
       ];
-      fileName = 'Mau_Cong_Tac_Khac_TDU_2024.xlsx';
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 26 },
+        { wch: 10 },
+        { wch: 22 },
+        { wch: 34 },
+        { wch: 24 },
+        { wch: 18 },
+        { wch: 32 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Cong_Tac_Khac');
+      XLSX.writeFile(wb, 'Mau_Cong_Tac_Khac_TDU_2026_2027.xlsx');
     } else {
-      // Default: Thanh toán giờ giảng (Phòng Đào tạo)
-      headers = [
+      // DEFAULT: Mẫu import Thanh toán Giờ giảng (Phòng Đào tạo)
+      // Chứa đúng các cột theo yêu cầu: Mã GV, Họ tên, Môn giảng dạy, Lớp, Số SV, Số nhóm, Số giờ môn học, Số giờ thực giảng, Hệ số lớp, nhóm, Hệ số tín chỉ
+      // Mỗi người có thể có nhiều hàng (để nhập đầy đủ tất cả các lớp/môn của giảng viên)
+      const headers = [
         'TT',
         'Mã GV',
-        'Họ và tên Giảng viên',
-        'Ngày sinh',
-        'Số CCCD',
-        'Tiết Lý thuyết',
-        'Tiết Thực hành',
+        'Họ tên',
+        'Môn giảng dạy',
+        'Lớp',
+        'Số SV',
+        'Số nhóm',
+        'Số giờ môn học',
+        'Số giờ thực giảng',
+        'Hệ số lớp, nhóm',
+        'Hệ số tín chỉ',
+        'Phân loại (Lý thuyết / Thực hành)',
         'Học vị',
-        'Khoa',
-        'Tên học phần',
-        'Mã lớp học phần',
+        'Khoa / Bộ môn',
+        'Số tài khoản',
+        'Ngân hàng',
+        'Đợt thanh toán',
+        'Ghi chú',
       ];
-      sampleRow = [
-        1,
-        'TDU00128',
-        'TS. Mai Như Long',
-        '18/09/1982',
-        '092082001245',
-        30,
-        30,
-        'TS',
-        'Khoa CNTT',
-        'Phát triển HTTT Doanh nghiệp',
-        'CNTT14A_TDU',
-      ];
-      fileName = 'Mau_Ke_Khai_Dao_Tao_TDU_2024.xlsx';
-    }
 
-    const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Mau_Ke_Khai_TDU');
-    XLSX.writeFile(wb, fileName);
+      const sampleRows = [
+        // 1. Giảng viên: TS. Mai Như Long (3 hàng: 2 môn, 1 lớp lý thuyết, 1 lớp thực hành lab, 1 môn chuyên ngành)
+        [
+          1,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'Phát triển Hệ thống Thông tin Doanh nghiệp',
+          'CNTT14A',
+          65,
+          1,
+          45,
+          30,
+          1.25,
+          1.0,
+          'Lý thuyết',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          '102874639912',
+          'VietinBank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Giảng dạy lý thuyết chính khóa',
+        ],
+        [
+          2,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'Phát triển Hệ thống Thông tin Doanh nghiệp (Thực hành Lab)',
+          'CNTT14A_LAB',
+          65,
+          2,
+          30,
+          30,
+          1.35,
+          1.1,
+          'Thực hành',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          '102874639912',
+          'VietinBank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Thực hành phòng lab 2 nhóm máy',
+        ],
+        [
+          3,
+          'TDU00128',
+          'TS. Mai Như Long',
+          'Kiến trúc Dữ liệu & Giải thuật nâng cao',
+          'CNTT15B',
+          60,
+          1,
+          45,
+          45,
+          1.2,
+          1.0,
+          'Lý thuyết',
+          'TS',
+          'Khoa Công nghệ thông tin',
+          '102874639912',
+          'VietinBank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Học phần chuyên ngành CNTT',
+        ],
+
+        // 2. Giảng viên: ThS. Nguyễn Thị Cẩm Tú (2 hàng: 2 môn giảng dạy)
+        [
+          4,
+          'TDU00318',
+          'ThS. Nguyễn Thị Cẩm Tú',
+          'Quản trị Marketing số & Thương mại điện tử',
+          'QTKD16C',
+          58,
+          1,
+          45,
+          45,
+          1.25,
+          1.0,
+          'Lý thuyết',
+          'ThS',
+          'Khoa Kinh tế - Quản trị kinh doanh',
+          '7400205128963',
+          'Agribank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Giảng dạy chính quy',
+        ],
+        [
+          5,
+          'TDU00318',
+          'ThS. Nguyễn Thị Cẩm Tú',
+          'Hành vi người tiêu dùng trên môi trường số',
+          'QTKD16A',
+          52,
+          1,
+          45,
+          45,
+          1.2,
+          1.0,
+          'Lý thuyết',
+          'ThS',
+          'Khoa Kinh tế - Quản trị kinh doanh',
+          '7400205128963',
+          'Agribank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Lớp chuyên sâu Marketing',
+        ],
+
+        // 3. Giảng viên: PGS.TS. Trần Quốc Hùng (2 hàng: 1 lý thuyết, 1 thực hành)
+        [
+          6,
+          'TDU00089',
+          'PGS.TS. Trần Quốc Hùng',
+          'Dược lý học nâng cao',
+          'DUOC15A',
+          80,
+          1,
+          30,
+          30,
+          1.4,
+          1.0,
+          'Lý thuyết',
+          'PGS.TS',
+          'Khoa Dược - Điều dưỡng',
+          '0111000289456',
+          'Vietcombank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Lớp quy mô đông sinh viên',
+        ],
+        [
+          7,
+          'TDU00089',
+          'PGS.TS. Trần Quốc Hùng',
+          'Dược lý học (Thực hành thí nghiệm Dược)',
+          'DUOC15A_LAB',
+          80,
+          2,
+          30,
+          30,
+          1.5,
+          1.1,
+          'Thực hành',
+          'PGS.TS',
+          'Khoa Dược - Điều dưỡng',
+          '0111000289456',
+          'Vietcombank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Thực hành chia 2 ca phòng thí nghiệm',
+        ],
+
+        // 4. Giảng viên: TS. Lê Hoàng Minh (2 hàng: 2 môn luật)
+        [
+          8,
+          'TDU00246',
+          'TS. Lê Hoàng Minh',
+          'Luật Thương mại Quốc tế',
+          'LUAT14A',
+          70,
+          1,
+          45,
+          45,
+          1.3,
+          1.0,
+          'Lý thuyết',
+          'TS',
+          'Khoa Luật',
+          '190334812903',
+          'Techcombank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Lý thuyết cơ sở ngành',
+        ],
+        [
+          9,
+          'TDU00246',
+          'TS. Lê Hoàng Minh',
+          'Pháp luật Hợp đồng & Tranh chấp thương mại',
+          'LUAT14B',
+          68,
+          1,
+          45,
+          45,
+          1.3,
+          1.0,
+          'Lý thuyết',
+          'TS',
+          'Khoa Luật',
+          '190334812903',
+          'Techcombank CN Cần Thơ',
+          'Học kỳ 1 2026-2027',
+          'Học phần chuyên ngành Luật',
+        ],
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+      ws['!cols'] = [
+        { wch: 6 },  // TT
+        { wch: 14 }, // Mã GV
+        { wch: 28 }, // Họ tên
+        { wch: 42 }, // Môn giảng dạy
+        { wch: 18 }, // Lớp
+        { wch: 12 }, // Số SV
+        { wch: 12 }, // Số nhóm
+        { wch: 16 }, // Số giờ môn học
+        { wch: 18 }, // Số giờ thực giảng
+        { wch: 16 }, // Hệ số lớp, nhóm
+        { wch: 14 }, // Hệ số tín chỉ
+        { wch: 24 }, // Phân loại (Lý thuyết / Thực hành)
+        { wch: 12 }, // Học vị
+        { wch: 32 }, // Khoa / Bộ môn
+        { wch: 18 }, // Số tài khoản
+        { wch: 26 }, // Ngân hàng
+        { wch: 22 }, // Đợt thanh toán
+        { wch: 32 }, // Ghi chú
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Import_Gio_Giang');
+
+      // Sheet 2: Hướng dẫn chi tiết dành cho Phòng Đào tạo & các Khoa
+      const instructionHeaders = [
+        'STT',
+        'Tên cột',
+        'Bắt buộc',
+        'Định dạng / Giá trị mẫu',
+        'Quy định & Hướng dẫn kê khai cho Phòng Đào tạo & các Khoa',
+      ];
+      const instructionRows = [
+        [
+          1,
+          'Mã GV',
+          'Bắt buộc',
+          'TDU00128, TDU00318...',
+          'Mã số giảng viên do Trường ĐH Tây Đô cấp. Dùng để gom nhóm tự động tất cả các lớp của giảng viên đó.',
+        ],
+        [
+          2,
+          'Họ tên',
+          'Bắt buộc',
+          'TS. Mai Như Long, ThS. Nguyễn Thị Cẩm Tú...',
+          'Họ và tên giảng viên đầy đủ kèm chức danh / học vị.',
+        ],
+        [
+          3,
+          'Môn giảng dạy',
+          'Bắt buộc',
+          'Phát triển Hệ thống Thông tin Doanh nghiệp',
+          'Tên môn học / học phần giảng dạy trong học kỳ.',
+        ],
+        [
+          4,
+          'Lớp',
+          'Bắt buộc',
+          'CNTT14A, CNTT14A_LAB...',
+          'Mã lớp học phần hoặc tên lớp phụ trách.',
+        ],
+        [
+          5,
+          'Số SV',
+          'Bắt buộc',
+          '65 (Số nguyên)',
+          'Sĩ số sinh viên thực tế của lớp học phần.',
+        ],
+        [
+          6,
+          'Số nhóm',
+          'Bắt buộc',
+          '1 (Lý thuyết), 2 hoặc 3 (Thực hành lab)',
+          'Số nhóm học.',
+        ],
+        [
+          7,
+          'Số giờ môn học',
+          'Bắt buộc',
+          '45, 30...',
+          'Tổng số giờ môn học theo đề cương chương trình đào tạo.',
+        ],
+        [
+          8,
+          'Số giờ thực giảng',
+          'Bắt buộc',
+          '30, 45...',
+          'Số tiết thực tế giảng dạy trên lớp hoặc phòng máy tính / phòng thí nghiệm.',
+        ],
+        [
+          9,
+          'Hệ số lớp, nhóm',
+          'Khuyến nghị',
+          '1.0, 1.25, 1.35...',
+          'Hệ số quy mô lớp theo Quy chế chi tiêu nội bộ TDU (mặc định 1.0 nếu để trống).',
+        ],
+        [
+          10,
+          'Hệ số tín chỉ',
+          'Khuyến nghị',
+          '1.0, 1.1...',
+          'Hệ số tín chỉ quy định (mặc định 1.0).',
+        ],
+        [
+          11,
+          'Phân loại (Lý thuyết / Thực hành)',
+          'Tùy chọn',
+          'Lý thuyết HOẶC Thực hành',
+          'Phân loại để tự động chia vào Phần I (Lý thuyết) hoặc Phần II (Thực hành) trong Bảng kê chi tiết.',
+        ],
+        [
+          12,
+          'QUY TẮC HIỂN THỊ CỦA HỆ THỐNG',
+          'ĐẶC BIỆT LƯU Ý',
+          'Mỗi người có thể có nhiều hàng trong file import',
+          'Khi import vào hệ thống: 1) Ở Bảng chính, hệ thống tự động gom lại thành đúng 1 HÀNG DUY NHẤT cho mỗi giảng viên (hiển thị: Mã GV, Họ tên, Tổng số môn, Tổng số sinh viên, Tổng số tiết, Tổng giờ giảng dạy). 2) Khi bấm vào tên giảng viên hoặc biểu tượng Xem chi tiết (con mắt), hệ thống sẽ mở Bảng xem chi tiết đầy đủ từng lớp/môn của giảng viên đó.',
+        ],
+      ];
+      const wsHelp = XLSX.utils.aoa_to_sheet([instructionHeaders, ...instructionRows]);
+      wsHelp['!cols'] = [
+        { wch: 6 },
+        { wch: 28 },
+        { wch: 18 },
+        { wch: 30 },
+        { wch: 72 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsHelp, 'Huong_Dan_Ke_Khai');
+
+      XLSX.writeFile(wb, 'Mau_Import_Gio_Giang_TDU_2026_2027.xlsx');
+    }
   };
 
   const handleExportDataTemplate = () => {
@@ -664,7 +1298,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen bg-[#f1f5f9] flex flex-row font-sans text-slate-800 antialiased overflow-hidden">
+    <div className="h-screen h-[100dvh] bg-[#f1f5f9] flex flex-row font-sans text-slate-800 antialiased overflow-hidden min-w-0">
       {/* 1. Left Sidebar: With official TDU logo, title & "Danh mục thống kê" tab */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -690,10 +1324,11 @@ export default function App() {
           pendingFeedbackCount={pendingFeedbackCount}
           onOpenFeedbacks={() => setIsFeedbackListOpen(true)}
           onSendFeedback={() => setIsFeedbackModalOpen(true)}
+          onOpenProfile={() => setIsProfileOpen(true)}
         />
 
         {/* Main Center Content Zone */}
-        <main className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
           {activeSidebarItem === 'nhap_lieu_phu_luc' ? (
             <StatisticsDashboard
               records={teachingList}
@@ -759,7 +1394,52 @@ export default function App() {
           ) : activeSidebarItem === 'he_thong_phan_quyen' ? (
             <SystemRoleGroupPage />
           ) : activeSidebarItem === 'he_thong_cau_hinh' ? (
-            <SystemConfigPage />
+            <SystemConfigPage
+              periods={periods}
+              currentPeriodId={currentPeriodId}
+              onSelectPeriod={(id) => {
+                setCurrentPeriodId(id);
+                setPeriods((prev) =>
+                  prev.map((p) => ({ ...p, isCurrent: p.id === id }))
+                );
+                const found = periods.find((p) => p.id === id);
+                if (found) {
+                  setFilters((prev) => ({
+                    ...prev,
+                    academicYear: found.academicYear,
+                    semester: found.semester,
+                  }));
+                }
+              }}
+              onCreatePeriod={(newPeriod) => {
+                setPeriods((prev) => {
+                  const updated = newPeriod.isCurrent
+                    ? prev.map((p) => ({ ...p, isCurrent: false }))
+                    : [...prev];
+                  return [newPeriod, ...updated];
+                });
+                if (newPeriod.isCurrent) {
+                  setCurrentPeriodId(newPeriod.id);
+                  setFilters((prev) => ({
+                    ...prev,
+                    academicYear: newPeriod.academicYear,
+                    semester: newPeriod.semester,
+                  }));
+                }
+              }}
+              onToggleLockPeriod={(id) => {
+                setPeriods((prev) =>
+                  prev.map((p) =>
+                    p.id === id
+                      ? { ...p, status: p.status === 'locked' ? 'active' : 'locked' }
+                      : p
+                  )
+                );
+              }}
+              onDeletePeriod={(id) => {
+                setPeriods((prev) => prev.filter((p) => p.id !== id));
+              }}
+            />
           ) : activeSidebarItem === 'he_thong_nhat_ky' ? (
             <SystemAuditLogPage />
           ) : activeSidebarItem === 'quan_ly_phan_hoi' ? (
@@ -779,95 +1459,201 @@ export default function App() {
                 currentRole === 'admin'
               }
             />
+          ) : selectedResearchScheduleMaGV ? (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+                <button
+                  onClick={() => setSelectedResearchScheduleMaGV(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay lại danh sách</span>
+                </button>
+                <span className="text-[12.5px] font-bold text-[#005325]">
+                  Chi tiết bảng kê Nghiên cứu Khoa học — Mã GV: {selectedResearchScheduleMaGV}
+                </span>
+              </div>
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+                <ResearchScheduleReport
+                  maGV={selectedResearchScheduleMaGV}
+                  records={teachingList}
+                  academicYear={filters.academicYear}
+                  onClose={() => setSelectedResearchScheduleMaGV(null)}
+                  onSaveRecords={(updated) => {
+                    setTeachingList((prev) => {
+                      const filtered = prev.filter(
+                        (r) => r.maGV !== selectedResearchScheduleMaGV || r.phongBanQuanLy !== 'nckh'
+                      );
+                      return [...filtered, ...updated];
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          ) : selectedScheduleMaGV ? (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+                <button
+                  onClick={() => setSelectedScheduleMaGV(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay lại danh sách</span>
+                </button>
+                <span className="text-[12.5px] font-bold text-[#005325]">
+                  Chi tiết bảng kê Giờ giảng dạy — Mã GV: {selectedScheduleMaGV}
+                </span>
+              </div>
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+                <TeachingScheduleReport
+                  maGV={selectedScheduleMaGV}
+                  records={teachingList}
+                  academicYear={filters.academicYear}
+                  onClose={() => setSelectedScheduleMaGV(null)}
+                  onSaveRecords={(updated) => {
+                    setTeachingList((prev) => {
+                      const filtered = prev.filter(
+                        (r) => r.maGV !== selectedScheduleMaGV || r.phongBanQuanLy !== 'dao_tao'
+                      );
+                      return [...filtered, ...updated];
+                    });
+                  }}
+                />
+              </div>
+            </div>
           ) : (
-            <>
+            <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-white">
               {/* Top Filter Section adjusted specifically for University Teaching Hours */}
-              <FilterSection
-                filters={filters}
-                onFilterChange={setFilters}
-                onSearch={() => setCurrentPage(1)}
-              />
+              <div className="shrink-0">
+                <FilterSection
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  onSearch={() => setCurrentPage(1)}
+                />
+              </div>
 
               {/* Status Bar */}
-              <StatusBar
-                counts={statusCounts}
-                currentFilter={filters.dataQuality}
-                onSelectFilter={(quality) => setFilters((prev) => ({ ...prev, dataQuality: quality }))}
-                periodStatus={periodStatus}
-                pendingFeedbackCount={pendingFeedbackCount}
-                onOpenFeedbacks={() => setIsFeedbackListOpen(true)}
-                onTogglePeriodLock={handleTogglePeriodLock}
-                canManagePeriod={currentRole === 'approver' || currentRole === 'accountant_specialist' || currentRole === 'admin'}
-              />
+              <div className="shrink-0">
+                <StatusBar
+                  counts={statusCounts}
+                  currentFilter={filters.dataQuality}
+                  onSelectFilter={(quality) => setFilters((prev) => ({ ...prev, dataQuality: quality }))}
+                  periodStatus={periodStatus}
+                  pendingFeedbackCount={pendingFeedbackCount}
+                  onOpenFeedbacks={() => setIsFeedbackListOpen(true)}
+                  onTogglePeriodLock={handleTogglePeriodLock}
+                  canManagePeriod={currentRole === 'approver' || currentRole === 'accountant_specialist' || currentRole === 'admin'}
+                />
+              </div>
 
               {/* Action Bar with Department context & 6 e-Gov action buttons */}
-              <ActionBar
-                totalRecords={filteredTeaching.length}
-                totalQCHours={totalQCHours}
-                totalPaymentVND={totalPaymentVND}
-                pageSize={pageSize}
-                onPageSizeChange={setPageSize}
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                onAddNew={() => {
-                  setEditingRecord(null);
-                  setIsAddModalOpen(true);
-                }}
-                onDownloadTemplate={handleDownloadTemplate}
-                onImportExcel={() => {
-                  setIsAppendMode(false);
-                  setIsExcelImportOpen(true);
-                }}
-                onImportAppendExcel={() => {
-                  setIsAppendMode(true);
-                  setIsExcelImportOpen(true);
-                }}
-                onExportDataTemplate={handleExportDataTemplate}
-                onPackageAndGenerateMinutes={() => setActiveSidebarItem('bien_ban_so_hoa')}
-                onLoadSampleData={handleLoadSampleData}
-                onClearData={handleClearData}
-                selectedDepartment={selectedDepartment}
-              />
+              <div className="shrink-0">
+                <ActionBar
+                  totalRecords={lecturerGroups.length}
+                  totalQCHours={totalQCHours}
+                  totalPaymentVND={totalPaymentVND}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                  onAddNew={() => {
+                    setEditingRecord(null);
+                    setCurrentPage(1);
+                    setIsAddingInline(true);
+                  }}
+                  onDownloadTemplate={handleDownloadTemplate}
+                  onImportExcel={() => {
+                    setIsAppendMode(false);
+                    setIsExcelImportOpen(true);
+                  }}
+                  onImportAppendExcel={() => {
+                    setIsAppendMode(true);
+                    setIsExcelImportOpen(true);
+                  }}
+                  onExportDataTemplate={handleExportDataTemplate}
+                  onPackageAndGenerateMinutes={() => setActiveSidebarItem('bien_ban_so_hoa')}
+                  onLoadSampleData={handleLoadSampleData}
+                  onClearData={handleClearData}
+                  selectedDepartment={selectedDepartment}
+                />
+              </div>
+
+              {/* Inline save notification banner */}
+              {inlineNotice && (
+                <div className="mx-3 mt-2 mb-1 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-300 text-[#005325] text-[12px] flex items-center justify-between animate-fadeIn shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-medium">{inlineNotice}</span>
+                  </div>
+                  <button
+                    onClick={() => setInlineNotice(null)}
+                    className="text-emerald-700 hover:text-emerald-900 text-sm px-1.5 cursor-pointer font-bold leading-none"
+                    title="Đóng thông báo"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
 
               {/* Data Table Grid with Column Headers and Inline Filters */}
-              <DataTable
-                appMode={appMode}
-                selectedDepartment={selectedDepartment}
-                vbccData={INITIAL_VBCC_DATA}
-                teachingData={currentTeachingSlice}
-                columnFilters={columnFilters}
-                onColumnFilterChange={setColumnFilters}
-                selectedIds={selectedIds}
-                onToggleSelectAll={handleToggleSelectAll}
-                onToggleSelectRow={handleToggleSelectRow}
-                onRefresh={handleRefresh}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                onEditRecord={handleEditRecord}
-                onDeleteRecord={handleDeleteRecord}
-                onViewTeachingSchedule={(maGV) => setSelectedScheduleMaGV(maGV)}
-                onViewResearchSchedule={(maGV) => setSelectedResearchScheduleMaGV(maGV)}
-                onViewRecordDetail={(record) => {
-                  if ('maGV' in record && record.maGV) {
-                    if (selectedDepartment === 'nckh') {
-                      setSelectedResearchScheduleMaGV(record.maGV);
-                    } else {
-                      setSelectedScheduleMaGV(record.maGV);
+              <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+                <DataTable
+                  appMode={appMode}
+                  selectedDepartment={selectedDepartment}
+                  vbccData={INITIAL_VBCC_DATA}
+                  teachingData={currentTeachingSlice}
+                  columnFilters={columnFilters}
+                  onColumnFilterChange={setColumnFilters}
+                  selectedIds={selectedIds}
+                  onToggleSelectAll={handleToggleSelectAll}
+                  onToggleSelectRow={handleToggleSelectRow}
+                  onRefresh={handleRefresh}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                  onEditRecord={handleEditRecord}
+                  onDeleteRecord={handleDeleteRecord}
+                  onViewTeachingSchedule={(maGV) => setSelectedScheduleMaGV(maGV)}
+                  onViewResearchSchedule={(maGV) => setSelectedResearchScheduleMaGV(maGV)}
+                  onViewRecordDetail={(record) => {
+                    if ('maGV' in record && record.maGV) {
+                      if (selectedDepartment === 'nckh') {
+                        setSelectedResearchScheduleMaGV(record.maGV);
+                      } else {
+                        setSelectedScheduleMaGV(record.maGV);
+                      }
                     }
-                  }
-                }}
-                onRequestFeedback={(record) => {
-                  if ('maGV' in record) {
-                    setSelectedLecturerMa(record.maGV);
-                    setIsFeedbackModalOpen(true);
-                  }
-                }}
-                periodStatus={periodStatus}
-                currentRole={currentRole}
-              />
-            </>
+                  }}
+                  onRequestFeedback={(record) => {
+                    if ('maGV' in record) {
+                      setSelectedLecturerMa(record.maGV);
+                      setIsFeedbackModalOpen(true);
+                    }
+                  }}
+                  periodStatus={periodStatus}
+                  currentRole={currentRole}
+                  isAddingInline={isAddingInline}
+                  onCancelAddInline={() => setIsAddingInline(false)}
+                  onSaveInlineRecord={(newRec) => {
+                    handleSaveTeaching(newRec);
+                    setIsAddingInline(false);
+                    setInlineNotice(`Đã lưu thành công dòng kê khai mới: ${newRec.hoTen} — ${newRec.tenHocPhan}`);
+                    setTimeout(() => setInlineNotice(null), 4500);
+                  }}
+                />
+              </div>
+            </div>
           )}
         </main>
       </div>
+
+      {/* User Profile & Settings Modal */}
+      {isProfileOpen && (
+        <UserProfileView
+          currentAccount={currentAccount}
+          currentRole={currentRole}
+          onClose={() => setIsProfileOpen(false)}
+          onUpdateAccount={(updated) => setCurrentAccount(updated)}
+        />
+      )}
 
       {/* Add / Edit Record Modal */}
       <AddRecordModal
@@ -890,6 +1676,8 @@ export default function App() {
         config={paymentRules}
         departmentUnit={selectedDepartment === 'all' ? 'dao_tao' : selectedDepartment}
         onDepartmentChange={setSelectedDepartment}
+        currentPeriodName={periods.find((p) => p.id === currentPeriodId)?.name || 'Học kỳ 1 2026-2027'}
+        onDownloadTemplate={handleDownloadTemplate}
       />
 
       {/* Official Acceptance & Payment Minutes Modal */}
@@ -935,36 +1723,6 @@ export default function App() {
       <ColumnSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-      />
-
-      {/* Teaching Schedule Modal (Exact sheet view) */}
-      <TeachingScheduleModal
-        isOpen={!!selectedScheduleMaGV}
-        onClose={() => setSelectedScheduleMaGV(null)}
-        maGV={selectedScheduleMaGV || ''}
-        records={teachingList}
-        academicYear={filters.academicYear}
-        onSaveRecords={(updated) => {
-          setTeachingList((prev) => {
-            const filtered = prev.filter((r) => r.maGV !== selectedScheduleMaGV || r.phongBanQuanLy !== 'dao_tao');
-            return [...filtered, ...updated];
-          });
-        }}
-      />
-
-      {/* Research Schedule Modal (Exact sheet view) */}
-      <ResearchScheduleModal
-        isOpen={!!selectedResearchScheduleMaGV}
-        onClose={() => setSelectedResearchScheduleMaGV(null)}
-        maGV={selectedResearchScheduleMaGV || ''}
-        records={teachingList}
-        academicYear={filters.academicYear}
-        onSaveRecords={(updated) => {
-          setTeachingList((prev) => {
-            const filtered = prev.filter((r) => r.maGV !== selectedResearchScheduleMaGV || r.phongBanQuanLy !== 'nckh');
-            return [...filtered, ...updated];
-          });
-        }}
       />
     </div>
   );

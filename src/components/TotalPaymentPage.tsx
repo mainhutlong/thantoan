@@ -1,23 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import {
-  DollarSign,
-  Download,
-  Search,
-  Filter,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  FileSpreadsheet,
-  Building,
-  CreditCard,
-  Eye,
-  Send,
-  ArrowUpDown,
-  FileText
-} from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { TeachingRecord, LecturerPaymentSummary } from '../types';
-import { TeachingScheduleModal } from './TeachingScheduleModal';
-import { ResearchScheduleModal } from './ResearchScheduleModal';
+import { TeachingScheduleReport } from './TeachingScheduleReport';
+import { ResearchScheduleReport } from './ResearchScheduleReport';
 import * as XLSX from 'xlsx';
 
 interface TotalPaymentPageProps {
@@ -36,17 +21,16 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
   const [facultyFilter, setFacultyFilter] = useState('all');
   const [confirmStatusFilter, setConfirmStatusFilter] = useState('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
-  const [selectedLecturerModal, setSelectedLecturerModal] = useState<LecturerPaymentSummary | null>(null);
+  const [selectedLecturerInline, setSelectedLecturerInline] = useState<LecturerPaymentSummary | null>(null);
   const [selectedScheduleMaGV, setSelectedScheduleMaGV] = useState<string | null>(null);
   const [selectedResearchScheduleMaGV, setSelectedResearchScheduleMaGV] = useState<string | null>(null);
 
-  // Group and sum up the 5 declaration modules for each lecturer
+  // Group and sum up the 6 declaration modules for each lecturer
   const lecturerSummaries: LecturerPaymentSummary[] = useMemo(() => {
     const map = new Map<string, LecturerPaymentSummary>();
 
     records.forEach((rec) => {
       if (!map.has(rec.maGV)) {
-        // Determine default confirmation and payment status based on lecturer demo data
         let confStatus: 'pending' | 'confirmed' | 'disputed' = 'pending';
         let confDate: string | undefined = undefined;
         let payStatus: 'unpaid' | 'paid' = 'unpaid';
@@ -86,6 +70,8 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
           tongGioKhaoThi: 0,
           khaoThiAmount: 0,
           khaoThiQC: 0,
+          doAnAmount: 0,
+          doAnQC: 0,
           tuyenSinhAmount: 0,
           tuyenSinhQC: 0,
           tongGioNCKH: 0,
@@ -111,27 +97,29 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
 
       const item = map.get(rec.maGV)!;
 
-      // Accumulate categories & breakdown
       if (rec.phongBanQuanLy === 'dao_tao') {
         item.daoTaoAmount += rec.tongTienThuLao;
         item.daoTaoQC += rec.tongTietQC;
-        item.tongGioGiangDay += (rec.soGioQuyChuan || rec.tongTietQC || 0);
+        item.tongGioGiangDay += rec.soGioQuyChuan || rec.tongTietQC || 0;
         if (rec.phanLoaiGiangDay === 'thuc_hanh_thuc_tap') {
-          item.tongGioThucHanh += (rec.soGioQuyChuan || rec.tongTietQC || 0);
+          item.tongGioThucHanh += rec.soGioQuyChuan || rec.tongTietQC || 0;
         } else {
-          item.tongGioLyThuyet += (rec.soGioQuyChuan || rec.tongTietQC || 0);
+          item.tongGioLyThuyet += rec.soGioQuyChuan || rec.tongTietQC || 0;
         }
       } else if (rec.phongBanQuanLy === 'khao_thi') {
         item.khaoThiAmount += rec.tongTienThuLao;
         item.khaoThiQC += rec.tongTietQC;
-        item.tongGioKhaoThi += (rec.tongSoGioTheoCV || rec.tongTietQC || 0);
+        item.tongGioKhaoThi += rec.tongSoGioTheoCV || rec.tongTietQC || 0;
+      } else if (rec.phongBanQuanLy === 'do_an') {
+        item.doAnAmount += rec.tongTienThuLao;
+        item.doAnQC += rec.tongTietQC;
       } else if (rec.phongBanQuanLy === 'tuyen_sinh') {
         item.tuyenSinhAmount += rec.tongTienThuLao;
         item.tuyenSinhQC += rec.tongTietQC;
       } else if (rec.phongBanQuanLy === 'nckh') {
         item.nckhAmount += rec.tongTienThuLao;
         item.nckhQC += rec.tongTietQC;
-        item.tongGioNCKH += (rec.soGioQCNCKH || rec.tongTietQC || 0);
+        item.tongGioNCKH += rec.soGioQCNCKH || rec.tongTietQC || 0;
         if (rec.dinhMucNCKH) {
           item.dinhMucNCKH = rec.dinhMucNCKH;
         }
@@ -153,14 +141,12 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
     return Array.from(map.values());
   }, [records]);
 
-  // List of faculties
   const faculties = useMemo(() => {
     const set = new Set<string>();
     lecturerSummaries.forEach((l) => set.add(l.khoaBoMon));
     return Array.from(set);
   }, [lecturerSummaries]);
 
-  // Filtered summaries
   const filteredSummaries = useMemo(() => {
     return lecturerSummaries.filter((l) => {
       if (searchTerm) {
@@ -184,15 +170,16 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
     });
   }, [lecturerSummaries, searchTerm, facultyFilter, confirmStatusFilter, paymentStatusFilter]);
 
-  // Grand totals
   const grandTotals = useMemo(() => {
     return filteredSummaries.reduce(
       (acc, curr) => ({
         tongQC: acc.tongQC + curr.tongQC,
         daoTaoAmount: acc.daoTaoAmount + curr.daoTaoAmount,
         khaoThiAmount: acc.khaoThiAmount + curr.khaoThiAmount,
+        doAnAmount: acc.doAnAmount + curr.doAnAmount,
         tuyenSinhAmount: acc.tuyenSinhAmount + curr.tuyenSinhAmount,
         nckhAmount: acc.nckhAmount + curr.nckhAmount,
+        coVanHocTapAmount: acc.coVanHocTapAmount + curr.coVanHocTapAmount,
         congTacKhacAmount: acc.congTacKhacAmount + curr.congTacKhacAmount,
         tongThuLao: acc.tongThuLao + curr.tongThuLao,
         thueTNCN: acc.thueTNCN + curr.thueTNCN,
@@ -202,8 +189,10 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
         tongQC: 0,
         daoTaoAmount: 0,
         khaoThiAmount: 0,
+        doAnAmount: 0,
         tuyenSinhAmount: 0,
         nckhAmount: 0,
+        coVanHocTapAmount: 0,
         congTacKhacAmount: 0,
         tongThuLao: 0,
         thueTNCN: 0,
@@ -212,13 +201,11 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
     );
   }, [filteredSummaries]);
 
-  // Counts
   const confirmedCount = lecturerSummaries.filter((l) => l.confirmationStatus === 'confirmed').length;
   const disputedCount = lecturerSummaries.filter((l) => l.confirmationStatus === 'disputed').length;
   const pendingCount = lecturerSummaries.filter((l) => l.confirmationStatus === 'pending').length;
   const paidCount = lecturerSummaries.filter((l) => l.paymentStatus === 'paid').length;
 
-  // Export Excel
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
     const rows = filteredSummaries.map((item, idx) => ({
@@ -231,11 +218,12 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
       'Số tài khoản': item.soTaiKhoan || '',
       'Ngân hàng': item.nganHang || '',
       '1. Giờ giảng (VNĐ)': item.daoTaoAmount,
-      '2. Coi/chấm thi (VNĐ)': item.khaoThiAmount,
-      '3. Tuyển sinh (VNĐ)': item.tuyenSinhAmount,
-      '4. NCKH (VNĐ)': item.nckhAmount,
+      '2. NCKH (VNĐ)': item.nckhAmount,
+      '3. Coi/chấm thi (VNĐ)': item.khaoThiAmount,
+      '4. Đồ án/KLTN (VNĐ)': item.doAnAmount,
       '5. Cố vấn HT (VNĐ)': item.coVanHocTapAmount,
-      '6. Công tác khác (VNĐ)': item.congTacKhacAmount,
+      '6. Tuyển sinh (VNĐ)': item.tuyenSinhAmount,
+      '7. Kiêm nhiệm & ĐBCL (VNĐ)': item.congTacKhacAmount,
       'Tổng tiết QC': item.tongQC,
       'Tổng thù lao gộp (VNĐ)': item.tongThuLao,
       'Thuế TNCN 10% (VNĐ)': item.thueTNCN,
@@ -250,514 +238,542 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, 'Tong_Thanh_Toan_5_Muc');
+    XLSX.utils.book_append_sheet(wb, ws, 'Tong_Thanh_Toan_6_Muc');
     XLSX.writeFile(wb, `Tong_Hop_Thanh_Toan_TDU_HK2_2024.xlsx`);
   };
 
+  const quickTabs = [
+    { id: 'all', label: 'Tất cả', count: lecturerSummaries.length, activeClass: 'bg-slate-800 text-white border-slate-800' },
+    { id: 'confirmed', label: 'Đã đồng ý', count: confirmedCount, activeClass: 'bg-[#005325] text-white border-[#005325]' },
+    { id: 'disputed', label: 'Đang phản hồi', count: disputedCount, activeClass: 'bg-amber-600 text-white border-amber-600' },
+    { id: 'pending', label: 'Chờ GV xem', count: pendingCount, activeClass: 'bg-slate-600 text-white border-slate-600' },
+  ];
+
   return (
-    <div className="flex-1 bg-slate-50 flex flex-col min-h-0 overflow-y-auto">
-      {/* Top Banner */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-normal bg-emerald-50 text-[#005325] border border-emerald-200">
-                Bảng tổng hợp toàn trường
-              </span>
-              <span className="text-xs text-slate-500 font-normal">
-                Cộng dồn tự động các nguồn kê khai (Giờ giảng, Khảo thí, Tuyển sinh, NCKH, Cố vấn HT, Khác)
-              </span>
-            </div>
-            <h1 className="text-xl font-normal text-slate-900 mt-1 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-[#005325]" />
-              Tổng thanh toán thù lao giảng viên
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5 font-normal">
-              Tổng hợp số tiền chính xác từ: Giờ giảng + Coi/chấm thi + Tuyển sinh + NCKH + Cố vấn học tập + Công tác khác.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
+    <div className="flex-1 bg-[#f8fafc] flex flex-col min-h-0 overflow-y-auto min-w-0">
+      {selectedResearchScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
             <button
-              onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#005325] hover:bg-[#00421d] text-white rounded text-xs font-normal cursor-pointer shadow-xs transition-colors"
+              onClick={() => setSelectedResearchScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Xuất Excel tổng thanh toán</span>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
             </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Nghiên cứu Khoa học — Mã GV: {selectedResearchScheduleMaGV}
+            </span>
           </div>
-        </div>
-
-        {/* 4 KPI Summary Cards with Distinct Thematic Colors */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-          {/* Card 1: Emerald Theme */}
-          <div className="bg-linear-to-br from-emerald-50/70 to-white border border-emerald-200 rounded-lg p-3 shadow-xs">
-            <div className="text-[11px] font-normal text-emerald-800">
-              Tổng thực nhận toàn trường
-            </div>
-            <div className="text-lg font-normal text-emerald-700 font-mono mt-0.5">
-              {grandTotals.thucNhan.toLocaleString('vi-VN')} đ
-            </div>
-            <div className="text-[10.5px] text-slate-500 mt-1 font-normal">
-              Gộp thù lao: {grandTotals.tongThuLao.toLocaleString('vi-VN')} đ (Thuế 10%: {grandTotals.thueTNCN.toLocaleString('vi-VN')} đ)
-            </div>
-          </div>
-
-          {/* Card 2: Blue Theme */}
-          <div className="bg-linear-to-br from-blue-50/70 to-white border border-blue-200 rounded-lg p-3 shadow-xs">
-            <div className="text-[11px] font-normal text-blue-800">
-              Tổng số giảng viên
-            </div>
-            <div className="text-lg font-normal text-blue-700 font-mono mt-0.5">
-              {lecturerSummaries.length} giảng viên
-            </div>
-            <div className="text-[10.5px] text-slate-500 mt-1 font-normal">
-              Tổng tiết QC: <span className="font-normal text-blue-800">{grandTotals.tongQC.toFixed(1)}</span> tiết quy chuẩn
-            </div>
-          </div>
-
-          {/* Card 3: Amber/Green Theme */}
-          <div className="bg-linear-to-br from-amber-50/70 to-white border border-amber-200 rounded-lg p-3 shadow-xs">
-            <div className="text-[11px] font-normal text-amber-800 flex items-center justify-between">
-              <span>GV xác nhận số liệu</span>
-              <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">
-                {confirmedCount}/{lecturerSummaries.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-normal text-emerald-700 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {confirmedCount} đã đồng ý
-              </span>
-              <span className="text-xs font-normal text-amber-700 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> {disputedCount} phản hồi
-              </span>
-            </div>
-            <div className="text-[10.5px] text-slate-500 mt-0.5 font-normal">
-              Còn {pendingCount} giảng viên chưa vào kiểm tra
-            </div>
-          </div>
-
-          {/* Card 4: Purple Theme */}
-          <div className="bg-linear-to-br from-purple-50/70 to-white border border-purple-200 rounded-lg p-3 shadow-xs">
-            <div className="text-[11px] font-normal text-purple-800 flex items-center justify-between">
-              <span>Tiến độ chi trả (Tài chính)</span>
-              <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">
-                {paidCount}/{lecturerSummaries.length}
-              </span>
-            </div>
-            <div className="text-lg font-normal text-purple-700 font-mono mt-0.5">
-              {paidCount > 0
-                ? `${paidCount} người đã nhận`
-                : 'Đang chuẩn bị lệnh chi'}
-            </div>
-            <div className="text-[10.5px] text-slate-500 mt-1 font-normal">
-              Ưu tiên chi ngay cho {confirmedCount} GV đã đồng ý xác nhận
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Bar */}
-        <div className="flex flex-wrap items-center gap-2.5 mt-3 pt-3 border-t border-slate-100">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo Tên giảng viên, Mã GV, CCCD..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-[#005325] focus:outline-hidden bg-white"
+          <div className="flex-1 overflow-auto p-2">
+            <ResearchScheduleReport
+              maGV={selectedResearchScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedResearchScheduleMaGV(null)}
+              allLecturers={lecturerSummaries.map((l) => ({
+                maGV: l.maGV,
+                hoTen: l.hoTen,
+                khoaBoMon: l.khoaBoMon,
+                hocHamHocVi: l.hocHamHocVi,
+              }))}
+              onSelectLecturer={(newMa) => setSelectedResearchScheduleMaGV(newMa)}
             />
           </div>
-
-          <div className="flex items-center gap-1.5 text-xs">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
-            <select
-              value={facultyFilter}
-              onChange={(e) => setFacultyFilter(e.target.value)}
-              className="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white text-slate-700 focus:outline-hidden"
+        </div>
+      ) : selectedScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setSelectedScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
             >
-              <option value="all">Tất cả Khoa / Bộ môn</option>
-              {faculties.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={confirmStatusFilter}
-              onChange={(e) => setConfirmStatusFilter(e.target.value)}
-              className="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white text-slate-700 focus:outline-hidden"
-            >
-              <option value="all">Tất cả Trạng thái GV</option>
-              <option value="confirmed">Đã đồng ý xác nhận</option>
-              <option value="pending">Chưa xác nhận</option>
-              <option value="disputed">Đang có phản hồi / khiếu nại</option>
-            </select>
-
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
-              className="border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white text-slate-700 focus:outline-hidden"
-            >
-              <option value="all">Tất cả Trạng thái Chi trả</option>
-              <option value="unpaid">Chờ chi trả</option>
-              <option value="paid">Đã thanh toán (UNC)</option>
-            </select>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
+            </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Giờ giảng dạy — Mã GV: {selectedScheduleMaGV}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <TeachingScheduleReport
+              maGV={selectedScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedScheduleMaGV(null)}
+              allLecturers={lecturerSummaries.map((l) => ({
+                maGV: l.maGV,
+                hoTen: l.hoTen,
+                khoaBoMon: l.khoaBoMon,
+                hocHamHocVi: l.hocHamHocVi,
+              }))}
+              onSelectLecturer={(newMa) => setSelectedScheduleMaGV(newMa)}
+            />
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* 1. Compact Summary Strip + Filter Toolbar */}
+          <div className="bg-white border-b border-slate-200 px-4 py-2.5 space-y-2">
+            {/* Row 1: Summary Metrics Strip + Export Button */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px]">
+                <span className="font-semibold text-slate-800">Tổng hợp thanh toán toàn trường</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-600">
+                  Thực nhận: <strong className="font-mono font-semibold text-[#005325]">{grandTotals.thucNhan.toLocaleString('vi-VN')} đ</strong>
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-600">
+                  Tổng gộp: <strong className="font-mono font-medium text-slate-800">{grandTotals.tongThuLao.toLocaleString('vi-VN')} đ</strong>
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-600">
+                  Thuế 10%: <strong className="font-mono font-normal text-rose-600">-{grandTotals.thueTNCN.toLocaleString('vi-VN')} đ</strong>
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-600">
+                  Quy chuẩn: <strong className="font-mono font-medium text-slate-800">{grandTotals.tongQC.toFixed(1)} tiết</strong>
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-600">
+                  Đã chi: <strong className="font-mono font-medium text-blue-600">{paidCount}/{lecturerSummaries.length} GV</strong>
+                </span>
+              </div>
 
-      {/* Main Table */}
-      <div className="flex-1 p-4 overflow-x-auto">
-        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100 text-black font-normal text-left border-b border-slate-300">
-                <th className="w-[42px] px-2 py-2.5 text-center border-r border-slate-200 text-black font-normal">STT</th>
-                <th className="w-[85px] px-2.5 py-2.5 border-r border-slate-200 text-black font-normal">Mã GV</th>
-                <th className="px-3 py-2.5 border-r border-slate-200 min-w-[170px] text-black font-normal">Họ và tên giảng viên</th>
-                <th className="px-2.5 py-2.5 border-r border-slate-200 min-w-[130px] text-black font-normal">Khoa / Bộ môn</th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[100px] text-black font-normal" title="Thanh toán giờ giảng (Phòng Đào tạo)">
-                  1. Giờ giảng
-                </th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[100px] text-black font-normal" title="Coi thi, Chấm thi, Ra đề (TT Khảo thí)">
-                  2. Khảo thí
-                </th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[95px] text-black font-normal" title="Công tác tuyển sinh (Phòng Tuyển sinh)">
-                  3. Tuyển sinh
-                </th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[95px] text-black font-normal" title="Nghiên cứu khoa học (Phòng NCKH)">
-                  4. NCKH
-                </th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[95px] text-black font-normal" title="Cố vấn học tập (CVHT)">
-                  5. Cố vấn HT
-                </th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[95px] text-black font-normal" title="Công tác khác (HĐKH, Ban Thanh tra)">
-                  6. Khác
-                </th>
-                <th className="px-2.5 py-2.5 text-right border-r border-slate-200 w-[105px] text-black font-normal">Tổng gộp (VNĐ)</th>
-                <th className="px-2 py-2.5 text-right border-r border-slate-200 w-[90px] text-black font-normal">Thuế 10%</th>
-                <th className="px-3 py-2.5 text-right border-r border-slate-200 w-[115px] text-black font-normal">
-                  Thực nhận (VNĐ)
-                </th>
-                <th className="px-2.5 py-2.5 text-center border-r border-slate-200 w-[115px] text-black font-normal">GV xác nhận</th>
-                <th className="px-2.5 py-2.5 text-center border-r border-slate-200 w-[110px] text-black font-normal">Tài chính</th>
-                <th className="px-2 py-2.5 text-center w-[90px] text-black font-normal">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-black">
-              {filteredSummaries.length === 0 ? (
-                <tr>
-                  <td colSpan={16} className="py-8 text-center text-black font-normal">
-                    Không tìm thấy giảng viên nào phù hợp với điều kiện tìm kiếm.
-                  </td>
-                </tr>
-              ) : (
-                filteredSummaries.map((item, idx) => (
-                  <tr
-                    key={item.maGV}
-                    className="hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-2 py-2 text-center font-mono text-black border-r border-slate-100 font-normal">
-                      {idx + 1}
-                    </td>
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="h-[29px] px-3 bg-[#005325] hover:bg-[#00421d] text-white rounded-lg text-[11.5px] font-medium cursor-pointer shadow-2xs transition-colors shrink-0"
+              >
+                Xuất Excel tổng hợp
+              </button>
+            </div>
 
-                    {/* Mã GV */}
-                    <td className="px-2.5 py-2 font-mono font-normal text-black border-r border-slate-100 whitespace-nowrap">
-                      {item.maGV}
-                    </td>
-
-                    {/* Họ và tên */}
-                    <td className="px-3 py-2 border-r border-slate-100 whitespace-nowrap">
-                      <div className="font-normal text-black">
-                        {item.hoTen}
-                      </div>
-                      <div className="text-[10px] text-black font-mono font-normal">
-                        {item.hocHamHocVi} · {item.soTaiKhoan ? `${item.soTaiKhoan} (${item.nganHang})` : 'Chưa có STK'}
-                      </div>
-                    </td>
-
-                    {/* Khoa */}
-                    <td className="px-2.5 py-2 text-black border-r border-slate-100 whitespace-nowrap font-normal">
-                      <span className="truncate block max-w-[130px]" title={item.khoaBoMon}>
-                        {item.khoaBoMon}
+            {/* Row 2: Quick Status Pills + Dropdowns + Search */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center flex-wrap gap-1.5">
+                {quickTabs.map((tab) => {
+                  const isActive = confirmStatusFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setConfirmStatusFilter(tab.id)}
+                      className={`h-[29px] px-2.5 rounded-lg border text-[11.5px] transition-all cursor-pointer flex items-center gap-1 ${
+                        isActive
+                          ? `${tab.activeClass} font-medium shadow-2xs`
+                          : 'bg-slate-50/80 text-slate-600 border-slate-200 hover:bg-slate-100 font-normal'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className={`text-[10.5px] font-mono ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                        ({tab.count})
                       </span>
-                    </td>
+                    </button>
+                  );
+                })}
+              </div>
 
-                    {/* 1. Giờ giảng */}
-                    <td
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedScheduleMaGV(item.maGV);
-                      }}
-                      className="px-2 py-1.5 text-right font-mono tabular-nums text-black border-r border-slate-100 whitespace-nowrap font-normal cursor-pointer hover:bg-emerald-50/80 transition-colors group"
-                      title="Bấm để xem Bảng thống kê công tác giảng dạy chi tiết theo mẫu hình ảnh"
+              <div className="flex items-center flex-wrap gap-2 flex-1 sm:flex-initial justify-end">
+                <select
+                  value={facultyFilter}
+                  onChange={(e) => setFacultyFilter(e.target.value)}
+                  className="h-[29px] border border-slate-200 rounded-lg px-2 text-[11.5px] bg-slate-50/60 text-slate-700 focus:bg-white focus:outline-none focus:border-[#005325]"
+                >
+                  <option value="all">Tất cả Khoa / Bộ môn</option>
+                  {faculties.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="h-[29px] border border-slate-200 rounded-lg px-2 text-[11.5px] bg-slate-50/60 text-slate-700 focus:bg-white focus:outline-none focus:border-[#005325]"
+                >
+                  <option value="all">Tất cả chi trả</option>
+                  <option value="unpaid">Chờ chi trả</option>
+                  <option value="paid">Đã thanh toán (UNC)</option>
+                </select>
+
+                <div className="relative w-full sm:w-[230px]">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm tên GV, mã GV, CCCD..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-[29px] pl-8 pr-3 border border-slate-200 rounded-lg text-[11.5px] bg-slate-50/60 focus:bg-white focus:border-[#005325] focus:outline-none text-slate-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Inline Detail Panel (Hiển thị trực tiếp khi bấm vào dòng giảng viên) */}
+          {selectedLecturerInline && (
+            <div className="px-4 pt-3 pb-1">
+              <div className="bg-white rounded-xl border border-slate-200 border-l-4 border-l-[#005325] shadow-xs px-4 py-3 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px]">
+                    <span className="font-semibold text-slate-800">
+                      Chi tiết thù lao: {selectedLecturerInline.hoTen} ({selectedLecturerInline.maGV})
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-600">{selectedLecturerInline.khoaBoMon}</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-600 font-mono text-[11.5px]">
+                      STK: {selectedLecturerInline.soTaiKhoan || 'Chưa cập nhật'} ({selectedLecturerInline.nganHang || 'Vietcombank'})
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedScheduleMaGV(selectedLecturerInline.maGV)}
+                      className="h-[26px] px-2.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-normal cursor-pointer transition-colors"
                     >
-                      {item.daoTaoAmount > 0 ? (
-                        <div>
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="font-medium text-black group-hover:text-[#005325] group-hover:underline underline-offset-2">
-                              {item.daoTaoAmount.toLocaleString('vi-VN')} đ
-                            </span>
-                            <FileSpreadsheet className="w-3 h-3 text-[#005325] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                          </div>
-                          <span className="block text-[9.5px] font-sans text-black font-normal">
-                            LT {item.tongGioLyThuyet}h · TH {item.tongGioThucHanh}h
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 group-hover:text-[#005325] font-normal group-hover:underline">
-                          -
-                        </span>
-                      )}
-                    </td>
-
-                    {/* 2. Khảo thí */}
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-black border-r border-slate-100 whitespace-nowrap font-normal">
-                      {item.khaoThiAmount > 0 ? (
-                        <div>
-                          <span className="font-normal text-black">{item.khaoThiAmount.toLocaleString('vi-VN')} đ</span>
-                          <span className="block text-[9.5px] font-sans text-black font-normal">
-                            {item.tongGioKhaoThi}h theo CV
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-black font-normal">-</span>
-                      )}
-                    </td>
-
-                    {/* 3. Tuyển sinh */}
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-black border-r border-slate-100 whitespace-nowrap font-normal">
-                      {item.tuyenSinhAmount > 0 ? (
-                        <div>
-                          <span className="font-normal text-black">{item.tuyenSinhAmount.toLocaleString('vi-VN')} đ</span>
-                          <span className="block text-[9.5px] font-sans text-black font-normal">{item.tuyenSinhQC} tiết</span>
-                        </div>
-                      ) : (
-                        <span className="text-black font-normal">-</span>
-                      )}
-                    </td>
-
-                    {/* 4. NCKH */}
-                    <td
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedResearchScheduleMaGV(item.maGV);
-                      }}
-                      className="px-2 py-1.5 text-right font-mono tabular-nums text-black border-r border-slate-100 whitespace-nowrap font-normal cursor-pointer hover:bg-purple-50/80 transition-colors group"
-                      title="Bấm để xem Bảng thống kê Nghiên cứu Khoa học (NCKH) chi tiết theo mẫu hình ảnh"
+                      Bảng kê giờ giảng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedResearchScheduleMaGV(selectedLecturerInline.maGV)}
+                      className="h-[26px] px-2.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-normal cursor-pointer transition-colors"
                     >
-                      {item.nckhAmount > 0 ? (
-                        <div>
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="font-medium text-black group-hover:text-purple-700 group-hover:underline underline-offset-2">
-                              {item.nckhAmount.toLocaleString('vi-VN')} đ
+                      Bảng kê NCKH
+                    </button>
+                    {onNavigateToLecturerCheck && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToLecturerCheck(selectedLecturerInline.maGV)}
+                        className="h-[26px] px-2.5 rounded-md border border-sky-200 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-normal cursor-pointer transition-colors"
+                      >
+                        Mở trang GV tra cứu
+                      </button>
+                    )}
+                    {onNavigateToFinance && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToFinance(selectedLecturerInline.maGV)}
+                        className="h-[26px] px-2.5 rounded-md bg-[#005325] hover:bg-[#00421e] text-white text-[11px] font-normal cursor-pointer transition-colors"
+                      >
+                        Chuyển sang Chi trả
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLecturerInline(null)}
+                      className="h-[26px] px-2 text-slate-400 hover:text-slate-700 text-[11px] cursor-pointer"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2 text-[11.5px]">
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">1. Giờ giảng</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.daoTaoAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">2. NCKH</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.nckhAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">3. Khảo thí</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.khaoThiAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">4. Đồ án / KLTN</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.doAnAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">5. Cố vấn HT</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.coVanHocTapAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">6. Tuyển sinh</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.tuyenSinhAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">7. Kiêm nhiệm/ĐBCL</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.congTacKhacAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className="text-slate-400 text-[10.5px]">Thuế TNCN 10%</div>
+                    <div className="font-mono text-rose-600 mt-0.5">-{selectedLecturerInline.thueTNCN.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-200">
+                    <div className="text-emerald-700 text-[10.5px] font-medium">Thực nhận</div>
+                    <div className="font-mono font-semibold text-[#005325] mt-0.5">{selectedLecturerInline.thucNhan.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. Main Table */}
+          <div className="flex-1 p-2 sm:p-3.5 overflow-x-auto min-w-0">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+              <table className="w-full min-w-[1150px] text-[12px] border-collapse">
+                <thead>
+                  <tr className="bg-[#f8fafc] text-[#1e293b] font-semibold text-left border-b border-slate-200 h-[36px]">
+                    <th className="w-[40px] px-2 text-center border-r border-slate-200">STT</th>
+                    <th className="w-[82px] px-2.5 border-r border-slate-200">Mã GV</th>
+                    <th className="px-3 border-r border-slate-200 min-w-[165px]">Họ và tên giảng viên</th>
+                    <th className="px-2.5 border-r border-slate-200 min-w-[125px]">Khoa / Bộ môn</th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[96px]" title="Thanh toán giờ giảng">
+                      1. Giờ giảng
+                    </th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Nghiên cứu khoa học">
+                      2. NCKH
+                    </th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Coi thi, Chấm thi, Ra đề">
+                      3. Khảo thí
+                    </th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[95px]" title="Đồ án & Khóa luận tốt nghiệp">
+                      4. Đồ án/KLTN
+                    </th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[90px]" title="Cố vấn học tập">
+                      5. Cố vấn HT
+                    </th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[90px]" title="Công tác tuyển sinh">
+                      6. Tuyển sinh
+                    </th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Công tác kiêm nhiệm & ĐBCL">
+                      7. Kiêm nhiệm
+                    </th>
+                    <th className="px-2.5 text-right border-r border-slate-200 w-[105px]">Tổng gộp</th>
+                    <th className="px-2 text-right border-r border-slate-200 w-[88px]">Thuế 10%</th>
+                    <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Thực nhận</th>
+                    <th className="px-2 text-center border-r border-slate-200 w-[98px]">GV xác nhận</th>
+                    <th className="px-2 text-center border-r border-slate-200 w-[95px]">Tài chính</th>
+                    <th className="px-2 text-center w-[85px]">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/80 text-[#475569] font-normal">
+                  {filteredSummaries.length === 0 ? (
+                    <tr>
+                      <td colSpan={17} className="py-10 text-center text-slate-400 font-normal">
+                        Không tìm thấy giảng viên nào phù hợp với điều kiện lọc.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSummaries.map((item, idx) => {
+                      const isSelected = selectedLecturerInline?.maGV === item.maGV;
+                      return (
+                        <tr
+                          key={item.maGV}
+                          onClick={() =>
+                            setSelectedLecturerInline(isSelected ? null : item)
+                          }
+                          className={`h-[38px] transition-colors cursor-pointer font-normal ${
+                            isSelected ? 'bg-emerald-50/50' : 'hover:bg-slate-50/80'
+                          }`}
+                        >
+                          <td className="px-2 text-center font-mono text-slate-400 border-r border-slate-100">
+                            {idx + 1}
+                          </td>
+
+                          <td className="px-2.5 font-mono text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            {item.maGV}
+                          </td>
+
+                          <td className="px-3 border-r border-slate-100 whitespace-nowrap">
+                            <div className="text-slate-700 font-normal">{item.hoTen}</div>
+                            <div className="text-[10.5px] text-slate-400 font-mono">
+                              {item.hocHamHocVi} · {item.soTaiKhoan ? `${item.soTaiKhoan}` : 'Chưa có STK'}
+                            </div>
+                          </td>
+
+                          <td className="px-2.5 text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            <span className="truncate block max-w-[130px]" title={item.khoaBoMon}>
+                              {item.khoaBoMon}
                             </span>
-                            <FileSpreadsheet className="w-3 h-3 text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                          </div>
-                          <span className="block text-[9.5px] font-sans font-normal text-black">
-                            {item.tongGioNCKH}h · {item.mucDoHoanThanhNCKH === 'hoan_thanh' ? 'Đạt định mức' : 'Chưa đạt'}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 group-hover:text-purple-700 font-normal group-hover:underline">
-                          -
-                        </span>
-                      )}
+                          </td>
+
+                          {/* 1. Giờ giảng */}
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-[#005325] hover:underline"
+                            title="Bấm để xem Bảng thống kê giờ giảng"
+                          >
+                            {item.daoTaoAmount > 0 ? `${item.daoTaoAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 2. NCKH */}
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedResearchScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-purple-700 hover:underline"
+                            title="Bấm để xem Bảng thống kê NCKH"
+                          >
+                            {item.nckhAmount > 0 ? `${item.nckhAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 3. Khảo thí */}
+                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            {item.khaoThiAmount > 0 ? `${item.khaoThiAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 4. Đồ án / Khóa luận tốt nghiệp */}
+                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            {item.doAnAmount > 0 ? `${item.doAnAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 5. Cố vấn học tập */}
+                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            {item.coVanHocTapAmount > 0 ? `${item.coVanHocTapAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 6. Tuyển sinh */}
+                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            {item.tuyenSinhAmount > 0 ? `${item.tuyenSinhAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 7. Khác (Kiêm nhiệm & ĐBCL) */}
+                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                            {item.congTacKhacAmount > 0 ? `${item.congTacKhacAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* Tổng gộp */}
+                          <td className="px-2.5 text-right font-mono tabular-nums text-slate-700 border-r border-slate-100 whitespace-nowrap">
+                            {item.tongThuLao.toLocaleString('vi-VN')}
+                          </td>
+
+                          {/* Thuế TNCN */}
+                          <td className="px-2 text-right font-mono tabular-nums text-slate-500 border-r border-slate-100 whitespace-nowrap">
+                            -{item.thueTNCN.toLocaleString('vi-VN')}
+                          </td>
+
+                          {/* Thực nhận */}
+                          <td className="px-2.5 text-right font-mono tabular-nums text-[#005325] border-r border-slate-100 whitespace-nowrap">
+                            {item.thucNhan.toLocaleString('vi-VN')}
+                          </td>
+
+                          {/* Trạng thái xác nhận của GV */}
+                          <td className="px-2 text-center border-r border-slate-100 whitespace-nowrap text-[11.5px]">
+                            {item.confirmationStatus === 'confirmed' ? (
+                              <span className="text-[#005325]" title={`Đã xác nhận lúc ${item.confirmationDate}`}>
+                                Đã đồng ý
+                              </span>
+                            ) : item.confirmationStatus === 'disputed' ? (
+                              <span className="text-amber-600" title="Đang có phản hồi">
+                                Đang phản hồi
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">Chờ GV xem</span>
+                            )}
+                          </td>
+
+                          {/* Trạng thái Tài chính */}
+                          <td className="px-2 text-center border-r border-slate-100 whitespace-nowrap text-[11.5px]">
+                            {item.paymentStatus === 'paid' ? (
+                              <span className="text-blue-600" title={`Mã UNC: ${item.transactionRef}`}>
+                                Đã thanh toán
+                              </span>
+                            ) : item.confirmationStatus === 'confirmed' ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onNavigateToFinance) onNavigateToFinance(item.maGV);
+                                }}
+                                className="text-[#005325] hover:underline cursor-pointer"
+                              >
+                                Sẵn sàng chi
+                              </button>
+                            ) : (
+                              <span className="text-slate-400">Chờ duyệt</span>
+                            )}
+                          </td>
+
+                          {/* Thao tác */}
+                          <td
+                            className="px-2 text-center whitespace-nowrap"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedLecturerInline(isSelected ? null : item)
+                                }
+                                className={`px-2 py-0.5 rounded text-[11px] cursor-pointer transition-colors ${
+                                  isSelected
+                                    ? 'bg-slate-200 text-slate-700'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                }`}
+                              >
+                                {isSelected ? 'Thu gọn' : 'Chi tiết'}
+                              </button>
+                              {onNavigateToLecturerCheck && (
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigateToLecturerCheck(item.maGV)}
+                                  className="px-2 py-0.5 rounded text-[11px] bg-emerald-50 hover:bg-[#005325] text-[#005325] hover:text-white cursor-pointer transition-colors"
+                                >
+                                  Tra cứu
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[#f8fafc] font-semibold text-[#1e293b] border-t border-slate-200 h-[36px]">
+                    <td colSpan={4} className="px-3 text-center text-[11.5px]">
+                      Tổng cộng ({filteredSummaries.length} giảng viên)
                     </td>
-
-                    {/* 5. Cố vấn học tập */}
-                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-black border-r border-slate-100 whitespace-nowrap font-normal">
-                      {item.coVanHocTapAmount > 0 ? (
-                        <div>
-                          <span className="font-normal text-black">{item.coVanHocTapAmount.toLocaleString('vi-VN')} đ</span>
-                          <span className="block text-[9.5px] font-sans font-normal text-black">{item.coVanHocTapQC} tiết</span>
-                        </div>
-                      ) : (
-                        <span className="text-black font-normal">-</span>
-                      )}
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.daoTaoAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* 6. Khác */}
-                    <td className="px-2 py-2 text-right font-mono tabular-nums text-black border-r border-slate-100 whitespace-nowrap font-normal">
-                      {item.congTacKhacAmount > 0 ? (
-                        <span className="font-normal text-black">{item.congTacKhacAmount.toLocaleString('vi-VN')} đ</span>
-                      ) : (
-                        <span className="text-black font-normal">-</span>
-                      )}
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.nckhAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* Tổng gộp */}
-                    <td className="px-2.5 py-2 text-right font-mono font-normal text-black border-r border-slate-100 whitespace-nowrap">
-                      {item.tongThuLao.toLocaleString('vi-VN')} đ
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.khaoThiAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* Thuế TNCN */}
-                    <td className="px-2 py-2 text-right font-mono text-black border-r border-slate-100 whitespace-nowrap font-normal">
-                      -{item.thueTNCN.toLocaleString('vi-VN')} đ
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.doAnAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* Thực nhận */}
-                    <td className="px-3 py-2 text-right font-mono font-normal text-black bg-slate-50 border-r border-slate-100 whitespace-nowrap">
-                      {item.thucNhan.toLocaleString('vi-VN')} đ
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.coVanHocTapAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* Trạng thái xác nhận của GV */}
-                    <td className="px-2.5 py-2 text-center border-r border-slate-100 whitespace-nowrap font-normal">
-                      {item.confirmationStatus === 'confirmed' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-normal bg-emerald-50 text-emerald-800 border border-emerald-200" title={`Đã xác nhận lúc ${item.confirmationDate}`}>
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Đã đồng ý
-                        </span>
-                      ) : item.confirmationStatus === 'disputed' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-normal bg-amber-50 text-amber-800 border border-amber-300" title="Đang có ý kiến phản hồi về số tiết/thù lao">
-                          <AlertCircle className="w-3 h-3 text-amber-600" />
-                          Đang phản hồi
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-normal bg-slate-50 text-slate-700 border border-slate-200">
-                          <Clock className="w-3 h-3 text-slate-500" />
-                          Chờ GV xem
-                        </span>
-                      )}
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.tuyenSinhAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* Trạng thái Tài chính */}
-                    <td className="px-2.5 py-2 text-center border-r border-slate-100 whitespace-nowrap font-normal">
-                      {item.paymentStatus === 'paid' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-normal bg-blue-50 text-blue-800 border border-blue-200" title={`Đã chuyển khoản: ${item.transactionRef}`}>
-                          <CreditCard className="w-3 h-3 text-blue-600" />
-                          Đã thanh toán
-                        </span>
-                      ) : item.confirmationStatus === 'confirmed' ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onNavigateToFinance) onNavigateToFinance(item.maGV);
-                          }}
-                          className="px-2 py-0.5 rounded text-[11px] font-normal bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-pointer transition-colors shadow-2xs"
-                        >
-                          Sẵn sàng chi
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-slate-400 font-normal">
-                          Chờ GV duyệt
-                        </span>
-                      )}
+                    <td className="px-2 text-right font-mono tabular-nums">
+                      {grandTotals.congTacKhacAmount.toLocaleString('vi-VN')}
                     </td>
-
-                    {/* Thao tác */}
-                    <td className="px-2 py-2 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedScheduleMaGV(item.maGV);
-                          }}
-                          title="Xem Bảng thống kê công tác giảng dạy (mẫu chuẩn)"
-                          className="p-1 text-[#005325] hover:bg-emerald-50 rounded cursor-pointer transition-colors"
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5 text-[#005325]" />
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            if (onNavigateToLecturerCheck) {
-                              onNavigateToLecturerCheck(item.maGV);
-                            } else {
-                              setSelectedLecturerModal(item);
-                            }
-                          }}
-                          title="Xem Cổng Giảng viên tra cứu & Xác nhận"
-                          className="p-1 text-black hover:bg-slate-100 rounded cursor-pointer transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-black" />
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            if (onNavigateToFinance) onNavigateToFinance(item.maGV);
-                          }}
-                          title="Chuyển sang tab Chi trả Tài chính"
-                          className="p-1 text-black hover:bg-slate-100 rounded cursor-pointer transition-colors"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 text-black" />
-                        </button>
-                      </div>
+                    <td className="px-2.5 text-right font-mono tabular-nums">
+                      {grandTotals.tongThuLao.toLocaleString('vi-VN')}
+                    </td>
+                    <td className="px-2 text-right font-mono tabular-nums text-rose-600">
+                      -{grandTotals.thueTNCN.toLocaleString('vi-VN')}
+                    </td>
+                    <td className="px-2.5 text-right font-mono tabular-nums text-[#005325]">
+                      {grandTotals.thucNhan.toLocaleString('vi-VN')}
+                    </td>
+                    <td colSpan={3} className="px-2 text-center text-[11px] font-normal text-slate-500">
+                      Đơn vị tính: VNĐ
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-            {/* Table Footer with exact sums */}
-            <tfoot>
-              <tr className="bg-slate-100 font-normal text-black border-t-2 border-slate-300">
-                <td colSpan={4} className="px-3 py-2 text-center font-normal text-[11px] text-black">
-                  Tổng cộng ({filteredSummaries.length} giảng viên)
-                </td>
-                <td className="px-2 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  {grandTotals.daoTaoAmount.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-2 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  {grandTotals.khaoThiAmount.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-2 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  {grandTotals.tuyenSinhAmount.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-2 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  {grandTotals.nckhAmount.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-2 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  {grandTotals.congTacKhacAmount.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-2.5 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  {grandTotals.tongThuLao.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-2 py-2 text-right font-mono tabular-nums text-black font-normal">
-                  -{grandTotals.thueTNCN.toLocaleString('vi-VN')} đ
-                </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-black text-sm bg-slate-200/60 font-normal">
-                  {grandTotals.thucNhan.toLocaleString('vi-VN')} đ
-                </td>
-                <td colSpan={3} className="px-2 py-2 text-center text-xs text-black font-normal">
-                  Chốt theo quy chế TDU
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      {/* Teaching Schedule Modal (Exact sheet view) */}
-      <TeachingScheduleModal
-        isOpen={!!selectedScheduleMaGV}
-        onClose={() => setSelectedScheduleMaGV(null)}
-        maGV={selectedScheduleMaGV || ''}
-        records={records}
-        allLecturers={lecturerSummaries.map((l) => ({
-          maGV: l.maGV,
-          hoTen: l.hoTen,
-          khoaBoMon: l.khoaBoMon,
-          hocHamHocVi: l.hocHamHocVi,
-        }))}
-        onSelectLecturer={(newMa) => setSelectedScheduleMaGV(newMa)}
-      />
-
-      {/* Research Schedule Modal (Exact sheet view) */}
-      <ResearchScheduleModal
-        isOpen={!!selectedResearchScheduleMaGV}
-        onClose={() => setSelectedResearchScheduleMaGV(null)}
-        maGV={selectedResearchScheduleMaGV || ''}
-        records={records}
-        allLecturers={lecturerSummaries.map((l) => ({
-          maGV: l.maGV,
-          hoTen: l.hoTen,
-          khoaBoMon: l.khoaBoMon,
-          hocHamHocVi: l.hocHamHocVi,
-        }))}
-        onSelectLecturer={(newMa) => setSelectedResearchScheduleMaGV(newMa)}
-      />
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -38,7 +38,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Phòng Đào tạo TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-1b',
@@ -74,7 +74,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Phòng Đào tạo TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-2a',
@@ -110,7 +110,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Vietcombank CN Tây Đô',
     nguoiThucHien: 'Phòng Đào tạo TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-2b',
@@ -146,7 +146,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Vietcombank CN Tây Đô',
     nguoiThucHien: 'Phòng Đào tạo TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-3a',
@@ -182,7 +182,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Agribank CN Cần Thơ',
     nguoiThucHien: 'Phòng Đào tạo TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
 
   // ==========================================
@@ -222,7 +222,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Trung tâm Khảo thí TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-kt-2',
@@ -258,7 +258,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Trung tâm Khảo thí TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-kt-3',
@@ -294,7 +294,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Trung tâm Khảo thí TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-kt-4',
@@ -330,7 +330,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Techcombank Cần Thơ',
     nguoiThucHien: 'Trung tâm Khảo thí TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
 
   // ==========================================
@@ -362,7 +362,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Agribank CN Cần Thơ',
     nguoiThucHien: 'Phòng Tuyển sinh & Truyền thông TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-ts-2',
@@ -390,7 +390,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Vietcombank CN Tây Đô',
     nguoiThucHien: 'Phòng Tuyển sinh & Truyền thông TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-ts-long',
@@ -418,7 +418,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Phòng Tuyển sinh & Truyền thông TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
 
   // ==========================================
@@ -455,7 +455,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Phòng NCKH & Sau đại học TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-nc-2',
@@ -488,7 +488,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Phòng NCKH & Sau đại học TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-nc-3',
@@ -521,7 +521,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Vietcombank Cần Thơ',
     nguoiThucHien: 'Phòng NCKH & Sau đại học TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-nc-4',
@@ -554,7 +554,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Agribank CN Cần Thơ',
     nguoiThucHien: 'Phòng NCKH & Sau đại học TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
 
   // ==========================================
@@ -587,7 +587,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Phòng Công tác Sinh viên & Đào tạo TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-cvht-2',
@@ -616,7 +616,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Agribank CN Cần Thơ',
     nguoiThucHien: 'Phòng Công tác Sinh viên & Đào tạo TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-cvht-3',
@@ -645,7 +645,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Agribank CN Cần Thơ',
     nguoiThucHien: 'Phòng Công tác Sinh viên & Đào tạo TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-cvht-4',
@@ -674,7 +674,163 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Vietcombank Cần Thơ',
     nguoiThucHien: 'Phòng Công tác Sinh viên & Đào tạo TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
+  },
+
+  // ==========================================
+  // 5.b ĐỒ ÁN & KHÓA LUẬN TỐT NGHIỆP
+  // ==========================================
+  {
+    id: 'tdu-tc-da-1',
+    tt: 20,
+    maGV: 'TDU00128',
+    hoTen: 'TS. Mai Như Long',
+    ngaySinh: '18/09/1982',
+    soCCCD: '092082001245',
+    hocHamHocVi: 'TS',
+    khoaBoMon: 'Khoa Công nghệ thông tin',
+    phongBanQuanLy: 'do_an',
+    loaiHoatDong: 'Hướng dẫn khóa luận tốt nghiệp',
+    tenHocPhan: 'Khóa luận tốt nghiệp ngành Hệ thống thông tin',
+    maLopHocPhan: 'KLTN_HTTT_K14',
+    nhomCongViec: 'Đồ án, khóa luận đại học',
+    maCV: 'HDDA',
+    tenCongViec: 'Hướng dẫn chấm khóa luận tốt nghiệp đại học',
+    dieuKien: '1 sinh viên (12 giờ quy đổi)',
+    quyDoiSoGio: 12,
+    soLuong: 2,
+    soDeTaiHuongDan: 2,
+    soLuotChamHoiDong: 0,
+    vaiTroDoAn: 'Hướng dẫn chính',
+    tongSoGioTheoCV: 24.0,
+    soTinChi: 0,
+    soTietLT: 24,
+    soTietTH: 0,
+    heSoLop: 1.0,
+    tongTietQC: 24,
+    donGiaTiet: 180000,
+    tongTienThuLao: 4320000,
+    thueTNCN: 432000,
+    thucNhan: 3888000,
+    soTaiKhoan: '102874639912',
+    nganHang: 'VietinBank CN Cần Thơ',
+    nguoiThucHien: 'Khoa CNTT & Phòng Đào tạo TDU',
+    trangThai: 'da_so_hoa',
+    dotThanhToan: 'Học kỳ 1 2026-2027'
+  },
+  {
+    id: 'tdu-tc-da-2',
+    tt: 21,
+    maGV: 'TDU00128',
+    hoTen: 'TS. Mai Như Long',
+    ngaySinh: '18/09/1982',
+    soCCCD: '092082001245',
+    hocHamHocVi: 'TS',
+    khoaBoMon: 'Khoa Công nghệ thông tin',
+    phongBanQuanLy: 'do_an',
+    loaiHoatDong: 'Phản biện khóa luận tốt nghiệp',
+    tenHocPhan: 'Phản biện hội đồng khóa luận tốt nghiệp K14',
+    maLopHocPhan: 'PB_KLTN_K14',
+    nhomCongViec: 'Đồ án, khóa luận đại học',
+    maCV: 'PBDA',
+    tenCongViec: 'Phản biện khóa luận tốt nghiệp đại học',
+    dieuKien: '1 sinh viên (3 giờ quy đổi)',
+    quyDoiSoGio: 3,
+    soLuong: 3,
+    soDeTaiHuongDan: 0,
+    soLuotChamHoiDong: 3,
+    vaiTroDoAn: 'Cán bộ phản biện',
+    tongSoGioTheoCV: 9.0,
+    soTinChi: 0,
+    soTietLT: 9,
+    soTietTH: 0,
+    heSoLop: 1.0,
+    tongTietQC: 9,
+    donGiaTiet: 180000,
+    tongTienThuLao: 1620000,
+    thueTNCN: 162000,
+    thucNhan: 1458000,
+    soTaiKhoan: '102874639912',
+    nganHang: 'VietinBank CN Cần Thơ',
+    nguoiThucHien: 'Khoa CNTT & Phòng Đào tạo TDU',
+    trangThai: 'hop_le',
+    dotThanhToan: 'Học kỳ 1 2026-2027'
+  },
+  {
+    id: 'tdu-tc-da-3',
+    tt: 22,
+    maGV: 'TDU00089',
+    hoTen: 'PGS.TS. Trần Thanh Dũng',
+    ngaySinh: '14/04/1975',
+    soCCCD: '092075001923',
+    hocHamHocVi: 'PGS.TS',
+    khoaBoMon: 'Khoa Dược - Điều dưỡng',
+    phongBanQuanLy: 'do_an',
+    loaiHoatDong: 'Hội đồng khóa luận tốt nghiệp',
+    tenHocPhan: 'Chủ tịch Hội đồng khóa luận tốt nghiệp Dược sĩ',
+    maLopHocPhan: 'HD_KLTN_DUOC',
+    nhomCongViec: 'Hội đồng đồ án, khóa luận đại học',
+    maCV: 'CTHD',
+    tenCongViec: 'Chủ tịch hội đồng chấm khóa luận tốt nghiệp',
+    dieuKien: '1 sinh viên (1.5 giờ quy đổi)',
+    quyDoiSoGio: 1.5,
+    soLuong: 4,
+    soDeTaiHuongDan: 0,
+    soLuotChamHoiDong: 4,
+    vaiTroDoAn: 'Chủ tịch hội đồng',
+    tongSoGioTheoCV: 6.0,
+    soTinChi: 0,
+    soTietLT: 6,
+    soTietTH: 0,
+    heSoLop: 1.0,
+    tongTietQC: 6,
+    donGiaTiet: 220000,
+    tongTienThuLao: 1320000,
+    thueTNCN: 132000,
+    thucNhan: 1188000,
+    soTaiKhoan: '0111000889234',
+    nganHang: 'Vietcombank Cần Thơ',
+    nguoiThucHien: 'Khoa Dược & Phòng Đào tạo TDU',
+    trangThai: 'da_so_hoa',
+    dotThanhToan: 'Học kỳ 1 2026-2027'
+  },
+  {
+    id: 'tdu-tc-da-4',
+    tt: 23,
+    maGV: 'TDU00215',
+    hoTen: 'ThS. Nguyễn Văn Hải',
+    ngaySinh: '12/10/1987',
+    soCCCD: '092087003412',
+    hocHamHocVi: 'ThS',
+    khoaBoMon: 'Khoa Công nghệ thông tin',
+    phongBanQuanLy: 'do_an',
+    loaiHoatDong: 'Đồ án môn học (Chấm 1)',
+    tenHocPhan: 'Chấm đồ án môn học Chuyên ngành Mạng & An toàn thông tin',
+    maLopHocPhan: 'DAMH_ATTT',
+    nhomCongViec: 'Đồ án môn học',
+    maCV: 'DAC1',
+    tenCongViec: 'Chấm 1 đồ án môn học',
+    dieuKien: '3 sinh viên (3 giờ quy đổi)',
+    quyDoiSoGio: 3,
+    soLuong: 2,
+    soDeTaiHuongDan: 6,
+    soLuotChamHoiDong: 2,
+    vaiTroDoAn: 'Chấm 1',
+    tongSoGioTheoCV: 6.0,
+    soTinChi: 0,
+    soTietLT: 6,
+    soTietTH: 0,
+    heSoLop: 1.0,
+    tongTietQC: 6,
+    donGiaTiet: 140000,
+    tongTienThuLao: 840000,
+    thueTNCN: 84000,
+    thucNhan: 756000,
+    soTaiKhoan: '7400205889123',
+    nganHang: 'Agribank CN Cần Thơ',
+    nguoiThucHien: 'Khoa CNTT & Phòng Đào tạo TDU',
+    trangThai: 'hop_le',
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
 
   // ==========================================
@@ -706,7 +862,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Agribank CN Cần Thơ',
     nguoiThucHien: 'Ban Thanh tra Nhân dân & Khảo thí TDU',
     trangThai: 'hop_le',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-khac-2',
@@ -734,7 +890,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'Vietcombank Cần Thơ',
     nguoiThucHien: 'Trung tâm Khảo thí & ĐBCL TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   },
   {
     id: 'tdu-tc-khac-long',
@@ -762,7 +918,7 @@ export const INITIAL_TEACHING_DATA: TeachingRecord[] = [
     nganHang: 'VietinBank CN Cần Thơ',
     nguoiThucHien: 'Hội đồng Khoa học & Ban Giám hiệu TDU',
     trangThai: 'da_so_hoa',
-    dotThanhToan: 'Đợt 1 - Học kỳ 2 (2023 - 2024)'
+    dotThanhToan: 'Học kỳ 1 2026-2027'
   }
 ];
 
@@ -785,12 +941,13 @@ export const INITIAL_VBCC_DATA: VbccRecord[] = [
 export const INITIAL_ACCOUNTS: UserAccount[] = [
   {
     id: 'acc-admin',
-    username: 'admin',
-    fullName: 'Quản trị viên Hệ thống (TDU)',
-    email: 'quantri@tdu.edu.vn',
+    username: 'mnlong',
+    fullName: 'Mai Nhựt Long',
+    email: 'mnlong@tdu.edu.vn',
     role: 'admin',
-    departmentName: 'Ban Giám hiệu / Phòng CNTT',
+    departmentName: 'Phòng Công nghệ thông tin',
     assignedModule: 'Toàn quyền cấu hình & quản lý hệ thống',
+    maGV: 'TDU00128',
     status: 'active',
     lastLogin: '18/10/2024 08:30',
   },

@@ -63,13 +63,19 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         };
       case 'khao_thi':
         return {
-          title: 'Coi thi chấm thi ra đề (Coi thi kết thúc HP, chấm bài, ra đề thi)',
-          badge: 'Coi thi chấm thi ra đề',
+          title: 'Coi thi, Chấm thi, Ra đề (Ra đề tự luận/TN, coi thi kết thúc HP, chấm bài thi)',
+          badge: 'Coi thi, Chấm thi, Ra đề',
           templateName: 'Khảo thí',
+        };
+      case 'do_an':
+        return {
+          title: 'Đồ án & Khóa luận tốt nghiệp (Hướng dẫn thực tập, BTL, Đồ án môn học, Khóa luận tốt nghiệp)',
+          badge: 'Đồ án & Khóa luận',
+          templateName: 'Đồ án & Khóa luận',
         };
       case 'tuyen_sinh':
         return {
-          title: 'Công tác tuyển sinh (Tư vấn tuyển sinh THPT, coi thi TS)',
+          title: 'Công tác tuyển sinh (Tư vấn tuyển sinh THPT, tư vấn hướng nghiệp)',
           badge: 'Công tác tuyển sinh',
           templateName: 'Tuyển sinh',
         };
@@ -87,9 +93,9 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         };
       case 'cong_tac_khac':
         return {
-          title: 'Công tác khác (Hội đồng khoa học, kiểm định chất lượng, thanh tra thi)',
-          badge: 'Công tác khác',
-          templateName: 'Công tác khác',
+          title: 'Công tác kiêm nhiệm & ĐBCL (Quản lý PTN, Dự giờ, Hội giảng, Tổ ĐBCL Khoa & Trường, Kiểm định)',
+          badge: 'Kiêm nhiệm & ĐBCL',
+          templateName: 'Kiêm nhiệm & ĐBCL',
         };
       default:
         return {
@@ -103,81 +109,81 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   const deptInfo = getDepartmentInfo();
 
   return (
-    <div className="bg-white border-b border-[#e2e8f0] px-4 py-2 select-none">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-        {/* Buttons Toolbar: Cohesive, modern rounded-xl design */}
-        <div className="flex items-center flex-wrap gap-2 text-[12.5px] font-medium">
+    <div className="bg-white border-b border-[#e2e8f0] px-3 py-1.5 select-none">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        {/* Buttons Toolbar: Single-line compact layout */}
+        <div className="flex items-center flex-nowrap gap-1.5 text-[11.5px] font-medium shrink-0">
           {/* Button 1: Thêm mới (TDU Green Primary) */}
           <button
             onClick={onAddNew}
-            className="h-[34px] px-3.5 bg-[#005325] hover:bg-[#00421e] text-white rounded-xl flex items-center gap-1.5 shadow-xs hover:shadow transition-all cursor-pointer"
+            className="h-[30px] px-2.5 bg-[#005325] hover:bg-[#00421e] text-white rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Thêm mới</span>
           </button>
 
-          {/* Button 2: Tải mẫu trống (Emerald soft pill) */}
+          {/* Button 2: Mẫu import (Tải file mẫu Excel chuẩn) */}
           <button
             onClick={onDownloadTemplate}
-            className="h-[34px] px-3 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200 rounded-xl flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-            title={`Tải file Excel mẫu chuẩn theo quy định của ${deptInfo.badge}`}
+            className="h-[30px] px-2.5 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
+            title={`Tải file Excel mẫu import dành cho ${deptInfo.badge}`}
           >
-            <Download className="w-4 h-4 text-emerald-700" />
-            <span>Tải mẫu trống ({deptInfo.templateName})</span>
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Mẫu import</span>
           </button>
 
-          {/* Button 3: Nhập liệu từ Excel (Blue soft pill) */}
+          {/* Button 3: Nhập liệu từ Excel */}
           <button
             onClick={onImportExcel}
-            className="h-[34px] px-3 bg-blue-50 hover:bg-blue-100/80 text-blue-700 border border-blue-200 rounded-xl flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="h-[30px] px-2.5 bg-blue-50 hover:bg-blue-100/80 text-blue-700 border border-blue-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
             title="Tải lên file Excel mới (kiểm tra định dạng, trùng lặp và tính toán số giờ)"
           >
-            <Upload className="w-4 h-4 text-blue-600" />
-            <span>Nhập liệu từ Excel</span>
+            <Upload className="w-3.5 h-3.5 text-blue-600" />
+            <span>Nhập liệu Excel</span>
           </button>
 
-          {/* Button 4: Nhập liệu bổ sung từ Excel (Indigo soft pill) */}
+          {/* Button 4: Nhập liệu bổ sung từ Excel */}
           <button
             onClick={onImportAppendExcel}
-            className="h-[34px] px-3 bg-indigo-50 hover:bg-indigo-100/80 text-indigo-700 border border-indigo-200 rounded-xl flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="h-[30px] px-2.5 bg-indigo-50 hover:bg-indigo-100/80 text-indigo-700 border border-indigo-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
             title="Nhập bổ sung thêm các bản ghi từ file Excel mà không xóa dữ liệu đang có"
           >
-            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-            <span>Nhập liệu bổ sung</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Nhập bổ sung</span>
           </button>
 
-          {/* Button 5: Tải mẫu có dữ liệu (Amber soft pill) */}
+          {/* Button 5: Xuất dữ liệu Excel */}
           <button
             onClick={onExportDataTemplate}
-            className="h-[34px] px-3 bg-amber-50 hover:bg-amber-100/80 text-amber-800 border border-amber-200 rounded-xl flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="h-[30px] px-2.5 bg-amber-50 hover:bg-amber-100/80 text-amber-800 border border-amber-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
             title="Xuất toàn bộ bảng thanh toán thù lao ra file Excel có công thức tính"
           >
-            <FileDown className="w-4 h-4 text-amber-700" />
-            <span>Xuất dữ liệu Excel</span>
+            <FileDown className="w-3.5 h-3.5 text-amber-700" />
+            <span>Xuất Excel</span>
           </button>
 
-          {/* Button 6: Đóng gói và lập biên bản (Teal soft pill) */}
+          {/* Button 6: Lập biên bản nghiệm thu */}
           <button
             onClick={onPackageAndGenerateMinutes}
-            className="h-[34px] px-3 bg-teal-50 hover:bg-teal-100/80 text-teal-800 border border-teal-200 rounded-xl flex items-center gap-1.5 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="h-[30px] px-2.5 bg-teal-50 hover:bg-teal-100/80 text-teal-800 border border-teal-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
             title="Đóng gói dữ liệu kỳ thanh toán, lập biên bản nghiệm thu và trình ký duyệt"
           >
-            <CheckSquare className="w-4 h-4 text-teal-700" />
-            <span>Lập biên bản nghiệm thu</span>
+            <CheckSquare className="w-3.5 h-3.5 text-teal-700" />
+            <span>Lập biên bản</span>
           </button>
         </div>
 
         {/* Right side info & pagination in the same row */}
-        <div className="flex items-center gap-2.5 text-[12px] text-slate-700 shrink-0 self-end lg:self-auto font-medium">
+        <div className="flex items-center gap-2 text-[11.5px] text-slate-700 shrink-0 font-medium whitespace-nowrap">
           <span className="text-slate-600">
             {totalRecords === 0 ? 'Không có dữ liệu' : `Tổng: ${totalRecords} bản ghi`}
           </span>
 
-          <div className="flex items-center gap-1 border border-slate-200 rounded-lg px-1.5 py-0.5 bg-slate-50">
+          <div className="flex items-center gap-0.5 border border-slate-200 rounded-lg px-1.5 h-[28px] bg-slate-50">
             <button
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage <= 1 || totalRecords === 0}
-              className="p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="p-0.5 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               title="Trang trước"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -186,7 +192,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="bg-transparent text-[11.5px] font-medium text-slate-700 border-none outline-none cursor-pointer py-0.5"
+              className="bg-transparent text-[11px] font-medium text-slate-700 border-none outline-none cursor-pointer"
             >
               <option value="150">150</option>
               <option value="100">100</option>
@@ -194,14 +200,14 @@ export const ActionBar: React.FC<ActionBarProps> = ({
               <option value="20">20</option>
             </select>
 
-            <span className="text-[11.5px] text-slate-500 font-mono">
+            <span className="text-[11px] text-slate-500">
               {currentPage}/{totalPages}
             </span>
 
             <button
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage >= totalPages || totalRecords === 0}
-              className="p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="p-0.5 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               title="Trang sau"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -212,19 +218,19 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           {totalRecords === 0 ? (
             <button
               onClick={onLoadSampleData}
-              className="text-[11.5px] text-blue-700 hover:underline font-medium flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1 rounded-lg border border-blue-200"
+              className="text-[11px] text-blue-700 hover:underline font-medium flex items-center gap-1 cursor-pointer bg-blue-50 px-2 h-[28px] rounded-lg border border-blue-200 whitespace-nowrap"
               title="Nạp dữ liệu giảng viên TDU mẫu để đối soát"
             >
               <Database className="w-3 h-3 text-blue-700" />
-              Nạp dữ liệu mẫu
+              Nạp mẫu
             </button>
           ) : (
             <button
               onClick={onClearData}
-              className="text-[11.5px] text-slate-500 hover:text-red-600 flex items-center gap-0.5 cursor-pointer font-medium p-1 rounded hover:bg-slate-100"
+              className="text-[11px] text-slate-500 hover:text-red-600 flex items-center gap-0.5 cursor-pointer font-medium p-1 rounded hover:bg-slate-100"
               title="Làm trống bảng dữ liệu"
             >
-              <RotateCcw className="w-3 h-3" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
