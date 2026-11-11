@@ -1,0 +1,6 @@
+{
+  "name": "Hệ Thống Thanh Toán Giờ Giảng TDU",
+  "description": "Hệ thống quản lý và thanh toán giờ giảng dạy giảng viên Trường Đại học Tây Đô (TDU)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  --app-zoom: 1.25;
+  --modal-zoom: 0.8;
+}
+
+@layer base {
+  html {
+    zoom: var(--app-zoom, 1.25);
+    height: 100%;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    background-color: #f1f5f9;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  table,
+  table th,
+  table td,
+  table caption,
+  table thead,
+  table tbody,
+  table tfoot,
+  .table-content {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+  }
+}
+
+/* ========================================================
+   TỰ ĐỘNG ĐIỀU CHỈNH CÁC POPUP / MODAL VỪA VẶN VỚI MÀN HÌNH
+   Khắc phục hiện tượng popup bị quá to khi giao diện chính zoom 125%
+   ======================================================== */
+.fixed.inset-0.z-50,
+.modal-overlay,
+[role="dialog"] {
+  zoom: var(--modal-zoom, 0.8) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+}
+
+.fixed.inset-0.z-50 > div,
+.modal-overlay > div {
+  max-height: 90vh !important;
+  max-width: 95vw !important;
+}
+
+/* Thiết lập màu chữ nội dung bảng trong các tab theo yêu cầu: oklch(37.2% 0.044 257.287) */
+table,
+table thead,
+table thead tr,
+table thead th,
+table tbody,
+table tbody tr,
+table tbody td,
+table tfoot,
+table tfoot tr,
+table tfoot th,
+table tfoot td,
+.table-content {
+  color: oklch(37.2% 0.044 257.287);
+}
+
+/* Áp dụng ưu tiên cao để các text trong bảng (kể cả có class text-black hay text-slate-800) đều mang màu oklch(37.2% 0.044 257.287) */
+table thead th,
+table thead th.text-black,
+table thead th .text-black,
+table thead tr.text-black,
+table tbody,
+table tbody.text-black,
+table tbody.text-slate-800,
+table tbody tr.text-black,
+table tbody td,
+table tbody td.text-black,
+table tbody td.text-slate-800,
+table tbody td.text-slate-700,
+table tbody td .text-black,
+table tbody td .text-slate-800,
+table tbody td span.text-black,
+table tbody td span.text-slate-800,
+table tbody td div.text-black,
+table tbody td div.text-slate-800,
+table tbody td p.text-black,
+table tbody td strong.text-black,
+table tfoot td,
+table tfoot td.text-black,
+table tfoot td .text-black {
+  color: oklch(37.2% 0.044 257.287) !important;
+}
+
+/* Bảo toàn các màu trạng thái đặc thù và nút hành động nếu có */
+table tbody td [class*="text-emerald"]:not(.text-black),
+table tbody td [class*="text-green"]:not(.text-black),
+table tbody td [class*="text-red"]:not(.text-black),
+table tbody td [class*="text-rose"]:not(.text-black),
+table tbody td [class*="text-amber"]:not(.text-black),
+table tbody td [class*="text-yellow"]:not(.text-black),
+table tbody td [class*="text-blue"]:not(.text-black),
+table tbody td [class*="text-indigo"]:not(.text-black),
+table tbody td [class*="text-purple"]:not(.text-black),
+table tbody td [class*="text-white"]:not(.text-black),
+table tbody td [class*="text-[#005325]"]:not(.text-black) {
+  color: revert !important;
+}
