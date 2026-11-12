@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { TeachingRecord, AppMode, PaymentRuleConfig, DepartmentUnit } from '../types';
+import { generateDepartmentExcelTemplate } from '../utils/excelTemplateGenerator';
 
 interface ValidationError {
   row: number;
@@ -147,14 +148,29 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
             (s) => s.toLowerCase().includes('ke_khai') || s.toLowerCase().includes('gio_giang')
           ) || workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
         if (json.length < 2) {
           setFileError('Tập tin Excel không có dòng dữ liệu hợp lệ.');
           return;
         }
 
-        const rawHeaders = (json[0] as string[]) || [];
+        // Tự động tìm dòng chứa tiêu đề cột (hỗ trợ cả file header ở dòng 1 lẫn file biểu mẫu chuẩn ở dòng 10)
+        let headerRowIdx = 0;
+        for (let i = 0; i < Math.min(json.length, 20); i++) {
+          const row = json[i];
+          if (!Array.isArray(row)) continue;
+          const rowStr = row.map((c) => normalizeStr(c)).join(' ');
+          if (
+            (rowStr.includes('magv') || rowStr.includes('magiangvien') || rowStr.includes('hoten') || rowStr.includes('tengiangvien')) &&
+            (rowStr.includes('mon') || rowStr.includes('hocphan') || rowStr.includes('thucgiang') || rowStr.includes('quydoi') || rowStr.includes('lop') || rowStr.includes('nckh') || rowStr.includes('nhiemvu') || rowStr.includes('chucdanh') || rowStr.includes('phanloai') || rowStr.includes('sinhvien'))
+          ) {
+            headerRowIdx = i;
+            break;
+          }
+        }
+
+        const rawHeaders = (json[headerRowIdx] as string[]) || [];
         const normHeaders = rawHeaders.map((h) => normalizeStr(h));
 
         const getCol = (keywords: string[], fallback: number): number => {
@@ -176,7 +192,12 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         const colLT = getCol(['tietlythuyet', 'tietlt', 'lythuyet', 'lt'], -1);
         const colTH = getCol(['tietthuchanh', 'tietth', 'thuchanh', 'th'], -1);
 
-        const dataRows = json.slice(1).filter((r: any) => r && r.length > 0 && r.some((c: any) => c !== null && c !== ''));
+        const dataRows = json.slice(headerRowIdx + 1).filter((r: any) => {
+          if (!r || !Array.isArray(r) || r.length === 0) return false;
+          const rowStr = r.map((c: any) => normalizeStr(c)).join(' ');
+          if (rowStr.startsWith('tongcong') || rowStr.startsWith('luuy') || rowStr.startsWith('ghichu') || rowStr.startsWith('nguoilap')) return false;
+          return r.some((c: any) => c !== null && c !== '' && String(c).trim() !== '');
+        });
 
         const errors: ValidationError[] = [];
         let validCount = 0;
@@ -274,34 +295,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       onDownloadTemplate();
       return;
     }
-    // Fallback template download
-    const wb = XLSX.utils.book_new();
-    const headers = [
-      'TT',
-      'Mã GV',
-      'Họ và tên giảng viên',
-      'Môn giảng dạy / Nhiệm vụ',
-      'Lớp / Mã đợt',
-      'Số SV',
-      'Số nhóm',
-      'Số giờ môn học',
-      'Số giờ thực giảng',
-      'Hệ số lớp, nhóm',
-      'Hệ số tín chỉ',
-      'Phân loại giảng dạy',
-      'Học vị',
-      'Khoa / Bộ môn',
-      'Số tài khoản',
-      'Ngân hàng',
-      'Đợt thanh toán',
-    ];
-    const sample = [
-      [1, 'TDU00128', 'TS. Mai Như Long', 'Hệ thống Thông tin Doanh nghiệp', 'CNTT14A', 65, 1, 45, 45, 1.2, 1.0, 'Lý thuyết', 'TS', 'Khoa Công nghệ thông tin', '102874639912', 'VietinBank CN Cần Thơ', currentPeriodName],
-      [2, 'TDU00245', 'ThS. Nguyễn Văn Hải', 'Lập trình Web nâng cao', 'CNTT14B', 48, 1, 45, 45, 1.1, 1.0, 'Thực hành', 'ThS', 'Khoa Công nghệ thông tin', '190334812903', 'Techcombank CN Cần Thơ', currentPeriodName],
-    ];
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...sample]);
-    XLSX.utils.book_append_sheet(wb, ws, 'Mau_Import_TDU');
-    XLSX.writeFile(wb, currentDeptMeta.sample);
+    generateDepartmentExcelTemplate(actualDept, currentPeriodName);
   };
 
   const handleApply = () => {

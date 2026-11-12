@@ -15,7 +15,6 @@ import {
   MoreVertical
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { OtherDutiesSection, DEFAULT_OTHER_DUTIES_DATA } from './OtherDutiesSection';
 
 export interface TeachingScheduleRow {
   id: string;
@@ -84,8 +83,6 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const [internalViewMode, setInternalViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
-  const [selectedReportSection, setSelectedReportSection] = useState<'all' | 'teaching' | 'other_duties'>('all');
-  const [otherDutiesTotalHours, setOtherDutiesTotalHours] = useState<number>(0);
 
   const activeViewMode = viewMode || internalViewMode;
   const handleSetViewMode = (mode: 'excel_sheet' | 'compact_table') => {
@@ -279,7 +276,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
     });
 
     headerRows.push([
-      'Tổng số giờ giảng dạy (A)',
+      'Tổng số giờ giảng dạy',
       '',
       '',
       '',
@@ -289,64 +286,6 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
       '',
       '',
       grandTotalQC > 0 ? grandTotalQC : '-',
-      '',
-    ]);
-
-    // SECTION B: CÔNG TÁC KHÁC
-    headerRows.push([]);
-    headerRows.push(['B. CÔNG TÁC KHÁC']);
-    headerRows.push([
-      'STT',
-      'Nhóm công việc',
-      'Mã CV',
-      'Tên công việc',
-      'Điều kiện',
-      'Quy đổi số giờ',
-      'Số Lượng',
-      'Ghi chú thông tin',
-      'Tổng số giờ theo công việc',
-      'Xác nhận của các đơn vị',
-    ]);
-
-    DEFAULT_OTHER_DUTIES_DATA.forEach((r) => {
-      headerRows.push([
-        r.stt,
-        r.nhom,
-        r.maCV,
-        r.tenCV,
-        r.dieuKien,
-        r.quyDoi > 0 ? r.quyDoi : '',
-        r.soLuong !== '' ? r.soLuong : '',
-        r.ghiChu || '',
-        r.tongGio !== null ? r.tongGio : '-',
-        r.xacNhan || '',
-      ]);
-    });
-
-    headerRows.push([
-      'Tổng số giờ công tác khác (B)',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      otherDutiesTotalHours > 0 ? otherDutiesTotalHours : '-',
-      '',
-    ]);
-
-    headerRows.push([]);
-    headerRows.push([
-      'TỔNG CỘNG SỐ GIỜ NGHĨA VỤ / GIỜ QUY CHUẨN (A + B)',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      Number((grandTotalQC + otherDutiesTotalHours).toFixed(2)),
       '',
     ]);
 
@@ -671,52 +610,12 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
             <span>Quý thầy cô nhập thống kê tại các ô màu vàng nhạt; khi hoàn tất ô sẽ tự động đổi màu và hệ thống tính quy chuẩn số giờ.</span>
           </div>
 
-          {/* SECTION SWITCH TABS (Print: hidden) */}
-          <div className="flex items-center gap-1.5 mb-3 print:hidden">
-            <span className="text-[11.5px] font-semibold text-slate-500 mr-1">Hiển thị phần:</span>
-            <button
-              type="button"
-              onClick={() => setSelectedReportSection('all')}
-              className={`px-3 py-1 rounded text-[11.5px] font-medium cursor-pointer transition-colors ${
-                selectedReportSection === 'all'
-                  ? 'bg-[#005325] text-white shadow-2xs font-semibold'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              Tất cả (A + B)
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedReportSection('teaching')}
-              className={`px-3 py-1 rounded text-[11.5px] font-medium cursor-pointer transition-colors ${
-                selectedReportSection === 'teaching'
-                  ? 'bg-[#005325] text-white shadow-2xs font-semibold'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              A. Giờ giảng dạy
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedReportSection('other_duties')}
-              className={`px-3 py-1 rounded text-[11.5px] font-medium cursor-pointer transition-colors ${
-                selectedReportSection === 'other_duties'
-                  ? 'bg-[#005325] text-white shadow-2xs font-semibold'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              B. Công tác khác (40 mục)
-            </button>
-          </div>
-
           {/* SECTION HEADER: A. GIẢNG DẠY */}
-          {(selectedReportSection === 'all' || selectedReportSection === 'teaching') && (
-            <>
-              <div className="border-t-2 border-black pt-1 mb-0.5">
-                <h3 className="text-[13px] font-bold text-red-600 uppercase tracking-wide">
-                  A. GIẢNG DẠY
-                </h3>
-              </div>
+          <div className="border-t-2 border-black pt-1 mb-0.5">
+            <h3 className="text-[13px] font-bold text-red-600 uppercase tracking-wide">
+              A. GIẢNG DẠY
+            </h3>
+          </div>
 
           {/* MAIN SPREADSHEET TABLE */}
           <div className="w-full border-t border-black">
@@ -1057,7 +956,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                 {/* FOOTER ROW: TỔNG SỐ GIỜ GIẢNG DẠY */}
                 <tr className="bg-white font-bold h-[28px]">
                   <td colSpan={9} className="px-2 py-1 text-center font-bold text-blue-700 border border-black text-[12px]">
-                    Tổng số giờ giảng dạy (A)
+                    Tổng số giờ giảng dạy
                   </td>
                   <td className="px-1 py-1 text-center font-bold text-black border border-black text-[12px]">
                     {grandTotalQC > 0 ? grandTotalQC.toFixed(grandTotalQC % 1 === 0 ? 0 : 2) : '-'}
@@ -1067,33 +966,6 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
               </tbody>
             </table>
           </div>
-          </>
-          )}
-
-          {/* SECTION B: CÔNG TÁC KHÁC (40 MỤC CHUẨN FORM TRƯỜNG ĐH TÂY ĐÔ) */}
-          {(selectedReportSection === 'all' || selectedReportSection === 'other_duties') && (
-            <OtherDutiesSection
-              isEditable={isEditable}
-              onTotalHoursChange={(total) => setOtherDutiesTotalHours(total)}
-            />
-          )}
-
-          {/* GRAND SUMMARY BANNER (A + B) */}
-          {selectedReportSection === 'all' && (
-            <div className="mt-5 p-3.5 bg-emerald-50/80 border-2 border-[#005325] rounded-md flex items-center justify-between font-sans">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-[13px] text-[#005325] uppercase tracking-wide">
-                  TỔNG CỘNG KHỐI LƯỢNG CÔNG TÁC QUY CHUẨN (PHẦN A + PHẦN B):
-                </span>
-                <span className="text-[12px] text-slate-600">
-                  (Giảng dạy: {grandTotalQC.toFixed(grandTotalQC % 1 === 0 ? 0 : 2)}h + Công tác khác: {otherDutiesTotalHours.toFixed(otherDutiesTotalHours % 1 === 0 ? 0 : 2)}h)
-                </span>
-              </div>
-              <div className="text-[16px] font-bold text-red-700 shrink-0">
-                {(grandTotalQC + otherDutiesTotalHours).toFixed((grandTotalQC + otherDutiesTotalHours) % 1 === 0 ? 0 : 2)} giờ QC
-              </div>
-            </div>
-          )}
 
           {/* SIGNATURE SECTION (For clean printing) */}
           <div className="hidden print:grid grid-cols-3 gap-4 mt-8 text-center text-[12px] text-black">
