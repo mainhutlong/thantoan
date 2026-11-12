@@ -13,6 +13,7 @@ import {
   Eye
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
 
 export interface ResearchScheduleRow {
   id: string;
@@ -226,7 +227,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
     const ws = XLSX.utils.aoa_to_sheet(headerRows);
     XLSX.utils.book_append_sheet(wb, ws, 'ThongKeNCKH');
-    XLSX.writeFile(wb, `Bang_Thong_Ke_NCKH_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
+    saveWorkbookToFile(wb, `Bang_Thong_Ke_NCKH_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
   };
 
   // Print handler

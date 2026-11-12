@@ -5,6 +5,67 @@ import { DepartmentUnit } from '../types/index';
  * Utility to generate professional, beautifully formatted Excel templates for Tay Do University
  */
 
+export const saveWorkbookToFile = (wb: XLSX.WorkBook, fileName: string) => {
+  if (typeof window === 'undefined') return;
+
+  // 1. Phương án chính: Blob URL với mime-type chuẩn XLSX và thời gian dọn dẹp an toàn (60 giây)
+  try {
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+
+    // Giữ Object URL tối thiểu 60s để trình duyệt hoàn tất việc ghi file vào máy tính người dùng
+    setTimeout(() => {
+      try {
+        if (link.parentNode) link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        // ignore
+      }
+    }, 60000);
+    return;
+  } catch (blobErr) {
+    console.warn('Blob URL download failed, trying base64 data URI:', blobErr);
+  }
+
+  // 2. Phương án dự phòng 1: Base64 Data URI trực tiếp (không phụ thuộc createObjectURL)
+  try {
+    const b64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    const link = document.createElement('a');
+    link.href = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${b64}`;
+    link.download = fileName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try {
+        if (link.parentNode) link.parentNode.removeChild(link);
+      } catch (e) {
+        // ignore
+      }
+    }, 3000);
+    return;
+  } catch (b64Err) {
+    console.warn('Base64 URI download failed, trying XLSX.writeFile:', b64Err);
+  }
+
+  // 3. Phương án dự phòng cuối: XLSX.writeFile của SheetJS
+  try {
+    XLSX.writeFile(wb, fileName);
+  } catch (err) {
+    console.error('All file download attempts failed:', err);
+  }
+};
+
 export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPeriodName: string = 'Học kỳ 1 2026-2027') => {
   const wb = XLSX.utils.book_new();
 
@@ -110,7 +171,7 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:M13' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Khao_Thi');
-    XLSX.writeFile(wb, 'Mau_Khao_Thi_Coi_Cham_Thi_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_Khao_Thi_Coi_Cham_Thi_TDU_2026_2027.xlsx');
   } else if (dept === 'nckh') {
     // 2. PHÒNG QL NCKH & SAU ĐẠI HỌC
     const sheetData: any[][] = [
@@ -229,7 +290,7 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:K15' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_NCKH');
-    XLSX.writeFile(wb, 'Mau_NCKH_Sau_Dai_Hoc_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_NCKH_Sau_Dai_Hoc_TDU_2026_2027.xlsx');
   } else if (dept === 'do_an') {
     // 3. ĐỒ ÁN & KHÓA LUẬN
     const sheetData: any[][] = [
@@ -327,7 +388,7 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:L13' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Do_An_Khoa_Luan');
-    XLSX.writeFile(wb, 'Mau_Do_An_Khoa_Luan_Tot_Nghiep_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_Do_An_Khoa_Luan_Tot_Nghiep_TDU_2026_2027.xlsx');
   } else if (dept === 'co_van_hoc_tap') {
     // 4. CỐ VẤN HỌC TẬP
     const sheetData: any[][] = [
@@ -407,7 +468,7 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:K12' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Co_Van_Hoc_Tap');
-    XLSX.writeFile(wb, 'Mau_Co_Van_Hoc_Tap_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_Co_Van_Hoc_Tap_TDU_2026_2027.xlsx');
   } else if (dept === 'tuyen_sinh') {
     // 5. TUYỂN SINH
     const sheetData: any[][] = [
@@ -491,7 +552,7 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:L12' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Tuyen_Sinh');
-    XLSX.writeFile(wb, 'Mau_Tuyen_Sinh_Truyen_Thong_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_Tuyen_Sinh_Truyen_Thong_TDU_2026_2027.xlsx');
   } else if (dept === 'cong_tac_khac') {
     // 6. CÔNG TÁC KHÁC
     const sheetData: any[][] = [
@@ -574,7 +635,7 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:I13' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Cong_Tac_Khac');
-    XLSX.writeFile(wb, 'Mau_Cong_Tac_Khac_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_Cong_Tac_Khac_TDU_2026_2027.xlsx');
   } else {
     // 7. DEFAULT: PHÒNG ĐÀO TẠO - THANH TOÁN GIỜ GIẢNG
     const sheetData: any[][] = [
@@ -744,6 +805,6 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
     ws['!autofilter'] = { ref: 'A10:R15' };
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Thanh_Toan_Gio_Giang');
-    XLSX.writeFile(wb, 'Mau_Thanh_Toan_Gio_Giang_TDU_2026_2027.xlsx');
+    saveWorkbookToFile(wb, 'Mau_Thanh_Toan_Gio_Giang_TDU_2026_2027.xlsx');
   }
 };

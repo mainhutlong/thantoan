@@ -11,6 +11,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
 import { OtherDutiesSection, DEFAULT_OTHER_DUTIES_DATA, OtherDutyRow } from './OtherDutiesSection';
 
 interface OtherDutiesScheduleReportProps {
@@ -117,7 +118,7 @@ export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps>
       { wch: 20 },
     ];
     XLSX.utils.book_append_sheet(wb, ws, 'CongTacKhac');
-    XLSX.writeFile(wb, `Bang_Thong_Ke_Cong_Tac_Khac_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
+    saveWorkbookToFile(wb, `Bang_Thong_Ke_Cong_Tac_Khac_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
   };
 
   const handleSave = () => {

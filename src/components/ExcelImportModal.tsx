@@ -61,6 +61,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
   const [localAppendMode, setLocalAppendMode] = useState<boolean>(isAppendMode);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showErrorsDetail, setShowErrorsDetail] = useState<boolean>(false);
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     setLocalAppendMode(isAppendMode);
@@ -290,12 +291,18 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     if (droppedFile) processFile(droppedFile);
   };
 
-  const handleDownloadTemplateClick = () => {
-    if (onDownloadTemplate) {
-      onDownloadTemplate();
-      return;
+  const handleDownloadTemplateClick = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-    generateDepartmentExcelTemplate(actualDept, currentPeriodName);
+    try {
+      generateDepartmentExcelTemplate(actualDept, currentPeriodName);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 4000);
+    } catch (err) {
+      console.error('Lỗi khi tải file mẫu Excel:', err);
+    }
   };
 
   const handleApply = () => {
@@ -551,12 +558,33 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
             <button
               type="button"
               onClick={handleDownloadTemplateClick}
-              className="shrink-0 h-[32px] px-2.5 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-xl border border-slate-300 shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
+              className={`shrink-0 h-[32px] px-2.5 text-[11px] font-semibold rounded-xl border shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                downloadSuccess
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+              }`}
+              title={`Tải file Excel mẫu biểu chuẩn dành cho ${currentDeptMeta.name}`}
             >
-              <Download className="w-3.5 h-3.5 text-slate-600" />
-              <span>Tải file mẫu</span>
+              {downloadSuccess ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                  <span>Đã tải mẫu!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Tải file mẫu</span>
+                </>
+              )}
             </button>
           </div>
+
+          {downloadSuccess && (
+            <div className="mt-2 p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center gap-2 animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Đã tải xuống file mẫu <strong>{currentDeptMeta.sample}</strong> thành công!</span>
+            </div>
+          )}
 
           {/* 5. KHUNG KÉO THẢ UPLOAD (Dashed border + Nút "Chọn file" ở giữa) */}
           <div

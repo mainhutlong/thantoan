@@ -15,6 +15,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
 
 export interface TeachingScheduleRow {
   id: string;
@@ -291,7 +292,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
 
     const ws = XLSX.utils.aoa_to_sheet(headerRows);
     XLSX.utils.book_append_sheet(wb, ws, 'ThongKeGiangDay');
-    XLSX.writeFile(wb, `Bang_Thong_Ke_Giang_Day_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
+    saveWorkbookToFile(wb, `Bang_Thong_Ke_Giang_Day_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
   };
 
   // Save changes

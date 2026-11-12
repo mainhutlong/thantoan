@@ -25,7 +25,7 @@ import { AccountPermissionPage } from './components/AccountPermissionPage';
 import { TeachingScheduleReport } from './components/TeachingScheduleReport';
 import { ResearchScheduleReport } from './components/ResearchScheduleReport';
 import { OtherDutiesScheduleReport } from './components/OtherDutiesScheduleReport';
-import { generateDepartmentExcelTemplate } from './utils/excelTemplateGenerator';
+import { generateDepartmentExcelTemplate, saveWorkbookToFile } from './utils/excelTemplateGenerator';
 import { SystemUsersPage } from './components/SystemUsersPage';
 import { SystemRoleGroupPage } from './components/SystemRoleGroupPage';
 import { SystemConfigPage, DEFAULT_PERIODS } from './components/SystemConfigPage';
@@ -586,7 +586,7 @@ export default function App() {
     }));
     const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [{ 'Thông báo': 'Chưa có bản ghi nào' }]);
     XLSX.utils.book_append_sheet(wb, ws, 'Thanh_Toan_Gio_Giang_TDU');
-    XLSX.writeFile(wb, `Bang_Thanh_Toan_Gio_Giang_TDU_2024.xlsx`);
+    saveWorkbookToFile(wb, `Bang_Thanh_Toan_Gio_Giang_TDU_2024.xlsx`);
   };
 
   const handleImportTeaching = (records: TeachingRecord[], isAppend: boolean) => {

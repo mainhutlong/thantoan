@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Plus,
   Download,
@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Database,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import { DepartmentUnit } from '../types';
 
@@ -51,7 +52,18 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   onClearData,
   selectedDepartment,
 }) => {
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+  const handleDownloadClick = () => {
+    try {
+      onDownloadTemplate();
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (e) {
+      console.error('Error downloading template:', e);
+    }
+  };
 
   const getDepartmentInfo = () => {
     switch (selectedDepartment) {
@@ -124,12 +136,25 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
           {/* Button 2: Mẫu import (Tải file mẫu Excel chuẩn) */}
           <button
-            onClick={onDownloadTemplate}
-            className="h-[30px] px-2.5 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
+            onClick={handleDownloadClick}
+            className={`h-[30px] px-2.5 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              downloadSuccess
+                ? 'bg-emerald-600 text-white border border-emerald-700'
+                : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200'
+            }`}
             title={`Tải file Excel mẫu import dành cho ${deptInfo.badge}`}
           >
-            <Download className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Mẫu import</span>
+            {downloadSuccess ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-white animate-pulse" />
+                <span>Đã tải mẫu!</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Mẫu import</span>
+              </>
+            )}
           </button>
 
           {/* Button 3: Nhập liệu từ Excel */}
