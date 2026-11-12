@@ -11,7 +11,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
-import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
+import { saveWorkbookToFile, stripAcademicTitle } from '../utils/excelTemplateGenerator';
 import { OtherDutiesSection, DEFAULT_OTHER_DUTIES_DATA, OtherDutyRow } from './OtherDutiesSection';
 
 interface OtherDutiesScheduleReportProps {
@@ -33,14 +33,14 @@ export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps>
 }) => {
   const firstRec = useMemo(() => {
     return records.find((r) => r.maGV === maGV) || {
-      hoTen: 'TS. Mai Như Long',
+      hoTen: 'Mai Như Long',
       khoaBoMon: 'Khoa Công nghệ thông tin',
       hocHamHocVi: 'TS',
     };
   }, [records, maGV]);
 
   const [donVi, setDonVi] = useState(firstRec.khoaBoMon || 'Khoa Công nghệ thông tin');
-  const [hoTen, setHoTen] = useState(firstRec.hoTen || 'TS. Mai Như Long');
+  const [hoTen, setHoTen] = useState(stripAcademicTitle(firstRec.hoTen) || 'Mai Như Long');
   const [namHoc] = useState(academicYear);
   const [isEditable, setIsEditable] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);

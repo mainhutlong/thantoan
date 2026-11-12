@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   RotateCw,
   ArrowUpDown,
-  Edit2,
   Trash2,
   Eye,
   Check,
@@ -10,6 +9,7 @@ import {
   Plus
 } from 'lucide-react';
 import { TeachingRecord, AppMode, UserRole, PeriodStatus, DepartmentUnit, VbccRecord } from '../types';
+import { stripAcademicTitle } from '../utils/excelTemplateGenerator';
 
 export interface ColumnFilters {
   hoTen: string;
@@ -74,7 +74,7 @@ interface DataTableProps {
   onToggleSelectRow: (id: string) => void;
   onRefresh: () => void;
   onOpenSettings?: () => void;
-  onEditRecord: (record: TeachingRecord) => void;
+  onEditRecord?: (record: TeachingRecord) => void;
   onDeleteRecord: (id: string) => void;
   onViewRecordDetail?: (record: TeachingRecord) => void;
   onViewTeachingSchedule?: (maGV: string) => void;
@@ -1072,7 +1072,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               )}
 
               {/* Col Thao tác */}
-              <th className="sticky top-0 z-10 w-[110px] min-w-[110px] px-2 border-b border-[#cbd5e1] bg-[#f8fafc] text-center text-[#1e293b] font-semibold whitespace-nowrap">
+              <th className="sticky top-0 z-10 w-[84px] min-w-[84px] px-2 border-b border-[#cbd5e1] bg-[#f8fafc] text-center text-[#1e293b] font-semibold whitespace-nowrap">
                 Thao tác
               </th>
             </tr>
@@ -1129,7 +1129,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   <datalist id="lecturers-datalist">
                     {knownLecturers.map((l) => (
                       <option key={l.maGV} value={l.maGV}>
-                        {l.maGV} — {l.hoTen}
+                        {l.maGV} — {stripAcademicTitle(l.hoTen)}
                       </option>
                     ))}
                   </datalist>
@@ -1407,7 +1407,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                 )}
 
                 {/* Col Thao tác */}
-                <td className="w-[110px] min-w-[110px] p-1 border-b border-slate-200 bg-white text-center text-slate-400 text-[12px] font-normal">
+                <td className="w-[84px] min-w-[84px] p-1 border-b border-slate-200 bg-white text-center text-slate-400 text-[12px] font-normal">
                   —
                 </td>
               </tr>
@@ -1482,13 +1482,8 @@ export const DataTable: React.FC<DataTableProps> = ({
                           className="font-medium text-slate-800 hover:text-[#005325] hover:underline cursor-pointer text-left truncate"
                           title="Bấm để xem chi tiết bảng kê"
                         >
-                          {lecturer.hoTen}
+                          {stripAcademicTitle(lecturer.hoTen)}
                         </button>
-                        {lecturer.hocHamHocVi && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-normal shrink-0">
-                            {lecturer.hocHamHocVi}
-                          </span>
-                        )}
                       </div>
                     </td>
 
@@ -1655,7 +1650,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     )}
 
                     {/* Col Thao tác */}
-                    <td className="px-2 text-center border-b border-[#f1f5f9] whitespace-nowrap">
+                    <td className="w-[84px] min-w-[84px] px-2 text-center border-b border-[#f1f5f9] whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5 py-1">
                         {/* 1. Xem chi tiết (Bảng kê chuẩn) */}
                         <button
@@ -1678,21 +1673,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                           <Eye className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* 2. Sửa */}
-                        <button
-                          onClick={() => onEditRecord(lecturer.primaryRecord)}
-                          disabled={isPeriodLocked}
-                          title={isPeriodLocked ? 'Kỳ thanh toán đã khóa' : 'Chỉnh sửa'}
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                            isPeriodLocked
-                              ? 'bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed'
-                              : 'bg-emerald-50 hover:bg-emerald-100/90 text-[#005325] border border-emerald-200/70 cursor-pointer shadow-2xs hover:shadow-xs'
-                          }`}
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* 3. Xóa */}
+                        {/* 2. Xóa */}
                         <button
                           onClick={() => onDeleteRecord(lecturer.primaryRecord.id)}
                           disabled={isPeriodLocked}

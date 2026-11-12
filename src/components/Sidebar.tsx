@@ -172,7 +172,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Nghiên cứu Khoa học</span>
                 </button>
 
-                {/* 3. Coi thi, Chấm thi, Ra đề */}
+                {/* 3. Công tác tuyển sinh */}
+                <button
+                  onClick={() => handleItemClick('ke_khai_upload', 'tuyen_sinh')}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
+                    isItemActive('ke_khai_upload', 'tuyen_sinh')
+                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
+                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
+                  }`}
+                >
+                  <span className="truncate">Công tác tuyển sinh</span>
+                </button>
+
+                {/* 4. Coi thi, Chấm thi, Ra đề */}
                 <button
                   onClick={() => handleItemClick('ke_khai_upload', 'khao_thi')}
                   className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
@@ -182,18 +194,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }`}
                 >
                   <span className="truncate">Coi thi, Chấm thi, Ra đề</span>
-                </button>
-
-                {/* 4. Đồ án & Khóa luận tốt nghiệp */}
-                <button
-                  onClick={() => handleItemClick('ke_khai_upload', 'do_an')}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
-                    isItemActive('ke_khai_upload', 'do_an')
-                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
-                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
-                  }`}
-                >
-                  <span className="truncate">Đồ án & Khóa luận tốt nghiệp</span>
                 </button>
 
                 {/* 5. Cố vấn học tập */}
@@ -208,19 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Cố vấn học tập</span>
                 </button>
 
-                {/* 6. Công tác tuyển sinh */}
-                <button
-                  onClick={() => handleItemClick('ke_khai_upload', 'tuyen_sinh')}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
-                    isItemActive('ke_khai_upload', 'tuyen_sinh')
-                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
-                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
-                  }`}
-                >
-                  <span className="truncate">Công tác tuyển sinh</span>
-                </button>
-
-                {/* 7. Công tác kiêm nhiệm & ĐBCL */}
+                {/* 6. Công tác khác */}
                 <button
                   onClick={() => handleItemClick('ke_khai_upload', 'cong_tac_khac')}
                   className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
@@ -229,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
                   }`}
                 >
-                  <span className="truncate">Công tác kiêm nhiệm & ĐBCL</span>
+                  <span className="truncate">Công tác khác</span>
                 </button>
               </div>
             )}

@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { TeachingRecord, AppMode, PaymentRuleConfig, DepartmentUnit } from '../types';
-import { generateDepartmentExcelTemplate } from '../utils/excelTemplateGenerator';
+import { generateDepartmentExcelTemplate, stripAcademicTitle } from '../utils/excelTemplateGenerator';
+import { findJobDutyByCode, calculateDutyHours } from '../data/jobDutyCatalog';
 
 interface ValidationError {
   row: number;
@@ -113,9 +114,9 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       sample: 'Mau_Co_Van_Hoc_Tap_TDU.xlsx',
     },
     cong_tac_khac: {
-      name: 'Công tác Kiêm nhiệm & ĐBCL',
-      task: 'Quản lý phòng thí nghiệm, dự giờ, hội giảng, tổ ĐBCL, kiểm định',
-      sample: 'Mau_Cong_Tac_Kiem_Nhiem_DBCL_TDU.xlsx',
+      name: 'Công tác khác (Thực tập, Đồ án, PTN, ĐBCL...)',
+      task: 'Kê khai công tác khác: Hướng dẫn thực tập, đồ án môn học, niên luận, chuyên đề, PTN, ĐBCL...',
+      sample: 'Mau_Cong_Tac_Khac_TDU_2026_2027.xlsx',
     },
     all: {
       name: 'Phòng Đào tạo (Mặc định)',
@@ -189,9 +190,11 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         const colSinhVien = getCol(['sosv', 'sisosinhvien', 'siso', 'sosinhvien'], 5);
         const colNhom = getCol(['sonhom', 'nhom'], 6);
         const colGioMH = getCol(['sogiomonhoc', 'giomonhoc', 'giomh'], 7);
-        const colThucGiang = getCol(['sogiothucgiang', 'thucgiang', 'giothucgiang', 'sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogio'], 8);
+        const colThucGiang = getCol(['sogiothucgiang', 'thucgiang', 'giothucgiang', 'sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogio', 'sotietqcquydoi'], 8);
         const colLT = getCol(['tietlythuyet', 'tietlt', 'lythuyet', 'lt'], -1);
         const colTH = getCol(['tietthuchanh', 'tietth', 'thuchanh', 'th'], -1);
+        const colMaCV = getCol(['macv', 'macongviec', 'manhiemvu'], -1);
+        const colSoLuong = getCol(['soluong', 'soluongsv', 'sosinhvien', 'songay', 'soluot', 'sobai', 'sode'], -1);
 
         const dataRows = json.slice(headerRowIdx + 1).filter((r: any) => {
           if (!r || !Array.isArray(r) || r.length === 0) return false;
@@ -219,11 +222,15 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
 
         const processed = dataRows.map((row: any, idx: number) => {
           const rowNum = idx + 2;
-          const hoTen = String(row[colHoTen] || row[1] || '').trim();
+          const hoTen = stripAcademicTitle(String(row[colHoTen] || row[1] || '').trim());
           const maLop = String(row[colMaLop] || `HP_${idx + 1}`).trim();
           const thucGiang = Number(row[colThucGiang]) || 0;
           const lt = Number(row[colLT]) || 0;
           const th = Number(row[colTH]) || 0;
+          const rawMaCV = colMaCV !== -1 && row[colMaCV] ? String(row[colMaCV]).trim().toUpperCase() : '';
+          const rawSL = colSoLuong !== -1 ? Number(row[colSoLuong]) : 0;
+          const dutyItem = rawMaCV ? findJobDutyByCode(rawMaCV) : undefined;
+          const calculatedHours = dutyItem ? calculateDutyHours(rawMaCV, rawSL || 1) : 0;
 
           let hasError = false;
 
@@ -239,7 +246,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
           }
 
           // Check teaching hours
-          if (thucGiang === 0 && lt === 0 && th === 0) {
+          if (thucGiang === 0 && lt === 0 && th === 0 && calculatedHours === 0) {
             errors.push({
               row: rowNum,
               col: 'Số giờ / Tiết',
@@ -336,12 +343,16 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     const colHocPhan = getCol(['mongiangday', 'tenhocphan', 'hocphan', 'tenmon', 'monhoc', 'nhiemvu', 'tendetai', 'baibao', 'luanvan', 'noidungnckh', 'noidung', 'tencongtrinh'], 3);
     const colMaLop = getCol(['lop', 'malophocphan', 'malop', 'lophp', 'madetai', 'soissn'], 4);
     const colTheLoaiNCKH = getCol(['theloainckh', 'theloai', 'loaihinhnckh', 'loaihoatdong', 'loai'], -1);
-    const colGioQCNCKH = getCol(['sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogioqcnckh', 'soqc'], -1);
+    const colGioQCNCKH = getCol(['sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogioqcnckh', 'soqc', 'sotietqcquydoi'], -1);
     const colMucDoHoanThanh = getCol(['mucdohoanthanh', 'hoanthanh', 'mucdo'], -1);
+    const colMaCV = getCol(['macv', 'macongviec', 'manhiemvu'], -1);
+    const colSoLuong = getCol(['soluong', 'soluongsv', 'sosinhvien', 'songay', 'soluot', 'sobai', 'sode'], -1);
+    const colDieuKien = getCol(['dieukien', 'donvitinh', 'dinhmuc', 'dvt'], -1);
+    const colCanCu = getCol(['cancu', 'thoigian', 'quyetdinh', 'soqd', 'thoigianphancong'], -1);
     const colSinhVien = getCol(['sosv', 'sisosinhvien', 'siso', 'sosinhvien'], 5);
     const colNhom = getCol(['sonhom', 'nhom'], 6);
     const colGioMH = getCol(['sogiomonhoc', 'giomonhoc', 'giomh'], 7);
-    const colThucGiang = getCol(['sogiothucgiang', 'thucgiang', 'giothucgiang', 'sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogio'], 8);
+    const colThucGiang = getCol(['sogiothucgiang', 'thucgiang', 'giothucgiang', 'sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogio', 'sotietqcquydoi'], 8);
     const colHsLop = getCol(['hesolopnhom', 'hesolop', 'hesonhom', 'hslop'], 9);
     const colHsTC = getCol(['hesotinchi', 'hesotc', 'hstc'], 10);
     const colPhanLoai = getCol(['phanloaigiangday', 'phanloai', 'loaihinh', 'hinhthuc'], 11);
@@ -359,13 +370,31 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     const records: TeachingRecord[] = parsedRows.map((item, index) => {
       const vals = item.values;
       const maGV = String(vals[colMaGV] || 'TDU' + (1000 + index)).trim();
-      const hoTen = String(vals[colHoTen] || 'Giảng viên TDU ' + (index + 1)).trim();
+      const hoTen = stripAcademicTitle(String(vals[colHoTen] || 'Giảng viên TDU ' + (index + 1)).trim());
       const ngaySinh = String((colNgaySinh !== -1 ? vals[colNgaySinh] : '') || '15/08/1985');
       const soCCCD = String((colCCCD !== -1 ? vals[colCCCD] : '') || '09208500' + (1000 + index));
       const hocVi = String(vals[colHocVi] || 'ThS');
       const khoa = String(vals[colKhoa] || 'Khoa Công nghệ thông tin');
-      const hocPhan = String(vals[colHocPhan] || currentDeptMeta.task);
-      const maLop = String(vals[colMaLop] || `${actualDept.toUpperCase()}_${100 + index}_TDU`).trim();
+
+      const rawMaCV = colMaCV !== -1 && vals[colMaCV] ? String(vals[colMaCV]).trim().toUpperCase() : '';
+      const rawSoLuong = colSoLuong !== -1 && vals[colSoLuong] !== undefined && vals[colSoLuong] !== '' ? Number(vals[colSoLuong]) : undefined;
+      const rawDieuKien = colDieuKien !== -1 && vals[colDieuKien] ? String(vals[colDieuKien]).trim() : '';
+      const rawCanCu = colCanCu !== -1 && vals[colCanCu] ? String(vals[colCanCu]).trim() : '';
+
+      const dutyCatalogItem = rawMaCV ? findJobDutyByCode(rawMaCV) : undefined;
+      let finalTenHocPhan = String(vals[colHocPhan] || '');
+      if (actualDept === 'cong_tac_khac') {
+        if (!finalTenHocPhan || finalTenHocPhan === currentDeptMeta.task) {
+          finalTenHocPhan = dutyCatalogItem?.tenCV || 'Nhiệm vụ công tác khác & ĐBCL';
+        }
+      } else if (!finalTenHocPhan) {
+        finalTenHocPhan = currentDeptMeta.task;
+      }
+
+      const hocPhan = finalTenHocPhan;
+      const maLop = String(
+        vals[colMaLop] || (rawMaCV ? `${rawMaCV}_${index + 1}` : `${actualDept.toUpperCase()}_${100 + index}_TDU`)
+      ).trim();
 
       const rawPhanLoai = normalizeStr(vals[colPhanLoai]);
       const phanLoaiGiangDay: 'ly_thuyet' | 'thuc_hanh_thuc_tap' =
@@ -387,6 +416,11 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         if (nckhHours > 0) {
           thucGiang = nckhHours;
         }
+      } else if (actualDept === 'cong_tac_khac') {
+        const dutyHours = Number(vals[colThucGiang]) || (dutyCatalogItem ? calculateDutyHours(rawMaCV, rawSoLuong || 1) : 0);
+        if (dutyHours > 0) {
+          thucGiang = dutyHours;
+        }
       }
 
       if (thucGiang === 0 && (lt > 0 || th > 0)) {
@@ -398,7 +432,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
           lt = thucGiang;
         }
       } else if (thucGiang === 0) {
-        thucGiang = actualDept === 'nckh' ? 60 : 30;
+        thucGiang = actualDept === 'nckh' ? 60 : actualDept === 'cong_tac_khac' ? 20 : 30;
         if (phanLoaiGiangDay === 'thuc_hanh_thuc_tap') th = 30;
         else lt = 30;
       }
@@ -406,7 +440,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       const heSoLop = Number(vals[colHsLop]) || 1.0;
       const heSoTinChi = Number(vals[colHsTC]) || 1.0;
       const donGia = config.rates[hocVi] || (actualDept === 'nckh' ? 180000 : 150000);
-      const qc = actualDept === 'nckh' ? thucGiang : Number((thucGiang * heSoLop * heSoTinChi).toFixed(2));
+      const qc = (actualDept === 'nckh' || actualDept === 'cong_tac_khac') ? thucGiang : Number((thucGiang * heSoLop * heSoTinChi).toFixed(2));
       const tongThuLao = Math.round(qc * donGia);
       const thue = Math.round(tongThuLao * config.taxRate);
 
@@ -429,7 +463,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         hocHamHocVi: hocVi,
         khoaBoMon: khoa,
         phongBanQuanLy: actualDept,
-        loaiHoatDong: actualDept === 'nckh' ? (theLoaiNCKH || 'Nghiên cứu khoa học') : currentDeptMeta.task,
+        loaiHoatDong: actualDept === 'nckh' ? (theLoaiNCKH || 'Nghiên cứu khoa học') : actualDept === 'cong_tac_khac' ? (dutyCatalogItem?.nhomCV || 'Công tác khác') : currentDeptMeta.task,
         tenHocPhan: hocPhan,
         maLopHocPhan: maLop,
         noiDungNCKH: actualDept === 'nckh' ? hocPhan : undefined,
@@ -459,6 +493,11 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         nguoiThucHien: `${currentDeptMeta.name} import`,
         trangThai: item.isDuplicate ? 'trung_lap' : 'hop_le',
         dotThanhToan,
+        maCV: rawMaCV || undefined,
+        soLuong: rawSoLuong,
+        dieuKien: rawDieuKien || dutyCatalogItem?.dieuKien,
+        nhiemVuKiemNhiem: actualDept === 'cong_tac_khac' ? hocPhan : undefined,
+        ghiChu: rawCanCu || (actualDept === 'cong_tac_khac' ? dutyCatalogItem?.ghiChu : undefined),
       };
     });
 
@@ -513,7 +552,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                 <option value="nckh">Nghiên cứu khoa học (NCKH)</option>
                 <option value="co_van_hoc_tap">Cố vấn học tập (CVHT)</option>
                 <option value="tuyen_sinh">Công tác Tuyển sinh</option>
-                <option value="cong_tac_khac">Công tác Kiêm nhiệm & ĐBCL</option>
+                <option value="cong_tac_khac">Công tác khác (Thực tập, Đồ án, PTN, ĐBCL...)</option>
               </select>
             </div>
           </div>

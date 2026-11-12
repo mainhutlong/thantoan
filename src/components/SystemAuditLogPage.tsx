@@ -20,7 +20,7 @@ export const INITIAL_AUDIT_LOGS: SystemAuditLog[] = [
   {
     id: 'log-1',
     timestamp: '10/11/2026 15:42:18',
-    userName: 'TS. Mai Như Long',
+    userName: 'Mai Như Long',
     userCode: 'TDU00128',
     ipAddress: '192.168.1.45 (Cần Thơ, VN)',
     action: 'Cập nhật hồ sơ giờ giảng',

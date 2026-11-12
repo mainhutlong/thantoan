@@ -53,7 +53,7 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
       setHoTen(editingRecord.hoTen);
       setNgaySinh(editingRecord.ngaySinh);
       setSoCCCD(editingRecord.soCCCD);
-      setNguoiThucHien(editingRecord.nguoiThucHien);
+      setNguoiThucHien(editingRecord.nguoiThucHien || '');
       setTrangThai(editingRecord.trangThai);
 
       if ('maGV' in editingRecord) {
@@ -65,10 +65,10 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
         setLoaiHoatDong(tr.loaiHoatDong || 'Giảng dạy lý thuyết & thực hành');
         setTenHocPhan(tr.tenHocPhan);
         setMaLopHocPhan(tr.maLopHocPhan);
-        setSoTinChi(tr.soTinChi);
-        setSoTietLT(tr.soTietLT);
-        setSoTietTH(tr.soTietTH);
-        setHeSoLop(tr.heSoLop);
+        setSoTinChi(tr.soTinChi ?? 0);
+        setSoTietLT(tr.soTietLT ?? 0);
+        setSoTietTH(tr.soTietTH ?? 0);
+        setHeSoLop(tr.heSoLop ?? 1.0);
         setDonGiaTiet(tr.donGiaTiet);
         setSoTaiKhoan(tr.soTaiKhoan || '');
         setNganHang(tr.nganHang || 'VietinBank CN Cần Thơ');
@@ -180,7 +180,7 @@ export const AddRecordModal: React.FC<AddRecordModalProps> = ({
                 required
                 value={hoTen}
                 onChange={(e) => setHoTen(e.target.value)}
-                placeholder="VD: TS. Mai Như Long"
+                placeholder="VD: Mai Như Long"
                 className="w-full h-8 px-2.5 border border-slate-300 rounded text-slate-800 focus:outline-none focus:border-[#005325]"
               />
             </div>

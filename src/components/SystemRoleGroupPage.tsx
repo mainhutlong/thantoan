@@ -299,7 +299,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeText: '#9333ea',
     description: 'Toàn quyền quản trị hệ thống Thanh toán giờ giảng TDU, quản lý người dùng, phân quyền group, cấu hình đơn giá và nhật ký kiểm toán.',
     members: [
-      { id: 'm1', name: 'TS. Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
+      { id: 'm1', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
       { id: 'm2', name: 'Quản trị viên Hệ thống', code: 'ADMIN01', unit: 'Phòng CNTT', email: 'admin@tdu.edu.vn' },
     ],
     disabledPermissions: [],
@@ -455,7 +455,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeText: '#b45309',
     description: 'Trưởng/Phó Khoa và Trưởng Bộ môn rà soát bảng kê giờ giảng, NCKH của giảng viên thuộc Khoa mình quản lý trước khi trình Phòng Đào tạo.',
     members: [
-      { id: 'm13', name: 'TS. Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
+      { id: 'm13', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
       { id: 'm14', name: 'PGS.TS. Trần Quốc Hùng', code: 'TDU00245', unit: 'Khoa Dược - Điều dưỡng', email: 'tqhung@tdu.edu.vn' },
     ],
     disabledPermissions: [

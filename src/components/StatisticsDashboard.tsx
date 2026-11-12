@@ -115,8 +115,8 @@ export const StatisticsDashboard: React.FC<StatisticsDashboardProps> = ({
     const count = facRecords.length;
     const gvCount = new Set(facRecords.map((r) => r.maGV)).size;
     const qc = facRecords.reduce((sum, r) => sum + r.tongTietQC, 0);
-    const lt = facRecords.reduce((sum, r) => sum + r.soTietLT, 0);
-    const th = facRecords.reduce((sum, r) => sum + r.soTietTH, 0);
+    const lt = facRecords.reduce((sum, r) => sum + (r.soTietLT || 0), 0);
+    const th = facRecords.reduce((sum, r) => sum + (r.soTietTH || 0), 0);
     const gross = facRecords.reduce((sum, r) => sum + r.tongTienThuLao, 0);
     const tax = facRecords.reduce((sum, r) => sum + r.thueTNCN, 0);
     const net = facRecords.reduce((sum, r) => sum + r.thucNhan, 0);

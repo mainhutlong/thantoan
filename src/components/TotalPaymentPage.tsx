@@ -8,19 +8,21 @@ import { ThesisScheduleReport } from './ThesisScheduleReport';
 import { AdvisorScheduleReport } from './AdvisorScheduleReport';
 import { AdmissionScheduleReport } from './AdmissionScheduleReport';
 import { OtherDutiesScheduleReport } from './OtherDutiesScheduleReport';
-import { exportTotalPaymentDataExcel } from '../utils/excelTemplateGenerator';
+import { exportTotalPaymentDataExcel, stripAcademicTitle } from '../utils/excelTemplateGenerator';
 
 interface TotalPaymentPageProps {
   records: TeachingRecord[];
   onNavigateToLecturerCheck?: (maGV: string) => void;
   onNavigateToFinance?: (maGV?: string) => void;
   onViewRecordDetail?: (record: TeachingRecord) => void;
+  currentPeriodName?: string;
 }
 
 export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
   records,
   onNavigateToLecturerCheck,
   onNavigateToFinance,
+  currentPeriodName = 'Học kỳ 1 2026-2027',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [facultyFilter, setFacultyFilter] = useState('all');
@@ -121,8 +123,10 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
         item.khaoThiQC += rec.tongTietQC;
         item.tongGioKhaoThi += rec.tongSoGioTheoCV || rec.tongTietQC || 0;
       } else if (rec.phongBanQuanLy === 'do_an') {
-        item.doAnAmount += rec.tongTienThuLao;
-        item.doAnQC += rec.tongTietQC;
+        item.congTacKhacAmount += rec.tongTienThuLao;
+        item.congTacKhacQC += rec.tongTietQC;
+        item.doAnAmount = (item.doAnAmount || 0) + rec.tongTienThuLao;
+        item.doAnQC = (item.doAnQC || 0) + rec.tongTietQC;
       } else if (rec.phongBanQuanLy === 'tuyen_sinh') {
         item.tuyenSinhAmount += rec.tongTienThuLao;
         item.tuyenSinhQC += rec.tongTietQC;
@@ -186,7 +190,7 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
         tongQC: acc.tongQC + curr.tongQC,
         daoTaoAmount: acc.daoTaoAmount + curr.daoTaoAmount,
         khaoThiAmount: acc.khaoThiAmount + curr.khaoThiAmount,
-        doAnAmount: acc.doAnAmount + curr.doAnAmount,
+        doAnAmount: (acc.doAnAmount || 0) + (curr.doAnAmount || 0),
         tuyenSinhAmount: acc.tuyenSinhAmount + curr.tuyenSinhAmount,
         nckhAmount: acc.nckhAmount + curr.nckhAmount,
         coVanHocTapAmount: acc.coVanHocTapAmount + curr.coVanHocTapAmount,
@@ -218,7 +222,7 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
 
   const handleExportExcel = () => {
     try {
-      exportTotalPaymentDataExcel(filteredSummaries, 'Học kỳ 1 2026-2027');
+      exportTotalPaymentDataExcel(filteredSummaries, currentPeriodName || 'Học kỳ 1 2026-2027');
     } catch (err: any) {
       console.error('Lỗi xuất Excel tổng hợp:', err);
       alert('Không thể xuất file Excel: ' + (err?.message || String(err)));
@@ -521,7 +525,7 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
                   <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px]">
                     <span className="font-semibold text-slate-800">
-                      Chi tiết thù lao: {selectedLecturerInline.hoTen} ({selectedLecturerInline.maGV})
+                      Chi tiết thù lao: {stripAcademicTitle(selectedLecturerInline.hoTen)} ({selectedLecturerInline.maGV})
                     </span>
                     <span className="text-slate-300">|</span>
                     <span className="text-slate-600">{selectedLecturerInline.khoaBoMon}</span>
@@ -574,7 +578,7 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2 text-[11.5px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-[11.5px]">
                   <div
                     onClick={() => setSelectedScheduleMaGV(selectedLecturerInline.maGV)}
                     className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-[#005325] hover:bg-emerald-50/40 cursor-pointer transition-colors"
@@ -592,20 +596,20 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.nckhAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
                   <div
+                    onClick={() => setSelectedAdmissionScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-orange-600 hover:bg-orange-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Tuyển sinh"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">3. Tuyển sinh ↗</div>
+                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.tuyenSinhAmount.toLocaleString('vi-VN')} đ</div>
+                  </div>
+                  <div
                     onClick={() => setSelectedExamScheduleMaGV(selectedLecturerInline.maGV)}
                     className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-600 hover:bg-blue-50/40 cursor-pointer transition-colors"
                     title="Bấm để xem Bảng thống kê Coi thi - Chấm thi - Ra đề"
                   >
-                    <div className="text-slate-400 text-[10.5px]">3. Khảo thí ↗</div>
+                    <div className="text-slate-400 text-[10.5px]">4. Khảo thí ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.khaoThiAmount.toLocaleString('vi-VN')} đ</div>
-                  </div>
-                  <div
-                    onClick={() => setSelectedThesisScheduleMaGV(selectedLecturerInline.maGV)}
-                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-600 hover:bg-amber-50/40 cursor-pointer transition-colors"
-                    title="Bấm để xem Bảng thống kê Hướng dẫn & Chấm Đồ án"
-                  >
-                    <div className="text-slate-400 text-[10.5px]">4. Đồ án / KLTN ↗</div>
-                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.doAnAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
                   <div
                     onClick={() => setSelectedAdvisorScheduleMaGV(selectedLecturerInline.maGV)}
@@ -616,20 +620,14 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.coVanHocTapAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
                   <div
-                    onClick={() => setSelectedAdmissionScheduleMaGV(selectedLecturerInline.maGV)}
-                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-orange-600 hover:bg-orange-50/40 cursor-pointer transition-colors"
-                    title="Bấm để xem Bảng thống kê Tuyển sinh"
-                  >
-                    <div className="text-slate-400 text-[10.5px]">6. Tuyển sinh ↗</div>
-                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.tuyenSinhAmount.toLocaleString('vi-VN')} đ</div>
-                  </div>
-                  <div
                     onClick={() => setSelectedOtherDutiesScheduleMaGV(selectedLecturerInline.maGV)}
                     className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/40 cursor-pointer transition-colors"
-                    title="Bấm để xem Bảng thống kê Công tác khác & ĐBCL"
+                    title="Bấm để xem Bảng thống kê Công tác khác (Đồ án, Niên luận, Thực tập, ĐBCL...)"
                   >
-                    <div className="text-slate-400 text-[10.5px]">7. Kiêm nhiệm/ĐBCL ↗</div>
-                    <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.congTacKhacAmount.toLocaleString('vi-VN')} đ</div>
+                    <div className="text-slate-400 text-[10.5px]">6. Công tác khác ↗</div>
+                    <div className="font-mono text-slate-800 mt-0.5">
+                      {((selectedLecturerInline.congTacKhacAmount || 0) + (selectedLecturerInline.doAnAmount || 0)).toLocaleString('vi-VN')} đ
+                    </div>
                   </div>
                   <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
                     <div className="text-slate-400 text-[10.5px]">Thuế TNCN 10%</div>
@@ -660,20 +658,17 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                     <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Nghiên cứu khoa học">
                       2. NCKH
                     </th>
-                    <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Coi thi, Chấm thi, Ra đề">
-                      3. Khảo thí
+                    <th className="px-2 text-right border-r border-slate-200 w-[90px]" title="Công tác tuyển sinh">
+                      3. Tuyển sinh
                     </th>
-                    <th className="px-2 text-right border-r border-slate-200 w-[95px]" title="Đồ án & Khóa luận tốt nghiệp">
-                      4. Đồ án/KLTN
+                    <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Coi thi, Chấm thi, Ra đề">
+                      4. Khảo thí
                     </th>
                     <th className="px-2 text-right border-r border-slate-200 w-[90px]" title="Cố vấn học tập">
                       5. Cố vấn HT
                     </th>
-                    <th className="px-2 text-right border-r border-slate-200 w-[90px]" title="Công tác tuyển sinh">
-                      6. Tuyển sinh
-                    </th>
-                    <th className="px-2 text-right border-r border-slate-200 w-[92px]" title="Công tác kiêm nhiệm & ĐBCL">
-                      7. Kiêm nhiệm
+                    <th className="px-2 text-right border-r border-slate-200 w-[98px]" title="Công tác khác (Đồ án, Niên luận, Thực tập, ĐBCL...)">
+                      6. Công tác khác
                     </th>
                     <th className="px-2.5 text-right border-r border-slate-200 w-[105px]">Tổng gộp</th>
                     <th className="px-2 text-right border-r border-slate-200 w-[88px]">Thuế 10%</th>
@@ -712,10 +707,12 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                           </td>
 
                           <td className="px-3 border-r border-slate-100 whitespace-nowrap">
-                            <div className="text-slate-700 font-normal">{item.hoTen}</div>
-                            <div className="text-[10.5px] text-slate-400 font-mono">
-                              {item.hocHamHocVi} · {item.soTaiKhoan ? `${item.soTaiKhoan}` : 'Chưa có STK'}
-                            </div>
+                            <div className="text-slate-700 font-normal">{stripAcademicTitle(item.hoTen)}</div>
+                            {item.soTaiKhoan && (
+                              <div className="text-[10.5px] text-slate-400 font-mono">
+                                STK: {item.soTaiKhoan}
+                              </div>
+                            )}
                           </td>
 
                           <td className="px-2.5 text-slate-600 border-r border-slate-100 whitespace-nowrap">
@@ -730,7 +727,7 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                               e.stopPropagation();
                               setSelectedScheduleMaGV(item.maGV);
                             }}
-                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-[#005325] hover:underline"
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-[#005325] hover:underline cursor-pointer"
                             title="Bấm để xem Bảng thống kê giờ giảng"
                           >
                             {item.daoTaoAmount > 0 ? `${item.daoTaoAmount.toLocaleString('vi-VN')}` : '-'}
@@ -742,13 +739,25 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                               e.stopPropagation();
                               setSelectedResearchScheduleMaGV(item.maGV);
                             }}
-                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-purple-700 hover:underline"
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-purple-700 hover:underline cursor-pointer"
                             title="Bấm để xem Bảng thống kê NCKH"
                           >
                             {item.nckhAmount > 0 ? `${item.nckhAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
-                          {/* 3. Khảo thí */}
+                          {/* 3. Tuyển sinh */}
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAdmissionScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-orange-700 hover:underline cursor-pointer"
+                            title="Bấm để xem Bảng thống kê Tư vấn Tuyển sinh & Hướng nghiệp"
+                          >
+                            {item.tuyenSinhAmount > 0 ? `${item.tuyenSinhAmount.toLocaleString('vi-VN')}` : '-'}
+                          </td>
+
+                          {/* 4. Khảo thí */}
                           <td
                             onClick={(e) => {
                               e.stopPropagation();
@@ -758,18 +767,6 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                             title="Bấm để xem Bảng thống kê Coi thi - Chấm thi - Ra đề"
                           >
                             {item.khaoThiAmount > 0 ? `${item.khaoThiAmount.toLocaleString('vi-VN')}` : '-'}
-                          </td>
-
-                          {/* 4. Đồ án / Khóa luận tốt nghiệp */}
-                          <td
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedThesisScheduleMaGV(item.maGV);
-                            }}
-                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-amber-700 hover:underline cursor-pointer"
-                            title="Bấm để xem Bảng thống kê Hướng dẫn & Chấm Đồ án"
-                          >
-                            {item.doAnAmount > 0 ? `${item.doAnAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
                           {/* 5. Cố vấn học tập */}
@@ -784,28 +781,18 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                             {item.coVanHocTapAmount > 0 ? `${item.coVanHocTapAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
-                          {/* 6. Tuyển sinh */}
-                          <td
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedAdmissionScheduleMaGV(item.maGV);
-                            }}
-                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-orange-700 hover:underline cursor-pointer"
-                            title="Bấm để xem Bảng thống kê Tư vấn Tuyển sinh & Hướng nghiệp"
-                          >
-                            {item.tuyenSinhAmount > 0 ? `${item.tuyenSinhAmount.toLocaleString('vi-VN')}` : '-'}
-                          </td>
-
-                          {/* 7. Khác (Kiêm nhiệm & ĐBCL) */}
+                          {/* 6. Công tác khác (Đồ án, Niên luận, Hướng dẫn TT, PTN, ĐBCL...) */}
                           <td
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedOtherDutiesScheduleMaGV(item.maGV);
                             }}
                             className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-emerald-700 hover:underline cursor-pointer"
-                            title="Bấm để xem Bảng thống kê Công tác khác & ĐBCL"
+                            title="Bấm để xem Bảng thống kê Công tác khác (Đồ án, Niên luận, Thực tập, ĐBCL...)"
                           >
-                            {item.congTacKhacAmount > 0 ? `${item.congTacKhacAmount.toLocaleString('vi-VN')}` : '-'}
+                            {((item.congTacKhacAmount || 0) + (item.doAnAmount || 0)) > 0
+                              ? `${((item.congTacKhacAmount || 0) + (item.doAnAmount || 0)).toLocaleString('vi-VN')}`
+                              : '-'}
                           </td>
 
                           {/* Tổng gộp */}
@@ -907,19 +894,16 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                       {grandTotals.nckhAmount.toLocaleString('vi-VN')}
                     </td>
                     <td className="px-2 text-right font-mono tabular-nums">
-                      {grandTotals.khaoThiAmount.toLocaleString('vi-VN')}
+                      {grandTotals.tuyenSinhAmount.toLocaleString('vi-VN')}
                     </td>
                     <td className="px-2 text-right font-mono tabular-nums">
-                      {grandTotals.doAnAmount.toLocaleString('vi-VN')}
+                      {grandTotals.khaoThiAmount.toLocaleString('vi-VN')}
                     </td>
                     <td className="px-2 text-right font-mono tabular-nums">
                       {grandTotals.coVanHocTapAmount.toLocaleString('vi-VN')}
                     </td>
                     <td className="px-2 text-right font-mono tabular-nums">
-                      {grandTotals.tuyenSinhAmount.toLocaleString('vi-VN')}
-                    </td>
-                    <td className="px-2 text-right font-mono tabular-nums">
-                      {grandTotals.congTacKhacAmount.toLocaleString('vi-VN')}
+                      {((grandTotals.congTacKhacAmount || 0) + (grandTotals.doAnAmount || 0)).toLocaleString('vi-VN')}
                     </td>
                     <td className="px-2.5 text-right font-mono tabular-nums">
                       {grandTotals.tongThuLao.toLocaleString('vi-VN')}

@@ -45,7 +45,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
   {
     id: 'lec-1',
     maGV: 'TDU00128',
-    hoTen: 'TS. Mai Như Long',
+    hoTen: 'Mai Như Long',
     hocHamHocVi: 'Tiến sĩ',
     khoaBoMon: 'Khoa Công nghệ thông tin',
     chucVu: 'Trưởng Bộ môn Hệ thống thông tin',
@@ -65,7 +65,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
   {
     id: 'lec-2',
     maGV: 'TDU00215',
-    hoTen: 'ThS. Nguyễn Văn Hải',
+    hoTen: 'Nguyễn Văn Hải',
     hocHamHocVi: 'Thạc sĩ',
     khoaBoMon: 'Khoa Công nghệ thông tin',
     chucVu: 'Giảng viên cơ hữu',
@@ -85,7 +85,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
   {
     id: 'lec-3',
     maGV: 'TDU00089',
-    hoTen: 'PGS.TS. Trần Thanh Dũng',
+    hoTen: 'Trần Thanh Dũng',
     hocHamHocVi: 'Phó Giáo sư, Tiến sĩ',
     khoaBoMon: 'Khoa Dược - Điều dưỡng',
     chucVu: 'Phó Trưởng Khoa Dược',
@@ -105,7 +105,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
   {
     id: 'lec-4',
     maGV: 'TDU00342',
-    hoTen: 'ThS. Lê Hoàng Nam',
+    hoTen: 'Lê Hoàng Nam',
     hocHamHocVi: 'Thạc sĩ',
     khoaBoMon: 'Khoa Kinh tế - Quản trị kinh doanh',
     chucVu: 'Giảng viên kiêm nhiệm tuyển sinh',
@@ -125,7 +125,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
   {
     id: 'lec-5',
     maGV: 'TDU00512',
-    hoTen: 'ThS. Đặng Thị Hồng Nhung',
+    hoTen: 'Đặng Thị Hồng Nhung',
     hocHamHocVi: 'Thạc sĩ',
     khoaBoMon: 'Khoa Ngoại ngữ',
     chucVu: 'Giảng viên Tiếng Anh chuyên ngành',
@@ -145,7 +145,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
   {
     id: 'lec-6',
     maGV: 'TDU00408',
-    hoTen: 'TS. Phạm Minh Tuấn',
+    hoTen: 'Phạm Minh Tuấn',
     hocHamHocVi: 'Tiến sĩ',
     khoaBoMon: 'Khoa Luật',
     chucVu: 'Giảng viên thỉnh giảng Luật Kinh tế',

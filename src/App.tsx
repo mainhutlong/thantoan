@@ -317,7 +317,7 @@ export default function App() {
       if (columnFilters.col8 && !String(item.thucNhan).includes(columnFilters.col8)) {
         return false;
       }
-      if (columnFilters.nguoiThucHien && !item.nguoiThucHien.toLowerCase().includes(columnFilters.nguoiThucHien.toLowerCase())) {
+      if (columnFilters.nguoiThucHien && !(item.nguoiThucHien || '').toLowerCase().includes(columnFilters.nguoiThucHien.toLowerCase())) {
         return false;
       }
       return true;
@@ -632,6 +632,7 @@ export default function App() {
           ) : activeSidebarItem === 'tong_thanh_toan' ? (
             <TotalPaymentPage
               records={teachingList}
+              currentPeriodName={currentPeriodName}
               onNavigateToLecturerCheck={(maGV) => {
                 setSelectedLecturerMa(maGV);
                 setActiveSidebarItem('tra_cuu_giang_vien');

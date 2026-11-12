@@ -11,7 +11,7 @@ import {
   Trash2
 } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
-import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
+import { saveWorkbookToFile, stripAcademicTitle } from '../utils/excelTemplateGenerator';
 
 export interface ThesisScheduleRow {
   id: string;
@@ -57,7 +57,7 @@ export const ThesisScheduleReport: React.FC<ThesisScheduleReportProps> = ({
   const firstRec = lecturerRecords[0] || ({} as Partial<TeachingRecord>);
 
   const [donVi, setDonVi] = useState(firstRec.khoaBoMon || 'Khoa Công nghệ thông tin');
-  const [hoTen, setHoTen] = useState(firstRec.hoTen || 'TS. Mai Như Long');
+  const [hoTen, setHoTen] = useState(stripAcademicTitle(firstRec.hoTen || '') || 'Mai Như Long');
   const [chucDanh, setChucDanh] = useState(() => {
     const hh = firstRec.hocHamHocVi || '';
     if (hh.includes('GS')) return 'GIÁO SƯ';
@@ -73,7 +73,7 @@ export const ThesisScheduleReport: React.FC<ThesisScheduleReportProps> = ({
   useEffect(() => {
     if (firstRec.hoTen) {
       setDonVi(firstRec.khoaBoMon || 'Khoa Công nghệ thông tin');
-      setHoTen(firstRec.hoTen);
+      setHoTen(stripAcademicTitle(firstRec.hoTen));
     }
   }, [firstRec]);
 

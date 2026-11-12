@@ -26,7 +26,7 @@ export const INITIAL_SYSTEM_USERS: SystemUserProfile[] = [
   {
     id: 'user-1',
     stt: 1,
-    hoTen: 'TS. Mai Như Long',
+    hoTen: 'Mai Như Long',
     chucVu: 'Trưởng Bộ môn Hệ thống thông tin',
     donVi: 'Khoa Công nghệ thông tin',
     maNhanSu: 'TDU00128',

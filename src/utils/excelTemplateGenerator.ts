@@ -1,5 +1,18 @@
 import XLSX from 'xlsx-js-style';
 import { DepartmentUnit, TeachingRecord, LecturerPaymentSummary } from '../types/index';
+import { INITIAL_JOB_DUTIES } from '../data/jobDutyCatalog';
+
+/**
+ * Loại bỏ học hàm / học vị / chức danh viết tắt phía trước họ tên giảng viên
+ * Ví dụ: 'TS. Mai Như Long' -> 'Mai Như Long', 'PGS.TS. Trần Thanh Dũng' -> 'Trần Thanh Dũng'
+ */
+export const stripAcademicTitle = (name: string): string => {
+  if (!name) return '';
+  return name
+    .replace(/^(PGS\.TS\.|GS\.TS\.|TS\.|ThS\.|PGS\.|GS\.|BSCKII\.|BSCKI\.|BS\.|CN\.)\s*/i, '')
+    .replace(/^(PGS\.TS|GS\.TS|TS|ThS|PGS|GS|BSCKII|BSCKI|BS|CN)\s+/i, '')
+    .trim();
+};
 
 /**
  * Biểu mẫu Excel chuẩn hóa cho Trường Đại học Tây Đô (TDU)
@@ -277,6 +290,7 @@ export const saveWorkbookToFile = (wb: XLSX.WorkBook, fileName: string) => {
 };
 
 export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPeriodName: string = 'Học kỳ 1 2026-2027') => {
+  const periodLabel = currentPeriodName || 'Học kỳ 1 2026-2027';
   const wb = XLSX.utils.book_new();
 
   if (dept === 'khao_thi') {
@@ -298,13 +312,13 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00128', 'TS. Mai Như Long', '18/09/1982', '092082001245', 'TS', 'Khoa Công nghệ thông tin', 'Hệ thống thông tin doanh nghiệp', 4, 120, 2, currentPeriodName, 'Coi thi ca sáng + Chấm thi tự luận'],
-      [2, 'TDU00215', 'ThS. Nguyễn Văn Hải', '10/05/1987', '092087003412', 'ThS', 'Khoa Công nghệ thông tin', 'Lập trình Web nâng cao', 6, 95, 1, currentPeriodName, 'Coi thi học kỳ tập trung'],
-      [3, 'TDU00089', 'PGS.TS. Trần Thanh Dũng', '12/03/1975', '092075001188', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Dược lý học đại cương', 3, 150, 2, currentPeriodName, 'Ra đề tự luận + chấm thi'],
+      [1, 'TDU00128', 'Mai Như Long', '18/09/1982', '092082001245', 'TS', 'Khoa Công nghệ thông tin', 'Hệ thống thông tin doanh nghiệp', 4, 120, 2, periodLabel, 'Coi thi ca sáng + Chấm thi tự luận'],
+      [2, 'TDU00215', 'Nguyễn Văn Hải', '10/05/1987', '092087003412', 'ThS', 'Khoa Công nghệ thông tin', 'Lập trình Web nâng cao', 6, 95, 1, periodLabel, 'Coi thi học kỳ tập trung'],
+      [3, 'TDU00089', 'Trần Thanh Dũng', '12/03/1975', '092075001188', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Dược lý học đại cương', 3, 150, 2, periodLabel, 'Ra đề tự luận + chấm thi'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM CÔNG TÁC RA ĐỀ, COI THI & CHẤM THI (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM CÔNG TÁC RA ĐỀ, COI THI & CHẤM THI (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
@@ -327,15 +341,15 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00089', 'PGS.TS. Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Chủ nhiệm đề tài NCKH cấp Bộ: "Khảo sát và chiết xuất hoạt chất thảo dược"', 'Đề tài NCKH cấp Bộ', 'NCKH_DUOC_01', 220, 'Hoàn thành', 'Chủ nhiệm đề tài (Nghiệm thu Đạt)'],
-      [2, 'TDU00089', 'PGS.TS. Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Bài báo khoa học ISI/Scopus: "Bioactive compounds from Mekong Delta medicinal plants"', 'Bài báo quốc tế ISI/Scopus (Q1)', 'ISSN 1872-2040', 180, 'Hoàn thành', 'Tác giả chính (First Author)'],
-      [3, 'TDU00128', 'TS. Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Bài báo khoa học quốc tế: "AI and Cloud Architectures in Modern University Management"', 'Bài báo quốc tế ISI/Scopus (Q1)', 'NCKH_SCOPUS_01', 180, 'Hoàn thành', 'Tác giả chính (Q1)'],
-      [4, 'TDU00128', 'TS. Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Hướng dẫn 02 Học viên cao học bảo vệ thành công Luận văn Thạc sĩ ngành HTTT', 'Hướng dẫn luận văn Thạc sĩ', 'SDH_CH_HTTT12', 40, 'Hoàn thành', 'Cán bộ hướng dẫn chính'],
-      [5, 'TDU00318', 'ThS. Nguyễn Thị Cẩm Tú', 'ThS', 'Khoa Quản trị kinh doanh', 'Bài báo: "Nghiên cứu các yếu tố ảnh hưởng đến quyết định mua sắm trực tuyến"', 'Bài báo tạp chí chuyên ngành', 'NCKH_KTE_02', 60, 'Hoàn thành', 'Tác giả'],
+      [1, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Chủ nhiệm đề tài NCKH cấp Bộ: "Khảo sát và chiết xuất hoạt chất thảo dược"', 'Đề tài NCKH cấp Bộ', 'NCKH_DUOC_01', 220, 'Hoàn thành', 'Chủ nhiệm đề tài (Nghiệm thu Đạt)'],
+      [2, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Bài báo khoa học ISI/Scopus: "Bioactive compounds from Mekong Delta medicinal plants"', 'Bài báo quốc tế ISI/Scopus (Q1)', 'ISSN 1872-2040', 180, 'Hoàn thành', 'Tác giả chính (First Author)'],
+      [3, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Bài báo khoa học quốc tế: "AI and Cloud Architectures in Modern University Management"', 'Bài báo quốc tế ISI/Scopus (Q1)', 'NCKH_SCOPUS_01', 180, 'Hoàn thành', 'Tác giả chính (Q1)'],
+      [4, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Hướng dẫn 02 Học viên cao học bảo vệ thành công Luận văn Thạc sĩ ngành HTTT', 'Hướng dẫn luận văn Thạc sĩ', 'SDH_CH_HTTT12', 40, 'Hoàn thành', 'Cán bộ hướng dẫn chính'],
+      [5, 'TDU00318', 'Nguyễn Thị Cẩm Tú', 'ThS', 'Khoa Quản trị kinh doanh', 'Bài báo: "Nghiên cứu các yếu tố ảnh hưởng đến quyết định mua sắm trực tuyến"', 'Bài báo tạp chí chuyên ngành', 'NCKH_KTE_02', 60, 'Hoàn thành', 'Tác giả'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM HOẠT ĐỘNG NGHIÊN CỨU KHOA HỌC & ĐỀ TÀI (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM HOẠT ĐỘNG NGHIÊN CỨU KHOA HỌC & ĐỀ TÀI (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
@@ -359,13 +373,13 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00128', 'TS. Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Hướng dẫn Khóa luận tốt nghiệp đại học ngành HTTT', 'KLTN_HTTT_K14', 2, 0, 'Hướng dẫn chính', 24, '12 giờ quy đổi / 1 SV'],
-      [2, 'TDU00128', 'TS. Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Phản biện Khóa luận tốt nghiệp đại học K14', 'PB_KLTN_K14', 0, 3, 'Cán bộ phản biện', 9, '3 giờ quy đổi / 1 SV'],
-      [3, 'TDU00089', 'PGS.TS. Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Chủ tịch Hội đồng khóa luận tốt nghiệp Dược sĩ', 'HD_KLTN_DUOC', 0, 4, 'Chủ tịch hội đồng', 6, '1.5 giờ quy đổi / 1 SV'],
+      [1, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Hướng dẫn Khóa luận tốt nghiệp đại học ngành HTTT', 'KLTN_HTTT_K14', 2, 0, 'Hướng dẫn chính', 24, '12 giờ quy đổi / 1 SV'],
+      [2, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Phản biện Khóa luận tốt nghiệp đại học K14', 'PB_KLTN_K14', 0, 3, 'Cán bộ phản biện', 9, '3 giờ quy đổi / 1 SV'],
+      [3, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Chủ tịch Hội đồng khóa luận tốt nghiệp Dược sĩ', 'HD_KLTN_DUOC', 0, 4, 'Chủ tịch hội đồng', 6, '1.5 giờ quy đổi / 1 SV'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM HƯỚNG DẪN & CHẤM ĐỒ ÁN, KHÓA LUẬN TỐT NGHIỆP (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM HƯỚNG DẪN & CHẤM ĐỒ ÁN, KHÓA LUẬN TỐT NGHIỆP (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
@@ -388,12 +402,12 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00128', 'TS. Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'CNTT14A', 65, currentPeriodName, 20, 180000, 'Theo Quyết định phân công Cố vấn học tập TDU'],
-      [2, 'TDU00318', 'ThS. Nguyễn Thị Cẩm Tú', 'ThS', 'Khoa Quản trị kinh doanh', 'QTKD15B', 55, currentPeriodName, 20, 150000, 'Theo Quyết định phân công Cố vấn học tập TDU'],
+      [1, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'CNTT14A', 65, periodLabel, 20, 180000, 'Theo Quyết định phân công Cố vấn học tập TDU'],
+      [2, 'TDU00318', 'Nguyễn Thị Cẩm Tú', 'ThS', 'Khoa Quản trị kinh doanh', 'QTKD15B', 55, periodLabel, 20, 150000, 'Theo Quyết định phân công Cố vấn học tập TDU'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM CÔNG TÁC CỐ VẤN HỌC TẬP (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM CÔNG TÁC CỐ VẤN HỌC TẬP (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
@@ -417,43 +431,80 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00318', 'ThS. Nguyễn Thị Cẩm Tú', '22/11/1988', '092088005671', 'ThS', 'Khoa Quản trị kinh doanh', 'Tư vấn hướng nghiệp tuyển sinh ĐBSCL', 5, 'Cụm trường THPT Hậu Giang & Sóc Trăng', currentPeriodName, 'Tư vấn trực tiếp tại các trường THPT'],
-      [2, 'TDU00215', 'ThS. Nguyễn Văn Hải', '10/05/1987', '092087003412', 'ThS', 'Khoa Công nghệ thông tin', 'Trực gian hàng tư vấn Ngày hội tuyển sinh', 3, 'Khuôn viên Trường ĐH Cần Thơ & ĐH Tây Đô', currentPeriodName, 'Tư vấn khối ngành Kỹ thuật - Công nghệ'],
+      [1, 'TDU00318', 'Nguyễn Thị Cẩm Tú', '22/11/1988', '092088005671', 'ThS', 'Khoa Quản trị kinh doanh', 'Tư vấn hướng nghiệp tuyển sinh ĐBSCL', 5, 'Cụm trường THPT Hậu Giang & Sóc Trăng', periodLabel, 'Tư vấn trực tiếp tại các trường THPT'],
+      [2, 'TDU00215', 'Nguyễn Văn Hải', '10/05/1987', '092087003412', 'ThS', 'Khoa Công nghệ thông tin', 'Trực gian hàng tư vấn Ngày hội tuyển sinh', 3, 'Khuôn viên Trường ĐH Cần Thơ & ĐH Tây Đô', periodLabel, 'Tư vấn khối ngành Kỹ thuật - Công nghệ'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM CÔNG TÁC TƯ VẤN TUYỂN SINH & HƯỚNG NGHIỆP (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM CÔNG TÁC TƯ VẤN TUYỂN SINH & HƯỚNG NGHIỆP (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Tuyen_Sinh');
     saveWorkbookToFile(wb, 'Mau_Tuyen_Sinh_Truyen_Thong_TDU_2026_2027.xlsx');
   } else if (dept === 'cong_tac_khac') {
-    // 6. CÔNG TÁC KHÁC (40 mục)
+    // 6. CÔNG TÁC KHÁC (HƯỚNG DẪN THỰC TẬP, ĐỒ ÁN MÔN HỌC, NIÊN LUẬN, CHUYÊN ĐỀ, PTN, ĐBCL...)
     const columns: TemplateColumn[] = [
       { header: 'STT', key: 'stt', width: 6, align: 'center' },
       { header: 'Mã giảng viên (*)', key: 'ma_giang_vien', width: 15, isYellow: true, align: 'center' },
       { header: 'Họ tên giảng viên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
       { header: 'Học vị (*)', key: 'hoc_vi', width: 12, isYellow: true, align: 'center' },
       { header: 'Khoa / Bộ môn (*)', key: 'khoa_bo_mon', width: 26, isYellow: true, align: 'left' },
-      { header: 'Nhiệm vụ công tác kiêm nhiệm (*)', key: 'nhiem_vu_kiem_nhiem', width: 42, isYellow: true, align: 'left' },
+      { header: 'Mã công việc (*)', key: 'ma_cv', width: 16, isYellow: true, align: 'center' },
+      { header: 'Tên nhiệm vụ / Công tác (*)', key: 'ten_nhiem_vu', width: 44, isYellow: true, align: 'left' },
+      { header: 'Số lượng (SV/Lượt/Ngày) (*)', key: 'so_luong', width: 22, isYellow: true, align: 'center' },
+      { header: 'Đơn vị tính / Định mức', key: 'dieu_kien', width: 22, align: 'center' },
       { header: 'Thời gian / Căn cứ phân công', key: 'thoi_gian_phan_cong', width: 30, align: 'left' },
-      { header: 'Số tiết QC quy đổi (*)', key: 'so_tiet_qc_quy_doi', width: 20, isYellow: true, align: 'center' },
+      { header: 'Số tiết QC quy đổi (*)', key: 'so_tiet_qc_quy_doi', width: 20, isYellow: true, align: 'right' },
       { header: 'Ghi chú', key: 'ghi_chu', width: 32, align: 'left' },
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00215', 'ThS. Nguyễn Văn Hải', 'ThS', 'Khoa Công nghệ thông tin', 'Quản lý phòng thí nghiệm máy tính Lab 03', 'Cả năm học (QĐ số 118/QĐ-ĐHTĐ)', 40, '40 giờ quy đổi / 1 năm'],
-      [2, 'TDU00128', 'TS. Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Thành viên Tổ đảm bảo chất lượng Khoa CNTT', 'Cả năm học', 18, '18 giờ quy chuẩn / 1 năm'],
-      [3, 'TDU00089', 'PGS.TS. Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Chủ tịch Hội đồng Đảm bảo chất lượng Trường', 'Cả năm học (QĐ số 45/QĐ-ĐHTĐ)', 20, '20 giờ quy chuẩn / 1 năm'],
+      [1, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'HDTT', 'Hướng dẫn thực tập tốt nghiệp / thực tế', 15, '1 ngày / 1 GV', 'Đợt 1 (15 ngày)', 30, '2 giờ quy đổi / 1 ngày'],
+      [2, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'DAC1', 'Đồ án môn học - Chấm 1', 6, '3 sinh viên', periodLabel, 6, '3 giờ / 3 SV'],
+      [3, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'NLC1', 'Niên luận ngành - Chấm 1', 2, '1 sinh viên', periodLabel, 8, '4 giờ / 1 SV'],
+      [4, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'HDDA', 'Đồ án, khóa luận tốt nghiệp - Hướng dẫn', 2, '1 sinh viên', periodLabel, 24, '12 giờ / 1 SV'],
+      [5, 'TDU00215', 'Nguyễn Văn Hải', 'ThS', 'Khoa Công nghệ thông tin', 'QPTN', 'Quản lý phòng thí nghiệm máy tính Lab 03', 1, '1 năm', 'Cả năm học (QĐ số 118/QĐ-ĐHTĐ)', 40, '40 giờ quy đổi / 1 năm'],
+      [6, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'CTDG', 'Chủ tịch Hội đồng đánh giá ĐBCL', 1, '1 hội đồng', 'Cả năm học (QĐ số 45/QĐ-ĐHTĐ)', 20, '20 giờ quy chuẩn / 1 năm'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM NHIỆM VỤ CÔNG TÁC KIÊM NHIỆM & KHÁC (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM CÔNG TÁC KHÁC & QUY ĐỔI GIỜ CHUẨN (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
-    XLSX.utils.book_append_sheet(wb, ws, 'Mau_Cong_Tac_Khac');
+    XLSX.utils.book_append_sheet(wb, ws, 'Mau_Kekhai_Cong_Tac_Khac');
+
+    // Thêm Sheet 2: DanhMuc_TraCuu_MaCV để đơn vị tiện tra cứu 26 mã công việc chuẩn
+    const catalogColumns: TemplateColumn[] = [
+      { header: 'STT', key: 'stt', width: 6, align: 'center' },
+      { header: 'Mã công việc (*)', key: 'ma_cv', width: 16, isYellow: true, align: 'center' },
+      { header: 'Tên nhiệm vụ / Hoạt động', key: 'ten_cv', width: 45, align: 'left' },
+      { header: 'Nhóm công tác', key: 'nhom_cv', width: 22, align: 'center' },
+      { header: 'Định mức / Điều kiện tính', key: 'dieu_kien', width: 22, align: 'center' },
+      { header: 'Hệ số giờ quy đổi', key: 'he_so_gio', width: 18, isYellow: true, align: 'right' },
+      { header: 'Đơn vị quản lý', key: 'don_vi_quan_ly', width: 20, align: 'center' },
+      { header: 'Ghi chú áp dụng', key: 'ghi_chu', width: 35, align: 'left' },
+    ];
+
+    const catalogRows = INITIAL_JOB_DUTIES.map((item, idx) => [
+      idx + 1,
+      item.maCV,
+      item.tenCV,
+      item.nhomCV,
+      item.dieuKien,
+      item.heSoQuyDoi,
+      item.donViQuanLy === 'khoa' ? 'Khoa chuyên môn' : item.donViQuanLy === 'dbcl' ? 'Ban ĐBCL' : 'Phòng Thí nghiệm',
+      item.ghiChu || '',
+    ]);
+
+    const wsCatalog = createStyledWorksheet(
+      'BẢNG TRA CỨU MÃ CÔNG VIỆC & HỆ SỐ QUY ĐỔI GIỜ CHUẨN - TRƯỜNG ĐH TÂY ĐÔ',
+      catalogColumns,
+      catalogRows
+    );
+    XLSX.utils.book_append_sheet(wb, wsCatalog, 'DanhMuc_TraCuu_MaCV');
+
     saveWorkbookToFile(wb, 'Mau_Cong_Tac_Khac_TDU_2026_2027.xlsx');
   } else {
     // 7. DEFAULT: PHÒNG ĐÀO TẠO - THANH TOÁN GIỜ GIẢNG
@@ -479,15 +530,15 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     ];
 
     const sampleRows: any[][] = [
-      [1, 'TDU00128', 'TS. Mai Như Long', 'Phát triển Hệ thống Thông tin Doanh nghiệp', 'CNTT14A', 65, 1, 45, 30, 1.25, 1.0, 'Lý thuyết', 'TS', 'Khoa Công nghệ thông tin', '102874639912', 'VietinBank CN Cần Thơ', currentPeriodName, 'Giảng dạy lý thuyết chính khóa'],
-      [2, 'TDU00128', 'TS. Mai Như Long', 'Phát triển Hệ thống Thông tin Doanh nghiệp (Lab)', 'CNTT14A_LAB', 65, 2, 30, 30, 1.35, 1.1, 'Thực hành', 'TS', 'Khoa Công nghệ thông tin', '102874639912', 'VietinBank CN Cần Thơ', currentPeriodName, 'Thực hành phòng máy 2 nhóm'],
-      [3, 'TDU00089', 'PGS.TS. Trần Thanh Dũng', 'Dược lý học đại cương', 'DUOC12A', 80, 1, 60, 45, 1.30, 1.0, 'Lý thuyết', 'PGS.TS', 'Khoa Dược - Điều dưỡng', '101994827110', 'Vietcombank CN Cần Thơ', currentPeriodName, 'Giảng dạy chính khóa'],
-      [4, 'TDU00318', 'ThS. Nguyễn Thị Cẩm Tú', 'Quản trị Chiến lược Doanh nghiệp', 'QTKD15B', 55, 1, 45, 45, 1.15, 1.0, 'Lý thuyết', 'ThS', 'Khoa Quản trị kinh doanh', '190334812903', 'Techcombank CN Cần Thơ', currentPeriodName, 'Giảng dạy chính khóa'],
-      [5, 'TDU00215', 'ThS. Nguyễn Văn Hải', 'Lập trình Ứng dụng Di động Flutter', 'CNTT15A', 50, 1, 45, 45, 1.15, 1.0, 'Lý thuyết', 'ThS', 'Khoa Công nghệ thông tin', '103847291048', 'BIDV CN Tây Đô', currentPeriodName, 'Giảng dạy chính khóa'],
+      [1, 'TDU00128', 'Mai Như Long', 'Phát triển Hệ thống Thông tin Doanh nghiệp', 'CNTT14A', 65, 1, 45, 30, 1.25, 1.0, 'Lý thuyết', 'TS', 'Khoa Công nghệ thông tin', '102874639912', 'VietinBank CN Cần Thơ', periodLabel, 'Giảng dạy lý thuyết chính khóa'],
+      [2, 'TDU00128', 'Mai Như Long', 'Phát triển Hệ thống Thông tin Doanh nghiệp (Lab)', 'CNTT14A_LAB', 65, 2, 30, 30, 1.35, 1.1, 'Thực hành', 'TS', 'Khoa Công nghệ thông tin', '102874639912', 'VietinBank CN Cần Thơ', periodLabel, 'Thực hành phòng máy 2 nhóm'],
+      [3, 'TDU00089', 'Trần Thanh Dũng', 'Dược lý học đại cương', 'DUOC12A', 80, 1, 60, 45, 1.30, 1.0, 'Lý thuyết', 'PGS.TS', 'Khoa Dược - Điều dưỡng', '101994827110', 'Vietcombank CN Cần Thơ', periodLabel, 'Giảng dạy chính khóa'],
+      [4, 'TDU00318', 'Nguyễn Thị Cẩm Tú', 'Quản trị Chiến lược Doanh nghiệp', 'QTKD15B', 55, 1, 45, 45, 1.15, 1.0, 'Lý thuyết', 'ThS', 'Khoa Quản trị kinh doanh', '190334812903', 'Techcombank CN Cần Thơ', periodLabel, 'Giảng dạy chính khóa'],
+      [5, 'TDU00215', 'Nguyễn Văn Hải', 'Lập trình Ứng dụng Di động Flutter', 'CNTT15A', 50, 1, 45, 45, 1.15, 1.0, 'Lý thuyết', 'ThS', 'Khoa Công nghệ thông tin', '103847291048', 'BIDV CN Tây Đô', periodLabel, 'Giảng dạy chính khóa'],
     ];
 
     const ws = createStyledWorksheet(
-      `MẪU THÊM KHỐI LƯỢNG GIẢNG DẠY & THÙ LAO (${currentPeriodName.toUpperCase()})`,
+      `MẪU THÊM KHỐI LƯỢNG GIẢNG DẠY & THÙ LAO (${periodLabel.toUpperCase()})`,
       columns,
       sampleRows
     );
@@ -510,6 +561,7 @@ export const exportDepartmentDataExcel = (
   rawRecords: TeachingRecord[],
   currentPeriodName: string = 'Học kỳ 1 2026-2027'
 ) => {
+  const periodLabel = currentPeriodName || 'Học kỳ 1 2026-2027';
   const records = Array.isArray(rawRecords) ? rawRecords : [];
   const wb = XLSX.utils.book_new();
 
@@ -540,7 +592,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.ngaySinh || '—',
       r.soCCCD || '—',
       r.hocHamHocVi || '',
@@ -556,7 +608,7 @@ export const exportDepartmentDataExcel = (
       Number(r.thucNhan) || 0,
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.ghiChu || r.ghiChuThongTin || '',
     ]);
 
@@ -576,7 +628,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO KHẢO THÍ & ĐBCL (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO KHẢO THÍ & ĐBCL (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -609,7 +661,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.hocHamHocVi || '',
       r.khoaBoMon || '',
       r.tenHocPhan || r.noiDungNCKH || '—',
@@ -624,7 +676,7 @@ export const exportDepartmentDataExcel = (
       Number(r.thucNhan) || 0,
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.ghiChu || 'Chủ nhiệm / Tác giả',
     ]);
 
@@ -641,7 +693,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO NGHIÊN CỨU KHOA HỌC (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO NGHIÊN CỨU KHOA HỌC (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -673,7 +725,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.hocHamHocVi || '',
       r.khoaBoMon || '',
       r.tenHocPhan || 'Hướng dẫn KLTN / Đồ án',
@@ -706,7 +758,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO ĐỒ ÁN & KHÓA LUẬN (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO ĐỒ ÁN & KHÓA LUẬN (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -737,7 +789,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.hocHamHocVi || '',
       r.khoaBoMon || '',
       r.lopCVHT || r.maLopHocPhan || '—',
@@ -750,7 +802,7 @@ export const exportDepartmentDataExcel = (
       Number(r.thucNhan) || 0,
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.ghiChu || 'Theo Quyết định phân công Cố vấn học tập TDU',
     ]);
 
@@ -768,7 +820,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO CỐ VẤN HỌC TẬP (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO CỐ VẤN HỌC TẬP (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -801,7 +853,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.ngaySinh || '—',
       r.soCCCD || '—',
       r.hocHamHocVi || '',
@@ -816,7 +868,7 @@ export const exportDepartmentDataExcel = (
       Number(r.thucNhan) || 0,
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.ghiChu || '',
     ]);
 
@@ -834,7 +886,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO CÔNG TÁC TUYỂN SINH (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO CÔNG TÁC TUYỂN SINH (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -848,7 +900,9 @@ export const exportDepartmentDataExcel = (
       { header: 'Họ tên giảng viên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
       { header: 'Học vị (*)', key: 'hoc_vi', width: 12, isYellow: true, align: 'center' },
       { header: 'Khoa / Bộ môn (*)', key: 'khoa_bo_mon', width: 26, isYellow: true, align: 'left' },
-      { header: 'Nhiệm vụ công tác kiêm nhiệm (*)', key: 'nhiem_vu_kiem_nhiem', width: 42, isYellow: true, align: 'left' },
+      { header: 'Mã công việc (*)', key: 'ma_cv', width: 16, isYellow: true, align: 'center' },
+      { header: 'Tên nhiệm vụ / Hoạt động (*)', key: 'ten_nhiem_vu', width: 44, isYellow: true, align: 'left' },
+      { header: 'Số lượng (SV/Lượt/Ngày)', key: 'so_luong', width: 20, align: 'center' },
       { header: 'Thời gian / Căn cứ phân công', key: 'thoi_gian_phan_cong', width: 30, align: 'left' },
       { header: 'Số tiết QC quy đổi (*)', key: 'so_tiet_qc_quy_doi', width: 20, isYellow: true, align: 'right' },
       { header: 'Đơn giá tiết (VNĐ)', key: 'don_gia_tiet', width: 18, align: 'right' },
@@ -864,10 +918,12 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.hocHamHocVi || '',
       r.khoaBoMon || '',
-      r.tenHocPhan || r.nhiemVuKiemNhiem || 'Kiêm nhiệm & ĐBCL',
+      r.maCV || r.maLopHocPhan || 'HDTT',
+      r.tenHocPhan || r.tenCongViec || r.nhiemVuKiemNhiem || 'Công tác khác & ĐBCL',
+      Number(r.soLuong || r.soSinhVien || r.soDeTaiHuongDan) || 1,
       r.ghiChu || 'Cả năm học',
       Number(r.tongTietQC) || 0,
       Number(r.donGiaTiet) || 150000,
@@ -876,10 +932,11 @@ export const exportDepartmentDataExcel = (
       Number(r.thucNhan) || 0,
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.ghiChu || '',
     ]);
 
+    const sumSL = records.reduce((s, r) => s + (Number(r.soLuong || r.soSinhVien || r.soDeTaiHuongDan) || 1), 0);
     const sumQC = records.reduce((s, r) => s + (Number(r.tongTietQC) || 0), 0);
     const sumThuLao = records.reduce((s, r) => s + (Number(r.tongTienThuLao) || 0), 0);
     const sumThue = records.reduce((s, r) => s + (Number(r.thueTNCN) || 0), 0);
@@ -888,18 +945,18 @@ export const exportDepartmentDataExcel = (
     const summaryRow = [
       `TỔNG CỘNG (${records.length} nhiệm vụ)`,
       '', '', '', '', '', '',
-      sumQC, '', sumThuLao, sumThue, sumThucNhan,
+      sumSL, '', sumQC, '', sumThuLao, sumThue, sumThucNhan,
       '', '', '', ''
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO KIÊM NHIỆM & CÔNG TÁC KHÁC (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO CÔNG TÁC KHÁC (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
     );
     XLSX.utils.book_append_sheet(wb, ws, 'Bang_Ke_Cong_Tac_Khac');
-    saveWorkbookToFile(wb, `Bang_Ke_Chi_Tiet_Cong_Tac_Kiem_Nhiem_DBCL_TDU_2026_2027.xlsx`);
+    saveWorkbookToFile(wb, `Bang_Ke_Chi_Tiet_Cong_Tac_Khac_TDU_2026_2027.xlsx`);
   } else if (dept === 'dao_tao') {
     const columns: TemplateColumn[] = [
       { header: 'STT', key: 'stt', width: 6, align: 'center' },
@@ -931,7 +988,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.tenHocPhan || '',
       r.maLopHocPhan || '',
       r.phanLoaiGiangDay === 'thuc_hanh_thuc_tap' ? 'Thực hành' : 'Lý thuyết',
@@ -950,7 +1007,7 @@ export const exportDepartmentDataExcel = (
       r.khoaBoMon || '',
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.trangThai === 'hop_le' ? 'Hợp lệ' : r.trangThai === 'da_so_hoa' ? 'Đã duyệt chi' : r.trangThai === 'trung_lap' ? 'Trùng lịch' : 'Cần đối soát',
       r.ghiChu || '',
     ]);
@@ -970,7 +1027,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO GIỜ GIẢNG (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ CHI TIẾT THANH TOÁN THÙ LAO GIỜ GIẢNG (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -1002,7 +1059,7 @@ export const exportDepartmentDataExcel = (
     const dataRows = records.map((r, idx) => [
       idx + 1,
       r.maGV || '',
-      r.hoTen || '',
+      stripAcademicTitle(r.hoTen || ''),
       r.hocHamHocVi || '',
       r.khoaBoMon || '',
       r.phongBanQuanLy === 'dao_tao' ? 'Phòng Đào tạo' : r.phongBanQuanLy === 'khao_thi' ? 'TT Khảo thí' : r.phongBanQuanLy === 'tuyen_sinh' ? 'Phòng Tuyển sinh' : r.phongBanQuanLy === 'nckh' ? 'Phòng QL NCKH' : r.phongBanQuanLy === 'do_an' ? 'Bộ phận Đồ án' : r.phongBanQuanLy === 'co_van_hoc_tap' ? 'Phòng CTSV' : 'Ban Thanh tra',
@@ -1015,7 +1072,7 @@ export const exportDepartmentDataExcel = (
       Number(r.thucNhan) || 0,
       r.soTaiKhoan || '—',
       r.nganHang || '—',
-      r.dotThanhToan || currentPeriodName,
+      r.dotThanhToan || periodLabel,
       r.trangThai === 'hop_le' ? 'Hợp lệ' : r.trangThai === 'da_so_hoa' ? 'Đã duyệt chi' : r.trangThai === 'trung_lap' ? 'Trùng lịch' : 'Cần đối soát',
     ]);
 
@@ -1032,7 +1089,7 @@ export const exportDepartmentDataExcel = (
     ];
 
     const ws = createStyledWorksheet(
-      `BẢNG KÊ TỔNG HỢP THANH TOÁN THÙ LAO TOÀN TRƯỜNG (${currentPeriodName.toUpperCase()})`,
+      `BẢNG KÊ TỔNG HỢP THANH TOÁN THÙ LAO TOÀN TRƯỜNG (${periodLabel.toUpperCase()})`,
       columns,
       dataRows.length > 0 ? dataRows : [['Chưa có bản ghi nào']],
       dataRows.length > 0 ? summaryRow : undefined
@@ -1043,12 +1100,14 @@ export const exportDepartmentDataExcel = (
 };
 
 /**
- * XUẤT FILE EXCEL BẢNG TỔNG HỢP THANH TOÁN 7 CHUYÊN MỤC TOÀN TRƯỜNG:
+ * XUẤT FILE EXCEL BẢNG TỔNG HỢP THANH TOÁN 6 CHUYÊN MỤC TOÀN TRƯỜNG:
+ * 1. Giờ giảng | 2. NCKH | 3. Tuyển sinh | 4. Coi/chấm/ra đề thi | 5. Cố vấn HT | 6. Công tác khác
  */
 export const exportTotalPaymentDataExcel = (
   rawSummaries: LecturerPaymentSummary[],
   currentPeriodName: string = 'Học kỳ 1 2026-2027'
 ) => {
+  const periodLabel = currentPeriodName || 'Học kỳ 1 2026-2027';
   const summaries = Array.isArray(rawSummaries) ? rawSummaries : [];
   const wb = XLSX.utils.book_new();
 
@@ -1063,11 +1122,10 @@ export const exportTotalPaymentDataExcel = (
     { header: 'Ngân hàng', key: 'ngan_hang', width: 22, align: 'left' },
     { header: '1. Giờ giảng (VNĐ)', key: 'gio_giang_vnd', width: 18, align: 'right' },
     { header: '2. NCKH (VNĐ)', key: 'nckh_vnd', width: 18, align: 'right' },
-    { header: '3. Coi/chấm thi (VNĐ)', key: 'khao_thi_vnd', width: 18, align: 'right' },
-    { header: '4. Đồ án/KLTN (VNĐ)', key: 'do_an_vnd', width: 18, align: 'right' },
+    { header: '3. Tuyển sinh (VNĐ)', key: 'tuyen_sinh_vnd', width: 18, align: 'right' },
+    { header: '4. Coi/chấm/ra đề (VNĐ)', key: 'khao_thi_vnd', width: 18, align: 'right' },
     { header: '5. Cố vấn HT (VNĐ)', key: 'co_van_vnd', width: 18, align: 'right' },
-    { header: '6. Tuyển sinh (VNĐ)', key: 'tuyen_sinh_vnd', width: 18, align: 'right' },
-    { header: '7. Kiêm nhiệm & ĐBCL (VNĐ)', key: 'kiem_nhiem_vnd', width: 18, align: 'right' },
+    { header: '6. Công tác khác (VNĐ)', key: 'cong_tac_khac_vnd', width: 20, align: 'right' },
     { header: 'Tổng tiết QC (*)', key: 'tong_tiet_qc', width: 16, isYellow: true, align: 'right' },
     { header: 'Tổng thù lao gộp (VNĐ) (*)', key: 'tong_thu_lao_gop', width: 22, isYellow: true, align: 'right' },
     { header: 'Thuế TNCN 10% (VNĐ)', key: 'thue_tncn_10', width: 18, align: 'right' },
@@ -1079,7 +1137,7 @@ export const exportTotalPaymentDataExcel = (
   const dataRows = summaries.map((s, idx) => [
     idx + 1,
     s.maGV,
-    s.hoTen,
+    stripAcademicTitle(s.hoTen),
     s.hocHamHocVi,
     s.khoaBoMon,
     s.soCCCD || '',
@@ -1087,11 +1145,10 @@ export const exportTotalPaymentDataExcel = (
     s.nganHang || '',
     s.daoTaoAmount,
     s.nckhAmount,
-    s.khaoThiAmount,
-    s.doAnAmount,
-    s.coVanHocTapAmount,
     s.tuyenSinhAmount,
-    s.congTacKhacAmount,
+    s.khaoThiAmount,
+    s.coVanHocTapAmount,
+    (s.congTacKhacAmount || 0) + (s.doAnAmount || 0),
     s.tongQC,
     s.tongThuLao,
     s.thueTNCN,
@@ -1102,11 +1159,10 @@ export const exportTotalPaymentDataExcel = (
 
   const sumDaoTao = summaries.reduce((s, r) => s + (r.daoTaoAmount || 0), 0);
   const sumNCKH = summaries.reduce((s, r) => s + (r.nckhAmount || 0), 0);
-  const sumKhaoThi = summaries.reduce((s, r) => s + (r.khaoThiAmount || 0), 0);
-  const sumDoAn = summaries.reduce((s, r) => s + (r.doAnAmount || 0), 0);
-  const sumCVHT = summaries.reduce((s, r) => s + (r.coVanHocTapAmount || 0), 0);
   const sumTS = summaries.reduce((s, r) => s + (r.tuyenSinhAmount || 0), 0);
-  const sumKhac = summaries.reduce((s, r) => s + (r.congTacKhacAmount || 0), 0);
+  const sumKhaoThi = summaries.reduce((s, r) => s + (r.khaoThiAmount || 0), 0);
+  const sumCVHT = summaries.reduce((s, r) => s + (r.coVanHocTapAmount || 0), 0);
+  const sumKhac = summaries.reduce((s, r) => s + ((r.congTacKhacAmount || 0) + (r.doAnAmount || 0)), 0);
   const sumQC = summaries.reduce((s, r) => s + (r.tongQC || 0), 0);
   const sumGop = summaries.reduce((s, r) => s + (r.tongThuLao || 0), 0);
   const sumThue = summaries.reduce((s, r) => s + (r.thueTNCN || 0), 0);
@@ -1115,18 +1171,18 @@ export const exportTotalPaymentDataExcel = (
   const summaryRow = [
     `TỔNG CỘNG TOÀN TRƯỜNG (${summaries.length} giảng viên)`,
     '', '', '', '', '', '', '',
-    sumDaoTao, sumNCKH, sumKhaoThi, sumDoAn, sumCVHT, sumTS, sumKhac,
+    sumDaoTao, sumNCKH, sumTS, sumKhaoThi, sumCVHT, sumKhac,
     sumQC, sumGop, sumThue, sumThucNhan,
     '', ''
   ];
 
   const ws = createStyledWorksheet(
-    `BẢNG TỔNG HỢP THANH TOÁN THÙ LAO 7 CHUYÊN MỤC - TRƯỜNG ĐẠI HỌC TÂY ĐÔ (${currentPeriodName.toUpperCase()})`,
+    `BẢNG TỔNG HỢP THANH TOÁN THÙ LAO 6 CHUYÊN MỤC - TRƯỜNG ĐẠI HỌC TÂY ĐÔ (${periodLabel.toUpperCase()})`,
     columns,
     dataRows.length > 0 ? dataRows : [['Chưa có dữ liệu']],
     dataRows.length > 0 ? summaryRow : undefined
   );
 
   XLSX.utils.book_append_sheet(wb, ws, 'Tong_Hop_Thanh_Toan');
-  saveWorkbookToFile(wb, `Bang_Tong_Hop_Thanh_Toan_7_Chuyen_Muc_TDU_2026_2027.xlsx`);
+  saveWorkbookToFile(wb, `Bang_Tong_Hop_Thanh_Toan_6_Chuyen_Muc_TDU_2026_2027.xlsx`);
 };

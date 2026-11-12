@@ -13,7 +13,7 @@ import {
   Eye
 } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
-import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
+import { saveWorkbookToFile, stripAcademicTitle } from '../utils/excelTemplateGenerator';
 
 export interface ResearchScheduleRow {
   id: string;
@@ -62,7 +62,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
   // Header info fields
   const [donVi, setDonVi] = useState(firstRec.khoaBoMon || 'Khoa Công nghệ thông tin');
-  const [hoTen, setHoTen] = useState(firstRec.hoTen || 'TS. Mai Như Long');
+  const [hoTen, setHoTen] = useState(stripAcademicTitle(firstRec.hoTen || '') || 'Mai Như Long');
   const [chucDanh, setChucDanh] = useState(() => {
     const hh = firstRec.hocHamHocVi || '';
     if (hh.includes('GS')) return 'GIÁO SƯ';
@@ -99,7 +99,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   useEffect(() => {
     if (firstRec.hoTen) {
       setDonVi(firstRec.khoaBoMon || 'Khoa Công nghệ thông tin');
-      setHoTen(firstRec.hoTen);
+      setHoTen(stripAcademicTitle(firstRec.hoTen));
       const hh = firstRec.hocHamHocVi || '';
       if (hh.includes('GS')) setChucDanh('GIÁO SƯ');
       else if (hh.includes('PGS')) setChucDanh('PHÓ GIÁO SƯ');
@@ -389,7 +389,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
               >
                 {allLecturers.map((lec) => (
                   <option key={lec.maGV} value={lec.maGV}>
-                    {lec.maGV} - {lec.hoTen} ({lec.hocHamHocVi})
+                    {lec.maGV} - {stripAcademicTitle(lec.hoTen)} ({lec.hocHamHocVi})
                   </option>
                 ))}
               </select>

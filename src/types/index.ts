@@ -77,10 +77,10 @@ export interface TeachingRecord {
   loaiHoatDong: string;          // Giờ giảng dạy, Coi thi, Chấm thi, Tư vấn tuyển sinh...
   tenHocPhan: string;
   maLopHocPhan: string;
-  soTinChi: number;
-  soTietLT: number;
-  soTietTH: number;
-  heSoLop: number;
+  soTinChi?: number;
+  soTietLT?: number;
+  soTietTH?: number;
+  heSoLop?: number;
   tongTietQC: number;
   donGiaTiet: number;
   tongTienThuLao: number;
@@ -88,7 +88,7 @@ export interface TeachingRecord {
   thucNhan: number;
   soTaiKhoan?: string;
   nganHang?: string;
-  nguoiThucHien: string;
+  nguoiThucHien?: string;
   trangThai: DataQuality;
   dotThanhToan: string;
   ghiChu?: string;
@@ -183,6 +183,8 @@ export interface LecturerPaymentSummary {
   coVanHocTapQC: number;
   congTacKhacAmount: number;
   congTacKhacQC: number;
+  doAnAmount?: number;
+  doAnQC?: number;
   // Totals
   tongQC: number;
   tongThuLao: number;
