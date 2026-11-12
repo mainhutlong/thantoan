@@ -24,8 +24,12 @@ import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { AccountPermissionPage } from './components/AccountPermissionPage';
 import { TeachingScheduleReport } from './components/TeachingScheduleReport';
 import { ResearchScheduleReport } from './components/ResearchScheduleReport';
+import { ExamScheduleReport } from './components/ExamScheduleReport';
+import { ThesisScheduleReport } from './components/ThesisScheduleReport';
+import { AdvisorScheduleReport } from './components/AdvisorScheduleReport';
+import { AdmissionScheduleReport } from './components/AdmissionScheduleReport';
 import { OtherDutiesScheduleReport } from './components/OtherDutiesScheduleReport';
-import { generateDepartmentExcelTemplate, saveWorkbookToFile } from './utils/excelTemplateGenerator';
+import { generateDepartmentExcelTemplate, exportDepartmentDataExcel, saveWorkbookToFile } from './utils/excelTemplateGenerator';
 import { SystemUsersPage } from './components/SystemUsersPage';
 import { SystemRoleGroupPage } from './components/SystemRoleGroupPage';
 import { SystemConfigPage, DEFAULT_PERIODS } from './components/SystemConfigPage';
@@ -83,6 +87,7 @@ export default function App() {
   // Payment periods management (Lưu trữ và phân loại dữ liệu theo đợt)
   const [periods, setPeriods] = useState<PaymentPeriod[]>(DEFAULT_PERIODS);
   const [currentPeriodId, setCurrentPeriodId] = useState<string>('period-hk1-2026-2027');
+  const currentPeriodName = periods.find((p) => p.id === currentPeriodId)?.name || 'Học kỳ 1 2026-2027';
 
   // Column level filter inputs
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
@@ -164,6 +169,10 @@ export default function App() {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [selectedScheduleMaGV, setSelectedScheduleMaGV] = useState<string | null>(null);
   const [selectedResearchScheduleMaGV, setSelectedResearchScheduleMaGV] = useState<string | null>(null);
+  const [selectedExamScheduleMaGV, setSelectedExamScheduleMaGV] = useState<string | null>(null);
+  const [selectedThesisScheduleMaGV, setSelectedThesisScheduleMaGV] = useState<string | null>(null);
+  const [selectedAdvisorScheduleMaGV, setSelectedAdvisorScheduleMaGV] = useState<string | null>(null);
+  const [selectedAdmissionScheduleMaGV, setSelectedAdmissionScheduleMaGV] = useState<string | null>(null);
   const [selectedOtherDutiesScheduleMaGV, setSelectedOtherDutiesScheduleMaGV] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
@@ -208,6 +217,10 @@ export default function App() {
     setIsProfileOpen(false);
     setSelectedScheduleMaGV(null);
     setSelectedResearchScheduleMaGV(null);
+    setSelectedExamScheduleMaGV(null);
+    setSelectedThesisScheduleMaGV(null);
+    setSelectedAdvisorScheduleMaGV(null);
+    setSelectedAdmissionScheduleMaGV(null);
     setSelectedOtherDutiesScheduleMaGV(null);
     if (department) {
       setSelectedDepartment(department);
@@ -561,32 +574,12 @@ export default function App() {
   };
 
   const handleExportDataTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const rows = filteredTeaching.map((item, idx) => ({
-      'TT': idx + 1,
-      'Mã GV': item.maGV,
-      'Họ và tên Giảng viên': item.hoTen,
-      'Học vị': item.hocHamHocVi,
-      'Khoa / Bộ môn': item.khoaBoMon,
-      'Đơn vị kê khai': item.phongBanQuanLy === 'dao_tao' ? 'Phòng Đào tạo' : item.phongBanQuanLy === 'khao_thi' ? 'TT Khảo thí' : item.phongBanQuanLy === 'tuyen_sinh' ? 'Phòng Tuyển sinh' : 'Phòng NCKH',
-      'Học phần / Hoạt động': item.tenHocPhan,
-      'Lớp HP / Mã đợt': item.maLopHocPhan,
-      'Số TC': item.soTinChi,
-      'Tiết LT': item.soTietLT,
-      'Tiết TH': item.soTietTH,
-      'Tổng tiết QC': item.tongTietQC,
-      'Đơn giá / tiết (VNĐ)': item.donGiaTiet,
-      'Tổng thù lao (VNĐ)': item.tongTienThuLao,
-      'Thuế TNCN 10% (VNĐ)': item.thueTNCN,
-      'Thực nhận (VNĐ)': item.thucNhan,
-      'Số tài khoản': item.soTaiKhoan || '',
-      'Ngân hàng': item.nganHang || '',
-      'Đợt thanh toán': item.dotThanhToan,
-      'Trạng thái': item.trangThai === 'hop_le' ? 'Hợp lệ' : item.trangThai === 'da_so_hoa' ? 'Đã duyệt chi' : item.trangThai === 'trung_lap' ? 'Trùng lịch' : 'Cần đối soát',
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [{ 'Thông báo': 'Chưa có bản ghi nào' }]);
-    XLSX.utils.book_append_sheet(wb, ws, 'Thanh_Toan_Gio_Giang_TDU');
-    saveWorkbookToFile(wb, `Bang_Thanh_Toan_Gio_Giang_TDU_2024.xlsx`);
+    try {
+      exportDepartmentDataExcel(selectedDepartment, filteredTeaching, currentPeriodName);
+    } catch (err: any) {
+      console.error('Lỗi khi xuất file Excel:', err);
+      alert('Không thể xuất file Excel: ' + (err?.message || String(err)));
+    }
   };
 
   const handleImportTeaching = (records: TeachingRecord[], isAppend: boolean) => {
@@ -790,6 +783,130 @@ export default function App() {
                 />
               </div>
             </div>
+          ) : selectedExamScheduleMaGV ? (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 sticky top-0 z-40 shadow-xs">
+                <button
+                  onClick={() => setSelectedExamScheduleMaGV(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay lại danh sách</span>
+                </button>
+                <span className="text-[12.5px] font-bold text-[#005325]">
+                  Chi tiết bảng kê Coi thi - Chấm thi - Ra đề — Mã GV: {selectedExamScheduleMaGV}
+                </span>
+              </div>
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+                <ExamScheduleReport
+                  maGV={selectedExamScheduleMaGV}
+                  records={teachingList}
+                  academicYear={filters.academicYear}
+                  onClose={() => setSelectedExamScheduleMaGV(null)}
+                  onSaveRecords={(updated) => {
+                    setTeachingList((prev) => {
+                      const filtered = prev.filter(
+                        (r) => r.maGV !== selectedExamScheduleMaGV || r.phongBanQuanLy !== 'khao_thi'
+                      );
+                      return [...filtered, ...updated];
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          ) : selectedThesisScheduleMaGV ? (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 sticky top-0 z-40 shadow-xs">
+                <button
+                  onClick={() => setSelectedThesisScheduleMaGV(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay lại danh sách</span>
+                </button>
+                <span className="text-[12.5px] font-bold text-[#005325]">
+                  Chi tiết bảng kê Hướng dẫn & Chấm Đồ án / KLTN — Mã GV: {selectedThesisScheduleMaGV}
+                </span>
+              </div>
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+                <ThesisScheduleReport
+                  maGV={selectedThesisScheduleMaGV}
+                  records={teachingList}
+                  academicYear={filters.academicYear}
+                  onClose={() => setSelectedThesisScheduleMaGV(null)}
+                  onSaveRecords={(updated) => {
+                    setTeachingList((prev) => {
+                      const filtered = prev.filter(
+                        (r) => r.maGV !== selectedThesisScheduleMaGV || r.phongBanQuanLy !== 'do_an'
+                      );
+                      return [...filtered, ...updated];
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          ) : selectedAdvisorScheduleMaGV ? (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 sticky top-0 z-40 shadow-xs">
+                <button
+                  onClick={() => setSelectedAdvisorScheduleMaGV(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay lại danh sách</span>
+                </button>
+                <span className="text-[12.5px] font-bold text-[#005325]">
+                  Chi tiết bảng kê Cố vấn học tập & Quản lý lớp — Mã GV: {selectedAdvisorScheduleMaGV}
+                </span>
+              </div>
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+                <AdvisorScheduleReport
+                  maGV={selectedAdvisorScheduleMaGV}
+                  records={teachingList}
+                  academicYear={filters.academicYear}
+                  onClose={() => setSelectedAdvisorScheduleMaGV(null)}
+                  onSaveRecords={(updated) => {
+                    setTeachingList((prev) => {
+                      const filtered = prev.filter(
+                        (r) => r.maGV !== selectedAdvisorScheduleMaGV || r.phongBanQuanLy !== 'co_van_hoc_tap'
+                      );
+                      return [...filtered, ...updated];
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          ) : selectedAdmissionScheduleMaGV ? (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+              <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 sticky top-0 z-40 shadow-xs">
+                <button
+                  onClick={() => setSelectedAdmissionScheduleMaGV(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Quay lại danh sách</span>
+                </button>
+                <span className="text-[12.5px] font-bold text-[#005325]">
+                  Chi tiết bảng kê Tư vấn Tuyển sinh & Hướng nghiệp — Mã GV: {selectedAdmissionScheduleMaGV}
+                </span>
+              </div>
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+                <AdmissionScheduleReport
+                  maGV={selectedAdmissionScheduleMaGV}
+                  records={teachingList}
+                  academicYear={filters.academicYear}
+                  onClose={() => setSelectedAdmissionScheduleMaGV(null)}
+                  onSaveRecords={(updated) => {
+                    setTeachingList((prev) => {
+                      const filtered = prev.filter(
+                        (r) => r.maGV !== selectedAdmissionScheduleMaGV || r.phongBanQuanLy !== 'tuyen_sinh'
+                      );
+                      return [...filtered, ...updated];
+                    });
+                  }}
+                />
+              </div>
+            </div>
           ) : selectedOtherDutiesScheduleMaGV ? (
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
               <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 sticky top-0 z-40 shadow-xs">
@@ -948,6 +1065,14 @@ export default function App() {
                     if ('maGV' in record && record.maGV) {
                       if (selectedDepartment === 'nckh') {
                         setSelectedResearchScheduleMaGV(record.maGV);
+                      } else if (selectedDepartment === 'khao_thi') {
+                        setSelectedExamScheduleMaGV(record.maGV);
+                      } else if (selectedDepartment === 'do_an') {
+                        setSelectedThesisScheduleMaGV(record.maGV);
+                      } else if (selectedDepartment === 'co_van_hoc_tap') {
+                        setSelectedAdvisorScheduleMaGV(record.maGV);
+                      } else if (selectedDepartment === 'tuyen_sinh') {
+                        setSelectedAdmissionScheduleMaGV(record.maGV);
                       } else if (selectedDepartment === 'cong_tac_khac') {
                         setSelectedOtherDutiesScheduleMaGV(record.maGV);
                       } else {
@@ -1009,7 +1134,7 @@ export default function App() {
         config={paymentRules}
         departmentUnit={selectedDepartment === 'all' ? 'dao_tao' : selectedDepartment}
         onDepartmentChange={setSelectedDepartment}
-        currentPeriodName={periods.find((p) => p.id === currentPeriodId)?.name || 'Học kỳ 1 2026-2027'}
+        currentPeriodName={currentPeriodName}
         onDownloadTemplate={handleDownloadTemplate}
       />
 

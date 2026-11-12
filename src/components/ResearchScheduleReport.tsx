@@ -12,7 +12,7 @@ import {
   MoreVertical,
   Eye
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 import { saveWorkbookToFile } from '../utils/excelTemplateGenerator';
 
 export interface ResearchScheduleRow {
@@ -226,6 +226,86 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(headerRows);
+
+    // Merge tiêu đề dòng 1 & 2
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+    ];
+
+    ws['!cols'] = [
+      { wch: 6 },  // TT
+      { wch: 46 }, // Nội dung
+      { wch: 28 }, // Thể loại
+      { wch: 20 }, // Số giờ quy chuẩn
+      { wch: 24 }, // Xác nhận của P.QLKH
+    ];
+
+    const thinBorder = {
+      top: { style: 'thin', color: { rgb: '000000' } },
+      bottom: { style: 'thin', color: { rgb: '000000' } },
+      left: { style: 'thin', color: { rgb: '000000' } },
+      right: { style: 'thin', color: { rgb: '000000' } },
+    };
+
+    // Định dạng font Times New Roman và viền ô chuẩn TDU
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:E30');
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[cellRef];
+        if (!cell) continue;
+
+        if (R === 0 || R === 1) {
+          cell.s = {
+            font: { name: 'Times New Roman', sz: 14, bold: true, color: { rgb: '000000' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+          };
+        } else if (R >= 3 && R <= 7) {
+          cell.s = {
+            font: { name: 'Times New Roman', sz: 10.5, bold: C === 0, color: { rgb: '000000' } },
+            alignment: { vertical: 'center', horizontal: 'left' },
+          };
+        } else if (R === 9) {
+          // B. NGHIÊN CỨU KHOA HỌC
+          cell.s = {
+            font: { name: 'Times New Roman', sz: 11, bold: true, color: { rgb: '005325' } },
+            alignment: { vertical: 'center', horizontal: 'left' },
+          };
+        } else if (R === 10) {
+          // Table header
+          cell.s = {
+            font: { name: 'Times New Roman', sz: 10.5, bold: true, color: { rgb: '000000' } },
+            fill: { fgColor: { rgb: 'FFFF99' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: thinBorder,
+          };
+        } else if (R >= headerRows.length - 2) {
+          // Summary rows
+          cell.s = {
+            font: { name: 'Times New Roman', sz: 11, bold: true, color: { rgb: '005325' } },
+            fill: { fgColor: { rgb: 'F1F5F9' } },
+            alignment: { vertical: 'center', horizontal: C === 3 ? 'right' : 'left' },
+            border: {
+              top: { style: 'thin', color: { rgb: '000000' } },
+              bottom: { style: 'double', color: { rgb: '000000' } },
+              left: { style: 'thin', color: { rgb: '000000' } },
+              right: { style: 'thin', color: { rgb: '000000' } },
+            },
+          };
+        } else if (R > 10) {
+          cell.s = {
+            font: { name: 'Times New Roman', sz: 10, color: { rgb: '000000' } },
+            alignment: {
+              vertical: 'center',
+              horizontal: C === 0 ? 'center' : C === 3 ? 'right' : 'left',
+            },
+            border: thinBorder,
+          };
+        }
+      }
+    }
+
     XLSX.utils.book_append_sheet(wb, ws, 'ThongKeNCKH');
     saveWorkbookToFile(wb, `Bang_Thong_Ke_NCKH_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
   };

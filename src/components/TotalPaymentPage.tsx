@@ -3,7 +3,12 @@ import { Search, ArrowLeft } from 'lucide-react';
 import { TeachingRecord, LecturerPaymentSummary } from '../types';
 import { TeachingScheduleReport } from './TeachingScheduleReport';
 import { ResearchScheduleReport } from './ResearchScheduleReport';
-import * as XLSX from 'xlsx';
+import { ExamScheduleReport } from './ExamScheduleReport';
+import { ThesisScheduleReport } from './ThesisScheduleReport';
+import { AdvisorScheduleReport } from './AdvisorScheduleReport';
+import { AdmissionScheduleReport } from './AdmissionScheduleReport';
+import { OtherDutiesScheduleReport } from './OtherDutiesScheduleReport';
+import { exportTotalPaymentDataExcel } from '../utils/excelTemplateGenerator';
 
 interface TotalPaymentPageProps {
   records: TeachingRecord[];
@@ -24,6 +29,11 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
   const [selectedLecturerInline, setSelectedLecturerInline] = useState<LecturerPaymentSummary | null>(null);
   const [selectedScheduleMaGV, setSelectedScheduleMaGV] = useState<string | null>(null);
   const [selectedResearchScheduleMaGV, setSelectedResearchScheduleMaGV] = useState<string | null>(null);
+  const [selectedExamScheduleMaGV, setSelectedExamScheduleMaGV] = useState<string | null>(null);
+  const [selectedThesisScheduleMaGV, setSelectedThesisScheduleMaGV] = useState<string | null>(null);
+  const [selectedAdvisorScheduleMaGV, setSelectedAdvisorScheduleMaGV] = useState<string | null>(null);
+  const [selectedAdmissionScheduleMaGV, setSelectedAdmissionScheduleMaGV] = useState<string | null>(null);
+  const [selectedOtherDutiesScheduleMaGV, setSelectedOtherDutiesScheduleMaGV] = useState<string | null>(null);
 
   // Group and sum up the 6 declaration modules for each lecturer
   const lecturerSummaries: LecturerPaymentSummary[] = useMemo(() => {
@@ -207,39 +217,12 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
   const paidCount = lecturerSummaries.filter((l) => l.paymentStatus === 'paid').length;
 
   const handleExportExcel = () => {
-    const wb = XLSX.utils.book_new();
-    const rows = filteredSummaries.map((item, idx) => ({
-      'STT': idx + 1,
-      'Mã GV': item.maGV,
-      'Họ và tên Giảng viên': item.hoTen,
-      'Học hàm / Học vị': item.hocHamHocVi,
-      'Khoa / Đơn vị': item.khoaBoMon,
-      'Số CCCD': item.soCCCD || '',
-      'Số tài khoản': item.soTaiKhoan || '',
-      'Ngân hàng': item.nganHang || '',
-      '1. Giờ giảng (VNĐ)': item.daoTaoAmount,
-      '2. NCKH (VNĐ)': item.nckhAmount,
-      '3. Coi/chấm thi (VNĐ)': item.khaoThiAmount,
-      '4. Đồ án/KLTN (VNĐ)': item.doAnAmount,
-      '5. Cố vấn HT (VNĐ)': item.coVanHocTapAmount,
-      '6. Tuyển sinh (VNĐ)': item.tuyenSinhAmount,
-      '7. Kiêm nhiệm & ĐBCL (VNĐ)': item.congTacKhacAmount,
-      'Tổng tiết QC': item.tongQC,
-      'Tổng thù lao gộp (VNĐ)': item.tongThuLao,
-      'Thuế TNCN 10% (VNĐ)': item.thueTNCN,
-      'Tổng thực nhận (VNĐ)': item.thucNhan,
-      'Xác nhận của GV':
-        item.confirmationStatus === 'confirmed'
-          ? 'Đã đồng ý xác nhận'
-          : item.confirmationStatus === 'disputed'
-          ? 'Có khiếu nại'
-          : 'Chờ GV kiểm tra',
-      'Tình trạng thanh toán': item.paymentStatus === 'paid' ? 'Đã thanh toán (UNC)' : 'Chờ chi trả',
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, 'Tong_Thanh_Toan_6_Muc');
-    XLSX.writeFile(wb, `Tong_Hop_Thanh_Toan_TDU_HK2_2024.xlsx`);
+    try {
+      exportTotalPaymentDataExcel(filteredSummaries, 'Học kỳ 1 2026-2027');
+    } catch (err: any) {
+      console.error('Lỗi xuất Excel tổng hợp:', err);
+      alert('Không thể xuất file Excel: ' + (err?.message || String(err)));
+    }
   };
 
   const quickTabs = [
@@ -248,6 +231,16 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
     { id: 'disputed', label: 'Đang phản hồi', count: disputedCount, activeClass: 'bg-amber-600 text-white border-amber-600' },
     { id: 'pending', label: 'Chờ GV xem', count: pendingCount, activeClass: 'bg-slate-600 text-white border-slate-600' },
   ];
+
+  const allLecturersForReport = useMemo(() => {
+    return lecturerSummaries.map((l) => ({
+      maGV: l.maGV,
+      hoTen: l.hoTen,
+      khoaBoMon: l.khoaBoMon,
+      hocHamHocVi: l.hocHamHocVi,
+      khoa: l.khoaBoMon,
+    }));
+  }, [lecturerSummaries]);
 
   return (
     <div className="flex-1 bg-[#f8fafc] flex flex-col min-h-0 overflow-y-auto min-w-0">
@@ -270,12 +263,7 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
               maGV={selectedResearchScheduleMaGV}
               records={records}
               onClose={() => setSelectedResearchScheduleMaGV(null)}
-              allLecturers={lecturerSummaries.map((l) => ({
-                maGV: l.maGV,
-                hoTen: l.hoTen,
-                khoaBoMon: l.khoaBoMon,
-                hocHamHocVi: l.hocHamHocVi,
-              }))}
+              allLecturers={allLecturersForReport}
               onSelectLecturer={(newMa) => setSelectedResearchScheduleMaGV(newMa)}
             />
           </div>
@@ -299,13 +287,128 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
               maGV={selectedScheduleMaGV}
               records={records}
               onClose={() => setSelectedScheduleMaGV(null)}
-              allLecturers={lecturerSummaries.map((l) => ({
-                maGV: l.maGV,
-                hoTen: l.hoTen,
-                khoaBoMon: l.khoaBoMon,
-                hocHamHocVi: l.hocHamHocVi,
-              }))}
+              allLecturers={allLecturersForReport}
               onSelectLecturer={(newMa) => setSelectedScheduleMaGV(newMa)}
+            />
+          </div>
+        </div>
+      ) : selectedExamScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setSelectedExamScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
+            </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Coi thi - Chấm thi - Ra đề — Mã GV: {selectedExamScheduleMaGV}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <ExamScheduleReport
+              maGV={selectedExamScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedExamScheduleMaGV(null)}
+              allLecturers={allLecturersForReport}
+              onSelectLecturer={(newMa) => setSelectedExamScheduleMaGV(newMa)}
+            />
+          </div>
+        </div>
+      ) : selectedThesisScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setSelectedThesisScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
+            </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Hướng dẫn & Chấm Đồ án / KLTN — Mã GV: {selectedThesisScheduleMaGV}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <ThesisScheduleReport
+              maGV={selectedThesisScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedThesisScheduleMaGV(null)}
+              allLecturers={allLecturersForReport}
+              onSelectLecturer={(newMa) => setSelectedThesisScheduleMaGV(newMa)}
+            />
+          </div>
+        </div>
+      ) : selectedAdvisorScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setSelectedAdvisorScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
+            </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Cố vấn học tập & Quản lý lớp — Mã GV: {selectedAdvisorScheduleMaGV}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <AdvisorScheduleReport
+              maGV={selectedAdvisorScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedAdvisorScheduleMaGV(null)}
+              allLecturers={allLecturersForReport}
+              onSelectLecturer={(newMa) => setSelectedAdvisorScheduleMaGV(newMa)}
+            />
+          </div>
+        </div>
+      ) : selectedAdmissionScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setSelectedAdmissionScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
+            </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Tư vấn Tuyển sinh & Hướng nghiệp — Mã GV: {selectedAdmissionScheduleMaGV}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <AdmissionScheduleReport
+              maGV={selectedAdmissionScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedAdmissionScheduleMaGV(null)}
+              allLecturers={allLecturersForReport}
+              onSelectLecturer={(newMa) => setSelectedAdmissionScheduleMaGV(newMa)}
+            />
+          </div>
+        </div>
+      ) : selectedOtherDutiesScheduleMaGV ? (
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+          <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">
+            <button
+              onClick={() => setSelectedOtherDutiesScheduleMaGV(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12px] font-medium transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại bảng tổng thanh toán</span>
+            </button>
+            <span className="text-[12.5px] font-semibold text-[#005325]">
+              Chi tiết bảng kê Công tác khác & ĐBCL (40 mục) — Mã GV: {selectedOtherDutiesScheduleMaGV}
+            </span>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <OtherDutiesScheduleReport
+              maGV={selectedOtherDutiesScheduleMaGV}
+              records={records}
+              onClose={() => setSelectedOtherDutiesScheduleMaGV(null)}
+              allLecturers={allLecturersForReport}
+              onSelectLecturer={(newMa) => setSelectedOtherDutiesScheduleMaGV(newMa)}
             />
           </div>
         </div>
@@ -472,32 +575,60 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2 text-[11.5px]">
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">1. Giờ giảng</div>
+                  <div
+                    onClick={() => setSelectedScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-[#005325] hover:bg-emerald-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Giờ giảng dạy"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">1. Giờ giảng ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.daoTaoAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">2. NCKH</div>
+                  <div
+                    onClick={() => setSelectedResearchScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-purple-600 hover:bg-purple-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê NCKH"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">2. NCKH ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.nckhAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">3. Khảo thí</div>
+                  <div
+                    onClick={() => setSelectedExamScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-600 hover:bg-blue-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Coi thi - Chấm thi - Ra đề"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">3. Khảo thí ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.khaoThiAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">4. Đồ án / KLTN</div>
+                  <div
+                    onClick={() => setSelectedThesisScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-600 hover:bg-amber-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Hướng dẫn & Chấm Đồ án"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">4. Đồ án / KLTN ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.doAnAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">5. Cố vấn HT</div>
+                  <div
+                    onClick={() => setSelectedAdvisorScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-teal-600 hover:bg-teal-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Cố vấn học tập"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">5. Cố vấn HT ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.coVanHocTapAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">6. Tuyển sinh</div>
+                  <div
+                    onClick={() => setSelectedAdmissionScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-orange-600 hover:bg-orange-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Tuyển sinh"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">6. Tuyển sinh ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.tuyenSinhAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="text-slate-400 text-[10.5px]">7. Kiêm nhiệm/ĐBCL</div>
+                  <div
+                    onClick={() => setSelectedOtherDutiesScheduleMaGV(selectedLecturerInline.maGV)}
+                    className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/40 cursor-pointer transition-colors"
+                    title="Bấm để xem Bảng thống kê Công tác khác & ĐBCL"
+                  >
+                    <div className="text-slate-400 text-[10.5px]">7. Kiêm nhiệm/ĐBCL ↗</div>
                     <div className="font-mono text-slate-800 mt-0.5">{selectedLecturerInline.congTacKhacAmount.toLocaleString('vi-VN')} đ</div>
                   </div>
                   <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
@@ -618,27 +749,62 @@ export const TotalPaymentPage: React.FC<TotalPaymentPageProps> = ({
                           </td>
 
                           {/* 3. Khảo thí */}
-                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedExamScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-blue-700 hover:underline cursor-pointer"
+                            title="Bấm để xem Bảng thống kê Coi thi - Chấm thi - Ra đề"
+                          >
                             {item.khaoThiAmount > 0 ? `${item.khaoThiAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
                           {/* 4. Đồ án / Khóa luận tốt nghiệp */}
-                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedThesisScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-amber-700 hover:underline cursor-pointer"
+                            title="Bấm để xem Bảng thống kê Hướng dẫn & Chấm Đồ án"
+                          >
                             {item.doAnAmount > 0 ? `${item.doAnAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
                           {/* 5. Cố vấn học tập */}
-                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAdvisorScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-teal-700 hover:underline cursor-pointer"
+                            title="Bấm để xem Bảng thống kê Cố vấn học tập & Quản lý lớp"
+                          >
                             {item.coVanHocTapAmount > 0 ? `${item.coVanHocTapAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
                           {/* 6. Tuyển sinh */}
-                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAdmissionScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-orange-700 hover:underline cursor-pointer"
+                            title="Bấm để xem Bảng thống kê Tư vấn Tuyển sinh & Hướng nghiệp"
+                          >
                             {item.tuyenSinhAmount > 0 ? `${item.tuyenSinhAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 
                           {/* 7. Khác (Kiêm nhiệm & ĐBCL) */}
-                          <td className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap">
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOtherDutiesScheduleMaGV(item.maGV);
+                            }}
+                            className="px-2 text-right font-mono tabular-nums text-slate-600 border-r border-slate-100 whitespace-nowrap hover:text-emerald-700 hover:underline cursor-pointer"
+                            title="Bấm để xem Bảng thống kê Công tác khác & ĐBCL"
+                          >
                             {item.congTacKhacAmount > 0 ? `${item.congTacKhacAmount.toLocaleString('vi-VN')}` : '-'}
                           </td>
 

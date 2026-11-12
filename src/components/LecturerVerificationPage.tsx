@@ -39,6 +39,10 @@ import * as XLSX from 'xlsx';
 import { TeachingRecord, FeedbackItem, UserRole, UserAccount } from '../types';
 import { TeachingScheduleReport } from './TeachingScheduleReport';
 import { ResearchScheduleReport } from './ResearchScheduleReport';
+import { ExamScheduleReport } from './ExamScheduleReport';
+import { AdvisorScheduleReport } from './AdvisorScheduleReport';
+import { AdmissionScheduleReport } from './AdmissionScheduleReport';
+import { OtherDutiesScheduleReport } from './OtherDutiesScheduleReport';
 
 interface LecturerVerificationPageProps {
   records: TeachingRecord[];
@@ -1382,136 +1386,46 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
               {/* Tab 3: Khảo thí */}
               {activeTab === 'khao_thi' && (
-                <table className="w-full text-left border-collapse min-w-[1100px] text-[12px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300 font-semibold h-[38px] text-[11.5px] uppercase tracking-wider">
-                      <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
-                      <th className="px-2.5 border-r border-slate-200 w-[140px]">Nhóm công việc</th>
-                      <th className="px-2.5 border-r border-slate-200 w-[90px]">Mã CV</th>
-                      <th className="px-3 border-r border-slate-200 min-w-[220px]">Tên công việc</th>
-                      <th className="px-3 border-r border-slate-200 min-w-[170px]">Điều kiện thực hiện</th>
-                      <th className="px-2 text-center border-r border-slate-200 w-[90px]">Quy đổi số giờ</th>
-                      <th className="px-2 text-center border-r border-slate-200 w-[70px]">Số lượng</th>
-                      <th className="px-2.5 border-r border-slate-200 w-[130px]">Ghi chú</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Số giờ theo CV</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[125px]">Thù lao (VNĐ)</th>
-                      <th className="px-3 text-right w-[125px]">Thực nhận (VNĐ)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#e2e8f0]">
-                    {currentTabRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan={11} className="py-10 text-center text-slate-500 font-normal">
-                          Chưa có dữ liệu kê khai coi thi, ra đề hoặc chấm thi cho Thầy/Cô.
-                        </td>
-                      </tr>
-                    ) : (
-                      currentTabRecords.map((rec, idx) => (
-                        <tr key={rec.id} className="h-[38px] hover:bg-emerald-50/50 even:bg-slate-50/40 transition-colors">
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">{idx + 1}</td>
-                          <td className="px-2.5 border-r border-[#f1f5f9] whitespace-nowrap">
-                            <span className="px-2 py-0.5 rounded text-[10.5px] bg-slate-100 border border-slate-300">
-                              {rec.nhomCongViec || rec.loaiHoatDong}
-                            </span>
-                          </td>
-                          <td className="px-2.5 font-mono border-r border-[#f1f5f9] whitespace-nowrap">
-                            {rec.maCV || 'CV_KT'}
-                          </td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap font-normal">
-                            <span className="truncate block max-w-[240px]" title={rec.tenCongViec || rec.tenHocPhan}>
-                              {rec.tenCongViec || rec.tenHocPhan}
-                            </span>
-                          </td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap">
-                            <span className="truncate block max-w-[180px]" title={rec.dieuKien || 'Theo quy chế TDU'}>
-                              {rec.dieuKien || 'Theo quy chế TDU'}
-                            </span>
-                          </td>
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">
-                            {rec.quyDoiSoGio || 1.5} h
-                          </td>
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">
-                            {rec.soLuong || 1}
-                          </td>
-                          <td className="px-2.5 border-r border-[#f1f5f9] whitespace-nowrap">
-                            <span className="truncate block max-w-[130px]" title={rec.ghiChuThongTin || rec.maLopHocPhan}>
-                              {rec.ghiChuThongTin || rec.maLopHocPhan}
-                            </span>
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9]">
-                            {(rec.tongSoGioTheoCV || rec.tongTietQC).toFixed(1)} h
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTienThuLao.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono font-normal">
-                            {rec.thucNhan.toLocaleString('vi-VN')} đ
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
+                    <ExamScheduleReport
+                      maGV={selectedLecturer?.maGV}
+                      records={records}
+                      allLecturers={availableLecturers.map((l) => {
+                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        return {
+                          maGV: l.maGV,
+                          hoTen: l.hoTen,
+                          khoaBoMon: l.khoaBoMon,
+                          hocHamHocVi: r?.hocHamHocVi || '',
+                        };
+                      })}
+                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                    />
+                  </div>
+                </div>
               )}
 
               {/* Tab 4: Tuyển sinh */}
               {activeTab === 'tuyen_sinh' && (
-                <table className="w-full text-left border-collapse min-w-[1100px] text-[12px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300 font-semibold h-[38px] text-[11.5px] uppercase tracking-wider">
-                      <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
-                      <th className="px-3 border-r border-slate-200 min-w-[240px]">Nhiệm vụ công tác tuyển sinh</th>
-                      <th className="px-3 border-r border-slate-200 w-[170px]">Địa bàn / Trường THPT</th>
-                      <th className="px-2 text-center border-r border-slate-200 w-[90px]">Số ngày</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Tiết QC quy đổi</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[110px]">Đơn giá tiết</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[130px]">Tổng thù lao (VNĐ)</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Thuế 10%</th>
-                      <th className="px-3 text-right w-[125px]">Thực nhận (VNĐ)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#e2e8f0]">
-                    {currentTabRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="py-10 text-center text-slate-500 font-normal">
-                          Chưa có dữ liệu kê khai công tác tuyển sinh cho Thầy/Cô.
-                        </td>
-                      </tr>
-                    ) : (
-                      currentTabRecords.map((rec, idx) => (
-                        <tr key={rec.id} className="h-[38px] hover:bg-emerald-50/50 even:bg-slate-50/40 transition-colors">
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">{idx + 1}</td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap font-normal">
-                            <span className="truncate block max-w-[250px]" title={rec.tenHocPhan}>
-                              {rec.tenHocPhan}
-                            </span>
-                          </td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap">
-                            {rec.maLopHocPhan}
-                          </td>
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">
-                            {rec.soTietLT} ngày
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTietQC}
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.donGiaTiet.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTienThuLao.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9] text-rose-600">
-                            -{rec.thueTNCN.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono font-normal">
-                            {rec.thucNhan.toLocaleString('vi-VN')} đ
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
+                    <AdmissionScheduleReport
+                      maGV={selectedLecturer?.maGV}
+                      records={records}
+                      allLecturers={availableLecturers.map((l) => {
+                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        return {
+                          maGV: l.maGV,
+                          hoTen: l.hoTen,
+                          khoaBoMon: l.khoaBoMon,
+                          hocHamHocVi: r?.hocHamHocVi || '',
+                        };
+                      })}
+                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                    />
+                  </div>
+                </div>
               )}
 
               {/* Tab 5: NCKH (BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC - Theo mẫu hình ảnh chuẩn) */}
@@ -1605,118 +1519,47 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
               {/* Tab 6: Cố vấn học tập */}
               {activeTab === 'co_van_hoc_tap' && (
-                <table className="w-full text-left border-collapse min-w-[1100px] text-[12px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300 font-semibold h-[38px] text-[11.5px] uppercase tracking-wider">
-                      <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
-                      <th className="px-3 border-r border-slate-200 min-w-[240px]">Nhiệm vụ Cố vấn học tập</th>
-                      <th className="px-3 border-r border-slate-200 w-[150px]">Lớp phụ trách CVHT</th>
-                      <th className="px-2 text-center border-r border-slate-200 w-[80px]">Số SV lớp</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Tiết định mức QC</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[110px]">Đơn giá tiết</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[130px]">Tổng thù lao (VNĐ)</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Thuế 10%</th>
-                      <th className="px-3 text-right w-[125px]">Thực nhận (VNĐ)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#e2e8f0]">
-                    {currentTabRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="py-10 text-center text-slate-500 font-normal">
-                          Chưa có dữ liệu phân công Cố vấn học tập cho Thầy/Cô.
-                        </td>
-                      </tr>
-                    ) : (
-                      currentTabRecords.map((rec, idx) => (
-                        <tr key={rec.id} className="h-[38px] hover:bg-emerald-50/50 even:bg-slate-50/40 transition-colors">
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">{idx + 1}</td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap font-normal">
-                            <span className="truncate block max-w-[260px]" title={rec.tenHocPhan}>
-                              {rec.tenHocPhan}
-                            </span>
-                          </td>
-                          <td className="px-3 font-mono border-r border-[#f1f5f9] whitespace-nowrap">
-                            {rec.maLopHocPhan}
-                          </td>
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">
-                            {rec.soSinhVien || 60}
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTietQC}
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.donGiaTiet.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTienThuLao.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9] text-rose-600">
-                            -{rec.thueTNCN.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono font-normal">
-                            {rec.thucNhan.toLocaleString('vi-VN')} đ
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
+                    <AdvisorScheduleReport
+                      maGV={selectedLecturer?.maGV}
+                      records={records}
+                      allLecturers={availableLecturers.map((l) => {
+                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        return {
+                          maGV: l.maGV,
+                          hoTen: l.hoTen,
+                          khoaBoMon: l.khoaBoMon,
+                          hocHamHocVi: r?.hocHamHocVi || '',
+                        };
+                      })}
+                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                    />
+                  </div>
+                </div>
               )}
 
               {/* Tab 7: Công tác khác */}
               {activeTab === 'cong_tac_khac' && (
-                <table className="w-full text-left border-collapse min-w-[1100px] text-[12px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300 font-semibold h-[38px] text-[11.5px] uppercase tracking-wider">
-                      <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
-                      <th className="px-3 border-r border-slate-200 min-w-[260px]">Nhiệm vụ công tác kiêm nhiệm</th>
-                      <th className="px-3 border-r border-slate-200 w-[170px]">Căn cứ phân công / Quyết định</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Tiết định mức QC</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[110px]">Đơn giá / Tiết</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[130px]">Tổng thù lao (VNĐ)</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Thuế 10%</th>
-                      <th className="px-3 text-right w-[125px]">Thực nhận (VNĐ)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#e2e8f0]">
-                    {currentTabRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="py-10 text-center text-slate-500 font-normal">
-                          Chưa có dữ liệu kê khai công tác khác cho Thầy/Cô.
-                        </td>
-                      </tr>
-                    ) : (
-                      currentTabRecords.map((rec, idx) => (
-                        <tr key={rec.id} className="h-[38px] hover:bg-emerald-50/50 even:bg-slate-50/40 transition-colors">
-                          <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">{idx + 1}</td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap font-normal">
-                            <span className="truncate block max-w-[280px]" title={rec.tenHocPhan}>
-                              {rec.tenHocPhan}
-                            </span>
-                          </td>
-                          <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap font-mono">
-                            {rec.maLopHocPhan}
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTietQC}
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.donGiaTiet.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
-                            {rec.tongTienThuLao.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-2.5 text-right font-mono border-r border-[#f1f5f9] text-rose-600">
-                            -{rec.thueTNCN.toLocaleString('vi-VN')} đ
-                          </td>
-                          <td className="px-3 text-right font-mono font-normal">
-                            {rec.thucNhan.toLocaleString('vi-VN')} đ
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
+                    <OtherDutiesScheduleReport
+                      maGV={selectedLecturer?.maGV}
+                      records={records}
+                      allLecturers={availableLecturers.map((l) => {
+                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        return {
+                          maGV: l.maGV,
+                          hoTen: l.hoTen,
+                          khoaBoMon: l.khoaBoMon,
+                          hocHamHocVi: r?.hocHamHocVi || '',
+                          khoa: l.khoaBoMon,
+                        };
+                      })}
+                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                    />
+                  </div>
+                </div>
               )}
             </div>
 

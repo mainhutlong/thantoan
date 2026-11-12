@@ -1467,7 +1467,9 @@ export const DataTable: React.FC<DataTableProps> = ({
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => {
-                            if (
+                            if (onViewRecordDetail && lecturer.primaryRecord) {
+                              onViewRecordDetail(lecturer.primaryRecord);
+                            } else if (
                               selectedDepartment === 'nckh' &&
                               onViewResearchSchedule &&
                               lecturer.maGV
@@ -1475,8 +1477,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                               onViewResearchSchedule(lecturer.maGV);
                             } else if (onViewTeachingSchedule && lecturer.maGV) {
                               onViewTeachingSchedule(lecturer.maGV);
-                            } else if (onViewRecordDetail) {
-                              onViewRecordDetail(lecturer.primaryRecord);
                             }
                           }}
                           className="font-medium text-slate-800 hover:text-[#005325] hover:underline cursor-pointer text-left truncate"
@@ -1660,7 +1660,9 @@ export const DataTable: React.FC<DataTableProps> = ({
                         {/* 1. Xem chi tiết (Bảng kê chuẩn) */}
                         <button
                           onClick={() => {
-                            if (
+                            if (onViewRecordDetail && lecturer.primaryRecord) {
+                              onViewRecordDetail(lecturer.primaryRecord);
+                            } else if (
                               selectedDepartment === 'nckh' &&
                               onViewResearchSchedule &&
                               lecturer.maGV
@@ -1668,8 +1670,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                               onViewResearchSchedule(lecturer.maGV);
                             } else if (onViewTeachingSchedule && lecturer.maGV) {
                               onViewTeachingSchedule(lecturer.maGV);
-                            } else if (onViewRecordDetail) {
-                              onViewRecordDetail(lecturer.primaryRecord);
                             }
                           }}
                           title="Xem chi tiết bảng kê"

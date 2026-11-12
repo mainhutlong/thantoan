@@ -53,18 +53,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   onClearData,
   selectedDepartment,
 }) => {
-  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
-
-  const handleDownloadClick = () => {
-    try {
-      onDownloadTemplate();
-      setDownloadSuccess(true);
-      setTimeout(() => setDownloadSuccess(false), 3000);
-    } catch (e) {
-      console.error('Error downloading template:', e);
-    }
-  };
 
   const getDepartmentInfo = () => {
     switch (selectedDepartment) {
@@ -140,25 +129,12 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           <a
             href={`/templates/${templateFileName}`}
             download={templateFileName}
-            onClick={handleDownloadClick}
-            className={`h-[30px] px-2.5 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 no-underline ${
-              downloadSuccess
-                ? 'bg-emerald-600 text-white border border-emerald-700'
-                : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200'
-            }`}
+            onClick={onDownloadTemplate}
+            className="h-[30px] px-2.5 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 no-underline bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200"
             title={`Tải file Excel mẫu import dành cho ${deptInfo.badge}`}
           >
-            {downloadSuccess ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-white animate-pulse" />
-                <span>Đã tải mẫu!</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5 text-emerald-700" />
-                <span>Mẫu import</span>
-              </>
-            )}
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Mẫu import</span>
           </a>
 
           {/* Button 3: Nhập liệu từ Excel */}
@@ -183,6 +159,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
           {/* Button 5: Xuất dữ liệu Excel */}
           <button
+            type="button"
             onClick={onExportDataTemplate}
             className="h-[30px] px-2.5 bg-amber-50 hover:bg-amber-100/80 text-amber-800 border border-amber-200 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
             title="Xuất toàn bộ bảng thanh toán thù lao ra file Excel có công thức tính"
