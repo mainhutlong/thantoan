@@ -128,8 +128,8 @@ export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps>
 
   return (
     <div className="w-full max-w-full min-w-0 flex flex-col bg-white p-3 sm:p-4">
-      {/* 1. TOP ACTION TOOLBAR */}
-      <div className="print:hidden w-full max-w-full min-w-0 bg-slate-50 border border-slate-300 rounded-md p-2.5 mb-3 flex items-center justify-between gap-2">
+      {/* 1. TOP ACTION TOOLBAR (Sticky so it stays visible when scrolling) */}
+      <div className="print:hidden w-full max-w-full min-w-0 bg-white/95 backdrop-blur-xs border border-slate-300 rounded-xl p-2.5 mb-3 flex items-center justify-between gap-2 sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
             <FileSpreadsheet className="w-4 h-4 text-[#005325] shrink-0" />

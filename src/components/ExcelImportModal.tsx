@@ -196,7 +196,19 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         const dataRows = json.slice(headerRowIdx + 1).filter((r: any) => {
           if (!r || !Array.isArray(r) || r.length === 0) return false;
           const rowStr = r.map((c: any) => normalizeStr(c)).join(' ');
-          if (rowStr.startsWith('tongcong') || rowStr.startsWith('luuy') || rowStr.startsWith('ghichu') || rowStr.startsWith('nguoilap')) return false;
+          // Bỏ qua dòng mã trường hệ thống (dòng 5) và các dòng ghi chú/tổng cộng
+          if (
+            (rowStr.includes('magiangvien') && rowStr.includes('hovaten')) ||
+            (rowStr.includes('manhanvien') && rowStr.includes('hovaten')) ||
+            (rowStr.includes('mongiangday') && rowStr.includes('malophocphan')) ||
+            (rowStr.includes('sosinhvien') && rowStr.includes('sogiomonhoc')) ||
+            rowStr.startsWith('tongcong') ||
+            rowStr.startsWith('luuy') ||
+            rowStr.startsWith('ghichu') ||
+            rowStr.startsWith('nguoilap')
+          ) {
+            return false;
+          }
           return r.some((c: any) => c !== null && c !== '' && String(c).trim() !== '');
         });
 
@@ -551,14 +563,15 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
             <div className="min-w-0 pr-1">
               <div className="font-bold text-[12px] text-slate-900">Chưa có file mẫu?</div>
               <div className="text-[10.5px] text-slate-500 mt-0.5 leading-snug">
-                Giữ nguyên cột dòng 10, nhập dữ liệu từ dòng 11.
+                Giữ nguyên tiêu đề cột dòng 4, nhập dữ liệu từ dòng 6.
               </div>
             </div>
 
-            <button
-              type="button"
+            <a
+              href={`/templates/${currentDeptMeta.sample}`}
+              download={currentDeptMeta.sample}
               onClick={handleDownloadTemplateClick}
-              className={`shrink-0 h-[32px] px-2.5 text-[11px] font-semibold rounded-xl border shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`shrink-0 h-[32px] px-2.5 text-[11px] font-semibold rounded-xl border shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 no-underline ${
                 downloadSuccess
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                   : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
@@ -576,7 +589,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                   <span>Tải file mẫu</span>
                 </>
               )}
-            </button>
+            </a>
           </div>
 
           {downloadSuccess && (

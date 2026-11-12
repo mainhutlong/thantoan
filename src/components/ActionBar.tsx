@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { DepartmentUnit } from '../types';
+import { getDepartmentTemplateFileName } from '../utils/excelTemplateGenerator';
 
 interface ActionBarProps {
   totalRecords: number;
@@ -119,9 +120,10 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   };
 
   const deptInfo = getDepartmentInfo();
+  const templateFileName = getDepartmentTemplateFileName(selectedDepartment);
 
   return (
-    <div className="bg-white border-b border-[#e2e8f0] px-3 py-1.5 select-none">
+    <div className="bg-white border-b border-[#e2e8f0] px-3 py-1.5 select-none sticky top-0 z-20 shadow-2xs">
       <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
         {/* Buttons Toolbar: Single-line compact layout */}
         <div className="flex items-center flex-nowrap gap-1.5 text-[11.5px] font-medium shrink-0">
@@ -135,9 +137,11 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           </button>
 
           {/* Button 2: Mẫu import (Tải file mẫu Excel chuẩn) */}
-          <button
+          <a
+            href={`/templates/${templateFileName}`}
+            download={templateFileName}
             onClick={handleDownloadClick}
-            className={`h-[30px] px-2.5 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`h-[30px] px-2.5 rounded-lg flex items-center gap-1 shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 no-underline ${
               downloadSuccess
                 ? 'bg-emerald-600 text-white border border-emerald-700'
                 : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200'
@@ -155,7 +159,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
                 <span>Mẫu import</span>
               </>
             )}
-          </button>
+          </a>
 
           {/* Button 3: Nhập liệu từ Excel */}
           <button

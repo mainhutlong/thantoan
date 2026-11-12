@@ -517,6 +517,16 @@ export const DataTable: React.FC<DataTableProps> = ({
     }
   };
 
+  const handleDraftKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveDraft();
+    } else if (e.key === 'Escape' && onCancelAddInline) {
+      e.preventDefault();
+      onCancelAddInline();
+    }
+  };
+
   // Group teaching records by lecturer: Mỗi người chỉ đúng 1 hàng dữ liệu
   const lecturerSummaries: LecturerSummaryRow[] = useMemo(() => {
     const map = new Map<string, TeachingRecord[]>();
@@ -734,15 +744,18 @@ export const DataTable: React.FC<DataTableProps> = ({
     sortedLecturers.every((l) => l.records.some((r) => selectedIds.includes(r.id)));
 
   return (
-    <div className="w-full min-w-0 bg-white select-none flex flex-col h-fit max-h-full overflow-hidden">
-      {/* Scrollable table container that hugs table content height so scrollbar is directly under rows */}
-      <div className="w-full min-w-0 overflow-auto relative border-t border-b border-slate-200 h-fit max-h-full">
+    <div className="w-full min-w-0 bg-white select-none flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      {/* Scrollable table container */}
+      <div
+        id="main-datatable-scroll-container"
+        className="w-full min-w-0 overflow-auto relative border-t border-b border-slate-200 flex-1 h-full"
+      >
         <table className="w-max min-w-full text-left border-separate border-spacing-0 font-sans">
           {/* Table Header: 4 cột cố định (Checkbox, TT, Mã GV, Họ và tên) + Các cột số liệu tùy theo Chuyên mục */}
           <thead>
             <tr className="bg-[#f8fafc] text-[#1e293b] text-[12px] font-semibold h-[38px]">
               {/* Col 0: Checkbox + Refresh */}
-              <th className="sticky top-0 z-10 w-[44px] min-w-[44px] max-w-[44px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc]">
+              <th className="sticky top-0 z-10 w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc]">
                 <div className="flex items-center justify-center gap-1">
                   <input
                     type="checkbox"
@@ -762,7 +775,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               </th>
 
               {/* Col 1: TT */}
-              <th className="sticky top-0 z-10 w-[48px] min-w-[48px] max-w-[48px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc] text-[#1e293b] font-semibold">
+              <th className="sticky top-0 z-10 w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc] text-[#1e293b] font-semibold">
                 TT
               </th>
 
@@ -1069,31 +1082,48 @@ export const DataTable: React.FC<DataTableProps> = ({
           <tbody className="text-[12px] font-sans font-normal text-slate-600">
             {/* INLINE NEW ROW DRAFT */}
             {isAddingInline && (
-              <tr className="bg-emerald-50/80 border-b-2 border-emerald-500 h-[42px] transition-colors shadow-xs animate-fadeIn">
-                {/* Col 0: Plus indicator */}
-                <td className="w-[44px] min-w-[44px] max-w-[44px] px-1 text-center border-b border-r border-emerald-300 bg-emerald-50">
-                  <span
-                    className="w-5 h-5 rounded-full bg-[#005325] text-white text-[11px] font-bold inline-flex items-center justify-center shadow-xs"
-                    title="Đang tạo dòng mới"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </span>
-                </td>
-
-                {/* Col 1: TT */}
-                <td className="w-[48px] min-w-[48px] max-w-[48px] px-1 text-center font-mono text-emerald-800 font-bold border-b border-r border-emerald-300 bg-emerald-50 text-[11.5px]">
-                  *
+              <tr
+                onKeyDown={handleDraftKeyDown}
+                className="bg-white border-b border-slate-300 h-[40px] transition-colors shadow-2xs"
+              >
+                {/* Col đầu (Cột 0 + 1 gộp): Hủy và Lưu */}
+                <td
+                  colSpan={2}
+                  className="w-[108px] min-w-[108px] max-w-[108px] px-1.5 py-1 text-center border-b border-r border-slate-200 bg-white"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    {onCancelAddInline && (
+                      <button
+                        type="button"
+                        onClick={onCancelAddInline}
+                        title="Hủy bỏ thêm mới (Esc)"
+                        className="h-[26px] px-2 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-rose-600 text-[11.5px] font-sans font-medium flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Hủy</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      title="Lưu dòng giảng viên này (Enter)"
+                      className="h-[26px] px-2.5 rounded bg-[#005325] hover:bg-[#00421e] text-white text-[11.5px] font-sans font-medium flex items-center gap-1 cursor-pointer shadow-xs transition-colors"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Lưu</span>
+                    </button>
+                  </div>
                 </td>
 
                 {/* Col 2: Mã GV */}
-                <td className="w-[115px] min-w-[115px] max-w-[115px] p-1 border-b border-r border-emerald-300 bg-emerald-50">
+                <td className="w-[115px] min-w-[115px] max-w-[115px] p-1 border-b border-r border-slate-200 bg-white">
                   <input
                     type="text"
                     list="lecturers-datalist"
                     value={draftRow.maGV}
                     onChange={(e) => handleDraftChange('maGV', e.target.value)}
                     placeholder="Mã GV"
-                    className="w-full h-[28px] px-1.5 text-[11.5px] font-mono font-bold text-slate-800 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none placeholder:text-slate-400"
+                    className="w-full h-[28px] px-2 text-[12px] font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none placeholder:text-slate-400 transition-colors"
                     autoFocus
                   />
                   <datalist id="lecturers-datalist">
@@ -1106,223 +1136,223 @@ export const DataTable: React.FC<DataTableProps> = ({
                 </td>
 
                 {/* Col 3: Họ và tên Giảng viên */}
-                <td className="min-w-[220px] p-1 border-b border-r border-emerald-300 bg-emerald-50">
+                <td className="min-w-[220px] p-1 border-b border-r border-slate-200 bg-white">
                   <input
                     type="text"
                     value={draftRow.hoTen}
                     onChange={(e) => handleDraftChange('hoTen', e.target.value)}
                     placeholder="Họ và tên GV..."
-                    className="w-full h-[28px] px-2 text-[11.5px] font-semibold text-slate-800 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none placeholder:text-slate-400"
+                    className="w-full h-[28px] px-2 text-[12px] font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none placeholder:text-slate-400 transition-colors"
                   />
                 </td>
 
                 {isResearch ? (
                   <>
-                    <td className="min-w-[150px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[150px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="1"
                         value={draftRow.tongSoBaiNCKH}
                         onChange={(e) => handleDraftChange('tongSoBaiNCKH', e.target.value)}
-                        className="w-[85px] h-[28px] px-1.5 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số bài"
                       />
                     </td>
-                    <td className="min-w-[180px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[180px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="1"
                         value={draftRow.tongSoTietQuyDoiNCKH}
                         onChange={(e) => handleDraftChange('tongSoTietQuyDoiNCKH', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Tiết quy đổi"
                       />
                     </td>
                   </>
                 ) : isExam ? (
                   <>
-                    <td className="min-w-[125px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[125px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.soCaCoiThi}
                         onChange={(e) => handleDraftChange('soCaCoiThi', e.target.value)}
-                        className="w-[75px] h-[28px] px-1 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[75px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số ca"
                       />
                     </td>
-                    <td className="min-w-[135px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[135px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.soBaiChamThi}
                         onChange={(e) => handleDraftChange('soBaiChamThi', e.target.value)}
-                        className="w-[85px] h-[28px] px-1 text-center font-mono font-medium text-slate-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số bài"
                       />
                     </td>
-                    <td className="min-w-[110px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[110px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.soDeRa}
                         onChange={(e) => handleDraftChange('soDeRa', e.target.value)}
-                        className="w-[70px] h-[28px] px-1 text-center font-mono font-medium text-slate-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[70px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số đề"
                       />
                     </td>
-                    <td className="min-w-[160px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[160px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="0.5"
                         value={draftRow.tongTietQCKhaoThi}
                         onChange={(e) => handleDraftChange('tongTietQCKhaoThi', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Tiết quy đổi"
                       />
                     </td>
                   </>
                 ) : isThesis ? (
                   <>
-                    <td className="min-w-[145px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[145px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.soDeTaiHuongDan}
                         onChange={(e) => handleDraftChange('soDeTaiHuongDan', e.target.value)}
-                        className="w-[85px] h-[28px] px-1 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số đề tài"
                       />
                     </td>
-                    <td className="min-w-[145px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[145px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.soLuotChamHoiDong}
                         onChange={(e) => handleDraftChange('soLuotChamHoiDong', e.target.value)}
-                        className="w-[85px] h-[28px] px-1 text-center font-mono font-medium text-slate-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số lượt HĐ"
                       />
                     </td>
-                    <td className="min-w-[160px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[160px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="0.5"
                         value={draftRow.tongTietQCDoAn}
                         onChange={(e) => handleDraftChange('tongTietQCDoAn', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Tiết quy đổi"
                       />
                     </td>
                   </>
                 ) : isAdvisor ? (
                   <>
-                    <td className="min-w-[115px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[115px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="1"
                         value={draftRow.soLopCVHT}
                         onChange={(e) => handleDraftChange('soLopCVHT', e.target.value)}
-                        className="w-[75px] h-[28px] px-1 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[75px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số lớp"
                       />
                     </td>
-                    <td className="min-w-[130px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[130px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.tongSoSVCVHT}
                         onChange={(e) => handleDraftChange('tongSoSVCVHT', e.target.value)}
-                        className="w-[85px] h-[28px] px-1 text-center font-mono font-medium text-slate-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số SV"
                       />
                     </td>
-                    <td className="min-w-[145px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[145px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="text"
                         value={draftRow.xepLoaiCVHT}
                         onChange={(e) => handleDraftChange('xepLoaiCVHT', e.target.value)}
-                        className="w-full h-[28px] px-1.5 text-center text-[11.5px] font-medium text-slate-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none"
+                        className="w-full h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none placeholder:text-slate-400 transition-colors"
                         placeholder="Xếp loại"
                       />
                     </td>
-                    <td className="min-w-[160px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[160px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="0.5"
                         value={draftRow.tongTietQCCVHT}
                         onChange={(e) => handleDraftChange('tongTietQCCVHT', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Tiết quy đổi"
                       />
                     </td>
                   </>
                 ) : isAdmission ? (
                   <>
-                    <td className="min-w-[135px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[135px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="1"
                         value={draftRow.soNgayCongTac}
                         onChange={(e) => handleDraftChange('soNgayCongTac', e.target.value)}
-                        className="w-[85px] h-[28px] px-1 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số ngày"
                       />
                     </td>
-                    <td className="min-w-[240px] p-1 border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[240px] p-1 border-b border-r border-slate-200 bg-white">
                       <input
                         type="text"
                         value={draftRow.diaBanTuyenSinh}
                         onChange={(e) => handleDraftChange('diaBanTuyenSinh', e.target.value)}
-                        className="w-full h-[28px] px-2 text-[11.5px] font-normal text-slate-800 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none"
+                        className="w-full h-[28px] px-2 font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none placeholder:text-slate-400 transition-colors"
                         placeholder="Địa bàn / Trường THPT..."
                       />
                     </td>
-                    <td className="min-w-[160px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[160px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="0.5"
                         value={draftRow.tongTietQCTuyenSinh}
                         onChange={(e) => handleDraftChange('tongTietQCTuyenSinh', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Tiết quy đổi"
                       />
                     </td>
                   </>
                 ) : isOther ? (
                   <>
-                    <td className="min-w-[130px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[130px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="1"
                         value={draftRow.soNhiemVuKiemNhiem}
                         onChange={(e) => handleDraftChange('soNhiemVuKiemNhiem', e.target.value)}
-                        className="w-[85px] h-[28px] px-1 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[85px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Số nhiệm vụ"
                       />
                     </td>
-                    <td className="min-w-[240px] p-1 border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[240px] p-1 border-b border-r border-slate-200 bg-white">
                       <input
                         type="text"
                         value={draftRow.chiTietNhiemVu}
                         onChange={(e) => handleDraftChange('chiTietNhiemVu', e.target.value)}
-                        className="w-full h-[28px] px-2 text-[11.5px] font-normal text-slate-800 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none"
+                        className="w-full h-[28px] px-2 font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none placeholder:text-slate-400 transition-colors"
                         placeholder="Nhiệm vụ chính..."
                       />
                     </td>
-                    <td className="min-w-[160px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[160px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="0.5"
                         value={draftRow.tongTietQCKiemNhiem}
                         onChange={(e) => handleDraftChange('tongTietQCKiemNhiem', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block placeholder:text-slate-400 transition-colors"
                         placeholder="Tiết quy đổi"
                       />
                     </td>
@@ -1330,76 +1360,55 @@ export const DataTable: React.FC<DataTableProps> = ({
                 ) : (
                   <>
                     {/* Col 4 (Giờ giảng): Tổng số môn */}
-                    <td className="min-w-[130px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[130px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="1"
                         value={draftRow.tongSoMon}
                         onChange={(e) => handleDraftChange('tongSoMon', e.target.value)}
-                        className="w-[80px] h-[28px] px-1.5 text-center font-mono font-semibold text-blue-700 bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[80px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block transition-colors"
                       />
                     </td>
 
                     {/* Col 5 (Giờ giảng): Tổng số sinh viên */}
-                    <td className="min-w-[150px] p-1 text-center border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[150px] p-1 text-center border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.tongSoSinhVien}
                         onChange={(e) => handleDraftChange('tongSoSinhVien', e.target.value)}
-                        className="w-[90px] h-[28px] px-1.5 text-center font-mono text-slate-700 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:outline-none mx-auto block"
+                        className="w-[90px] h-[28px] px-2 text-center font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none mx-auto block transition-colors"
                       />
                     </td>
 
                     {/* Col 6 (Giờ giảng): Tổng số tiết */}
-                    <td className="min-w-[140px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[140px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         value={draftRow.tongSoTiet}
                         onChange={(e) => handleDraftChange('tongSoTiet', e.target.value)}
-                        className="w-[90px] h-[28px] px-2 text-right font-mono font-semibold text-slate-800 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[90px] h-[28px] px-2 text-right font-sans text-[12px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block transition-colors"
                       />
                     </td>
 
                     {/* Col 7 (Giờ giảng): Tổng giờ giảng dạy */}
-                    <td className="min-w-[170px] p-1 text-right border-b border-r border-emerald-200 bg-emerald-50/50">
+                    <td className="min-w-[170px] p-1 text-right border-b border-r border-slate-200 bg-white">
                       <input
                         type="number"
                         min="0"
                         step="0.5"
                         value={draftRow.tongGioGiangDay}
                         onChange={(e) => handleDraftChange('tongGioGiangDay', e.target.value)}
-                        className="w-[100px] h-[28px] px-2 text-right font-mono font-bold text-[#005325] bg-white border border-emerald-400 rounded focus:border-emerald-600 focus:outline-none ml-auto block"
+                        className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block transition-colors"
                       />
                     </td>
                   </>
                 )}
 
-                {/* Col Thao tác (Lưu & Hủy) */}
-                <td className="w-[110px] min-w-[110px] p-1 border-b border-emerald-300 bg-emerald-50 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <button
-                      type="button"
-                      onClick={handleSaveDraft}
-                      title="Lưu dòng giảng viên này vào hệ thống"
-                      className="h-[28px] px-2 rounded bg-[#005325] hover:bg-[#00421e] text-white text-[11.5px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs transition-colors"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Lưu</span>
-                    </button>
-                    {onCancelAddInline && (
-                      <button
-                        type="button"
-                        onClick={onCancelAddInline}
-                        title="Hủy bỏ dòng mới này"
-                        className="h-[28px] px-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rose-600 text-[11.5px] font-medium flex items-center gap-0.5 cursor-pointer transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Hủy</span>
-                      </button>
-                    )}
-                  </div>
+                {/* Col Thao tác */}
+                <td className="w-[110px] min-w-[110px] p-1 border-b border-slate-200 bg-white text-center text-slate-400 text-[12px] font-normal">
+                  —
                 </td>
               </tr>
             )}
@@ -1434,7 +1443,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     }`}
                   >
                     {/* Col 0: Checkbox */}
-                    <td className="w-[44px] min-w-[44px] max-w-[44px] px-2 text-center border-b border-r border-[#e2e8f0]">
+                    <td className="w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#e2e8f0]">
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -1444,7 +1453,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                     </td>
 
                     {/* Col 1: TT */}
-                    <td className="w-[48px] min-w-[48px] max-w-[48px] px-2 text-center font-mono text-slate-500 border-b border-r border-[#e2e8f0] whitespace-nowrap">
+                    <td className="w-[54px] min-w-[54px] max-w-[54px] px-2 text-center font-mono text-slate-500 border-b border-r border-[#e2e8f0] whitespace-nowrap">
                       {index + 1}
                     </td>
 
