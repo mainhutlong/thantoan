@@ -49,6 +49,15 @@ export interface FeedbackItem {
   ngayXuLy?: string;
 }
 
+export interface FeedbackRowInfo {
+  rowId: string;
+  tt: number | string;
+  title: string;
+  subtitle?: string;
+  khoiLuong?: string | number;
+  amount?: number;
+}
+
 export interface VbccRecord {
   id: string;
   tt: number;

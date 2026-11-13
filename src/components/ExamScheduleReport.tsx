@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TeachingRecord } from '../types';
+import { TeachingRecord, FeedbackRowInfo } from '../types';
 import {
   Printer,
   Download,
@@ -42,6 +42,9 @@ interface ExamScheduleReportProps {
   academicYear?: string;
   viewMode?: 'excel_sheet' | 'compact_table';
   onViewModeChange?: (mode: 'excel_sheet' | 'compact_table') => void;
+  selectedRowIds?: string[];
+  onToggleSelectRow?: (row: FeedbackRowInfo) => void;
+  onSelectAllRows?: (rows: FeedbackRowInfo[], selectAll: boolean) => void;
 }
 
 export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
@@ -55,6 +58,9 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
   academicYear = '2025 - 2026',
   viewMode,
   onViewModeChange,
+  selectedRowIds = [],
+  onToggleSelectRow,
+  onSelectAllRows,
 }) => {
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
@@ -397,6 +403,20 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
     setExamRows(updated);
   };
 
+  const allSelectableRows = useMemo(() => {
+    return examRows.map((r) => ({
+      rowId: r.id,
+      tt: r.tt,
+      title: r.tenHocPhan || 'Học phần thi',
+      subtitle: `Lớp ${r.maLopHocPhan} · Đợt ${r.dotThi}`,
+      khoiLuong: `${r.soGioQuyChuan} giờ QC`,
+    }));
+  }, [examRows]);
+
+  const areAllSelected =
+    allSelectableRows.length > 0 &&
+    allSelectableRows.every((r) => selectedRowIds.includes(r.rowId));
+
   return (
     <div className="w-full bg-slate-100 min-h-screen py-4 px-2 sm:px-4 font-sans text-slate-800">
       {/* 1. Header Toolbar */}
@@ -557,6 +577,15 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
           <table className="w-full border-collapse text-[12px] text-center">
             <thead>
               <tr className="bg-[#FFFF99] text-slate-900 font-bold border-b border-slate-400">
+                <th className="p-2 border-r border-slate-400 w-9 text-center bg-[#FFFF99] print:hidden">
+                  <input
+                    type="checkbox"
+                    checked={areAllSelected}
+                    onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                    className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                    title="Chọn tất cả để phản hồi"
+                  />
+                </th>
                 <th className="p-2 border-r border-slate-400 w-10">TT</th>
                 <th className="p-2 border-r border-slate-400 text-left min-w-[200px]">Tên học phần thi</th>
                 <th className="p-2 border-r border-slate-400 min-w-[100px]">Lớp HP</th>
@@ -573,6 +602,23 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
             <tbody>
               {examRows.map((row, idx) => (
                 <tr key={row.id} className="border-b border-slate-300 hover:bg-slate-50/50">
+                  <td className="p-2 border-r border-slate-300 text-center print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={selectedRowIds.includes(row.id)}
+                      onChange={() =>
+                        onToggleSelectRow?.({
+                          rowId: row.id,
+                          tt: row.tt,
+                          title: row.tenHocPhan,
+                          subtitle: `Lớp ${row.maLopHocPhan} · Đợt ${row.dotThi}`,
+                          khoiLuong: `${row.soGioQuyChuan} giờ QC`,
+                        })
+                      }
+                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                      title={`Chọn dòng ${row.tt} để phản hồi`}
+                    />
+                  </td>
                   <td className="p-2 border-r border-slate-300 font-semibold">{row.tt}</td>
                   <td className="p-2 border-r border-slate-300 text-left">
                     <input
@@ -661,7 +707,7 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
 
               {/* Summary Total Row */}
               <tr className="bg-slate-100 font-bold text-[12.5px] border-t-2 border-slate-500">
-                <td colSpan={4} className="p-2.5 text-center text-[#005325] uppercase tracking-wide border-r border-slate-400">
+                <td colSpan={5} className="p-2.5 text-center text-[#005325] uppercase tracking-wide border-r border-slate-400">
                   TỔNG CỘNG CÔNG TÁC KHẢO THÍ:
                 </td>
                 <td className="p-2.5 text-center border-r border-slate-400 font-mono text-slate-900">

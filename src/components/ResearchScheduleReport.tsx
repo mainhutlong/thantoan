@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TeachingRecord } from '../types';
+import { TeachingRecord, FeedbackRowInfo } from '../types';
 import {
   Printer,
   Download,
@@ -37,6 +37,9 @@ interface ResearchScheduleReportProps {
   viewMode?: 'excel_sheet' | 'compact_table';
   onViewModeChange?: (mode: 'excel_sheet' | 'compact_table') => void;
   compactContent?: React.ReactNode;
+  selectedRowIds?: string[];
+  onToggleSelectRow?: (row: FeedbackRowInfo) => void;
+  onSelectAllRows?: (rows: FeedbackRowInfo[], selectAll: boolean) => void;
 }
 
 export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
@@ -52,6 +55,9 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   viewMode,
   onViewModeChange,
   compactContent,
+  selectedRowIds = [],
+  onToggleSelectRow,
+  onSelectAllRows,
 }) => {
   // Find lecturer info
   const lecturerRecords = useMemo(() => {
@@ -167,6 +173,22 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
       return !isNaN(val) && val > 0 ? sum + val : sum;
     }, 0);
   }, [nckhRows]);
+
+  const allSelectableRows = useMemo(() => {
+    return nckhRows
+      .filter((r) => r.noiDung || r.theLoai || r.soGioQuyChuan)
+      .map((r) => ({
+        rowId: r.id,
+        tt: r.tt,
+        title: r.noiDung || 'Nội dung NCKH',
+        subtitle: r.theLoai ? `Thể loại: ${r.theLoai}` : undefined,
+        khoiLuong: r.soGioQuyChuan ? `${r.soGioQuyChuan} giờ QC` : undefined,
+      }));
+  }, [nckhRows]);
+
+  const areAllSelected =
+    allSelectableRows.length > 0 &&
+    allSelectableRows.every((r) => selectedRowIds.includes(r.rowId));
 
   // Cell style logic: Empty inputs are yellow '#FFFF99'.
   // Filled inputs change color (to white) as stated in the note: "khi nhập xong sẽ đổi màu"
@@ -591,6 +613,15 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
               {/* TABLE HEADER - EXACTLY MATCHING IMAGE */}
               <thead>
                 <tr className="bg-[#bfbfbf] text-black h-[34px]">
+                  <th className="w-[30px] px-0.5 py-1 text-center font-normal border border-black bg-[#bfbfbf] print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={areAllSelected}
+                      onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                      title="Chọn tất cả để phản hồi"
+                    />
+                  </th>
                   <th className="w-[38px] px-1 py-1 text-center font-normal border border-black">
                     TT
                   </th>
@@ -619,6 +650,25 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
                   return (
                     <tr key={row.id} className="h-[26px]">
+                      {/* Checkbox trước TT */}
+                      <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIds.includes(row.id)}
+                          onChange={() =>
+                            onToggleSelectRow?.({
+                              rowId: row.id,
+                              tt: row.tt,
+                              title: row.noiDung || 'Nội dung NCKH',
+                              subtitle: row.theLoai ? `Thể loại: ${row.theLoai}` : undefined,
+                              khoiLuong: row.soGioQuyChuan ? `${row.soGioQuyChuan} giờ QC` : undefined,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title={`Chọn dòng ${row.tt} để phản hồi`}
+                        />
+                      </td>
+
                       {/* TT */}
                       <td className="px-1 py-0 text-center font-normal border border-black bg-white">
                         {row.tt}
@@ -678,6 +728,9 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
                 {/* FOOTER ROW 1: TỔNG SỐ GIỜ NGHIÊN CỨU KHOA HỌC - EXACTLY MATCHING IMAGE */}
                 <tr className="h-[28px]">
+                  {/* Empty checkbox cell */}
+                  <td className="border border-black bg-white print:hidden"></td>
+
                   {/* Empty TT cell with border */}
                   <td className="border border-black bg-white"></td>
 

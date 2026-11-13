@@ -33,16 +33,73 @@ import {
   MoreVertical,
   Edit3,
   Save,
-  Download
+  Download,
+  MessageSquare,
+  Trash2,
+  X,
+  Sparkles,
+  Plus,
+  GitBranch,
+  ChevronDown
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { TeachingRecord, FeedbackItem, UserRole, UserAccount } from '../types';
+import { TeachingRecord, FeedbackItem, UserRole, UserAccount, FeedbackRowInfo } from '../types';
 import { TeachingScheduleReport } from './TeachingScheduleReport';
 import { ResearchScheduleReport } from './ResearchScheduleReport';
 import { ExamScheduleReport } from './ExamScheduleReport';
 import { AdvisorScheduleReport } from './AdvisorScheduleReport';
 import { AdmissionScheduleReport } from './AdmissionScheduleReport';
 import { OtherDutiesScheduleReport } from './OtherDutiesScheduleReport';
+
+export interface FeedbackSelectedRow {
+  rowId: string;
+  tabKey: TabKey;
+  tt: number | string;
+  title: string;
+  subtitle?: string;
+  khoiLuong?: string | number;
+  amount?: number;
+}
+
+export interface RowAdjustmentProposal {
+  id: string;
+  targetRecordId: string;
+  tabKey: TabKey;
+  tt: number | string;
+  originalData: {
+    tenHocPhan: string;
+    maLopHocPhan: string;
+    soGioThucGiang: number;
+    heSoLopNhom: number;
+    soGioQuyChuan: number;
+    donGiaTiet: number;
+    tongTienThuLao: number;
+    thucNhan: number;
+  };
+  adjustedData: {
+    tenHocPhan: string;
+    maLopHocPhan: string;
+    soGioThucGiang: number;
+    heSoLopNhom: number;
+    soGioQuyChuan: number;
+    donGiaTiet: number;
+    tongTienThuLao: number;
+    thucNhan: number;
+  };
+  reasonCategory: string;
+  feedbackNote: string;
+  status: 'da_gui' | 'da_duyet' | 'tu_choi';
+  submittedAt: string;
+}
+
+export interface VersionSnapshot {
+  version: number;
+  title: string;
+  createdAt: string;
+  approvedBy?: string;
+  records: TeachingRecord[];
+  approvedAdjustments?: RowAdjustmentProposal[];
+}
 
 interface LecturerVerificationPageProps {
   records: TeachingRecord[];
@@ -98,6 +155,76 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   const [isTopActionMenuOpen, setIsTopActionMenuOpen] = useState(false);
   const [isSheetEditable, setIsSheetEditable] = useState(true);
 
+  // Active records & Table Versioning
+  const [activeRecords, setActiveRecords] = useState<TeachingRecord[]>(records);
+  const [versions, setVersions] = useState<VersionSnapshot[]>([
+    {
+      version: 1,
+      title: 'Version 1 (Bản gốc)',
+      createdAt: 'Bản gốc ban đầu',
+      records: records,
+    },
+  ]);
+  const [currentVersion, setCurrentVersion] = useState<number>(1);
+  const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
+  const [pendingAdjustments, setPendingAdjustments] = useState<RowAdjustmentProposal[]>([]);
+
+  // Draft edits for rows inside the feedback form
+  const [rowDrafts, setRowDrafts] = useState<
+    Record<
+      string,
+      {
+        newGioThucGiang: number;
+        newHeSo: number;
+        note: string;
+        reasonCategory: string;
+      }
+    >
+  >({});
+
+  // Sync when prop records changes
+  useEffect(() => {
+    setActiveRecords(records);
+    setVersions([
+      {
+        version: 1,
+        title: 'Version 1 (Bản gốc)',
+        createdAt: 'Bản gốc ban đầu',
+        records: records,
+      },
+    ]);
+    setCurrentVersion(1);
+    setPendingAdjustments([]);
+  }, [records]);
+
+  const getRowDraft = (rowId: string, rec?: TeachingRecord) => {
+    if (rowDrafts[rowId]) return rowDrafts[rowId];
+    const gio = rec?.soGioThucGiang || rec?.soGioMonHoc || 30;
+    const heSo = rec?.heSoLopNhom || rec?.heSoLop || 1.25;
+    return {
+      newGioThucGiang: gio,
+      newHeSo: heSo,
+      note: '',
+      reasonCategory: 'sai_so_tiet',
+    };
+  };
+
+  const updateRowDraft = (
+    rowId: string,
+    field: 'newGioThucGiang' | 'newHeSo' | 'note' | 'reasonCategory',
+    value: any,
+    rec?: TeachingRecord
+  ) => {
+    const current = getRowDraft(rowId, rec);
+    setRowDrafts((prev) => ({
+      ...prev,
+      [rowId]: {
+        ...current,
+        [field]: value,
+      },
+    }));
+  };
+
   // Feedback form state
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [feedbackCategory, setFeedbackCategory] = useState<
@@ -107,6 +234,66 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackSubject, setFeedbackSubject] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Selected rows for feedback across tabs
+  const [selectedFeedbackRows, setSelectedFeedbackRows] = useState<FeedbackSelectedRow[]>([]);
+
+  // Selected rows specifically for the active tab
+  const selectedRowsInActiveTab = useMemo(() => {
+    return selectedFeedbackRows.filter((r) => r.tabKey === activeTab);
+  }, [selectedFeedbackRows, activeTab]);
+
+  const selectedRowIdsInActiveTab = useMemo(() => {
+    return selectedRowsInActiveTab.map((r) => r.rowId);
+  }, [selectedRowsInActiveTab]);
+
+  const handleToggleSelectRow = (tabKey: TabKey, row: FeedbackRowInfo) => {
+    setSelectedFeedbackRows((prev) => {
+      const exists = prev.some((r) => r.rowId === row.rowId);
+      if (exists) {
+        return prev.filter((r) => r.rowId !== row.rowId);
+      } else {
+        return [
+          ...prev,
+          {
+            rowId: row.rowId,
+            tabKey,
+            tt: row.tt,
+            title: row.title,
+            subtitle: row.subtitle,
+            khoiLuong: row.khoiLuong,
+            amount: row.amount,
+          },
+        ];
+      }
+    });
+  };
+
+  const handleSelectAllRowsForTab = (tabKey: TabKey, rows: FeedbackRowInfo[], selectAll: boolean) => {
+    setSelectedFeedbackRows((prev) => {
+      const targetIds = new Set(rows.map((r) => r.rowId));
+      const remaining = prev.filter((r) => !targetIds.has(r.rowId));
+      if (!selectAll) return remaining;
+      const toAdd: FeedbackSelectedRow[] = rows.map((r) => ({
+        rowId: r.rowId,
+        tabKey,
+        tt: r.tt,
+        title: r.title,
+        subtitle: r.subtitle,
+        khoiLuong: r.khoiLuong,
+        amount: r.amount,
+      }));
+      return [...remaining, ...toAdd];
+    });
+  };
+
+  const handleRemoveSelectedRow = (rowId: string) => {
+    setSelectedFeedbackRows((prev) => prev.filter((r) => r.rowId !== rowId));
+  };
+
+  const handleClearSelectedRowsForTab = (tabKey: TabKey) => {
+    setSelectedFeedbackRows((prev) => prev.filter((r) => r.tabKey !== tabKey));
+  };
 
   // Per-Lecturer & Per-Category approval states (default pending so buttons start recessed/unconfirmed)
   const [categoryStates, setCategoryStates] = useState<
@@ -142,13 +329,13 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   // Unique lecturers list for search quick selector
   const availableLecturers = useMemo(() => {
     const map = new Map<string, { maGV: string; hoTen: string; khoaBoMon: string }>();
-    records.forEach((r) => {
+    activeRecords.forEach((r) => {
       if (!map.has(r.maGV)) {
         map.set(r.maGV, { maGV: r.maGV, hoTen: r.hoTen, khoaBoMon: r.khoaBoMon });
       }
     });
     return Array.from(map.values());
-  }, [records]);
+  }, [activeRecords]);
 
   // Selected Lecturer
   const selectedLecturer = useMemo(() => {
@@ -159,11 +346,11 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     return found || availableLecturers[0];
   }, [availableLecturers, searchQuery]);
 
-  // All records for this lecturer
+  // All records for this lecturer from activeRecords (reflects current Version)
   const lecturerRecords = useMemo(() => {
     if (!selectedLecturer) return [];
-    return records.filter((r) => r.maGV === selectedLecturer.maGV);
-  }, [records, selectedLecturer]);
+    return activeRecords.filter((r) => r.maGV === selectedLecturer.maGV);
+  }, [activeRecords, selectedLecturer]);
 
   // Sums across 6 modules for this lecturer
   const summary = useMemo(() => {
@@ -359,6 +546,14 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       minute: '2-digit',
     })}`;
 
+    // Khi đồng ý xác nhận: tự động đóng khung phản hồi nếu đang mở và xóa chọn dòng của mục đó
+    setIsFeedbackOpen(false);
+    if (tabKey === 'tong_quan') {
+      setSelectedFeedbackRows([]);
+    } else {
+      setSelectedFeedbackRows((prev) => prev.filter((r) => r.tabKey !== tabKey));
+    }
+
     setCategoryStates((prev) => {
       const lecturerMap = prev[selectedLecturer.maGV] || ({} as Record<TabKey, CategoryApprovalStatus>);
       const updated = {
@@ -388,11 +583,11 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     setFeedbackTargetTab(tabKey);
     const categoryNames: Record<TabKey, string> = {
       tong_quan: 'Thù lao tổng hợp các nguồn',
-      dao_tao: 'Thanh toán giờ giảng dạy',
-      khao_thi: 'Coi thi, chấm thi, ra đề thi',
-      tuyen_sinh: 'Công tác tuyển sinh',
-      nckh: 'Nghiên cứu khoa học',
-      co_van_hoc_tap: 'Cố vấn học tập',
+      dao_tao: 'Thanh toán giờ giảng (Phòng Đào tạo)',
+      khao_thi: 'Coi thi, chấm thi, ra đề (Phòng Khảo thí & ĐBCL)',
+      tuyen_sinh: 'Công tác tuyển sinh (Phòng Tuyển sinh & Truyền thông)',
+      nckh: 'Nghiên cứu khoa học (Phòng Quản lý KH & HTQT)',
+      co_van_hoc_tap: 'Cố vấn học tập (Phòng CTCT & Quản lý SV)',
       cong_tac_khac: 'Nhiệm vụ công tác khác',
     };
     setFeedbackSubject(categoryNames[tabKey] || '');
@@ -406,16 +601,112 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     setIsFeedbackOpen(true);
   };
 
+  const handleTabChange = (key: TabKey) => {
+    setActiveTab(key);
+    if (isFeedbackOpen) {
+      if (getTabStatus(key).status === 'confirmed') {
+        setIsFeedbackOpen(false);
+      } else {
+        setFeedbackTargetTab(key);
+        const categoryNames: Record<TabKey, string> = {
+          tong_quan: 'Thù lao tổng hợp các nguồn',
+          dao_tao: 'Thanh toán giờ giảng (Phòng Đào tạo)',
+          khao_thi: 'Coi thi, chấm thi, ra đề (Phòng Khảo thí & ĐBCL)',
+          tuyen_sinh: 'Công tác tuyển sinh (Phòng Tuyển sinh & Truyền thông)',
+          nckh: 'Nghiên cứu khoa học (Phòng Quản lý KH & HTQT)',
+          co_van_hoc_tap: 'Cố vấn học tập (Phòng CTCT & Quản lý SV)',
+          cong_tac_khac: 'Nhiệm vụ công tác khác',
+        };
+        setFeedbackSubject(categoryNames[key] || '');
+      }
+    }
+  };
+
   // Submit feedback
   const handleSubmitFeedback = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedLecturer || !feedbackContent.trim()) return;
+    if (!selectedLecturer) return;
 
     const now = new Date();
     const dateStr = `${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
     })}`;
+
+    // 1. Nếu có hàng được chọn -> Tạo đề xuất điều chỉnh cụ thể cho từng hàng
+    if (selectedRowsInActiveTab.length > 0) {
+      const newProposals: RowAdjustmentProposal[] = selectedRowsInActiveTab.map((row) => {
+        const rec = activeRecords.find((r) => r.id === row.rowId);
+        const draft = getRowDraft(row.rowId, rec);
+        const heSoTC = rec?.heSoTinChi || 1.0;
+        const newQC = Number((draft.newGioThucGiang * draft.newHeSo * heSoTC).toFixed(1));
+        const donGia = rec?.donGiaTiet || 100000;
+        const newTong = newQC * donGia;
+        const newThucNhan = Math.round(newTong * 0.9);
+
+        return {
+          id: `adj-${Date.now()}-${row.rowId}`,
+          targetRecordId: row.rowId,
+          tabKey: activeTab,
+          tt: row.tt,
+          originalData: {
+            tenHocPhan: rec?.tenHocPhan || row.title,
+            maLopHocPhan: rec?.maLopHocPhan || '',
+            soGioThucGiang: rec?.soGioThucGiang || 30,
+            heSoLopNhom: rec?.heSoLopNhom || rec?.heSoLop || 1.25,
+            soGioQuyChuan: rec?.soGioQuyChuan || rec?.tongTietQC || 37.5,
+            donGiaTiet: rec?.donGiaTiet || 100000,
+            tongTienThuLao: rec?.tongTienThuLao || 3750000,
+            thucNhan: rec?.thucNhan || 3375000,
+          },
+          adjustedData: {
+            tenHocPhan: rec?.tenHocPhan || row.title,
+            maLopHocPhan: rec?.maLopHocPhan || '',
+            soGioThucGiang: draft.newGioThucGiang,
+            heSoLopNhom: draft.newHeSo,
+            soGioQuyChuan: newQC,
+            donGiaTiet: donGia,
+            tongTienThuLao: newTong,
+            thucNhan: newThucNhan,
+          },
+          reasonCategory: draft.reasonCategory || feedbackCategory,
+          feedbackNote: draft.note || feedbackContent || 'Đề xuất điều chỉnh số liệu theo phản hồi',
+          status: 'da_gui',
+          submittedAt: dateStr,
+        };
+      });
+
+      setPendingAdjustments((prev) => [...prev, ...newProposals]);
+      setSelectedFeedbackRows((prev) => prev.filter((r) => r.tabKey !== activeTab));
+      setIsFeedbackOpen(false);
+      setFeedbackContent('');
+      showToast(
+        `Đã gửi đề xuất điều chỉnh ${newProposals.length} hàng! Dòng điều chỉnh đã xuất hiện dưới hàng cũ ở trạng thái "Đã gửi".`
+      );
+
+      if (onSendFeedback) {
+        onSendFeedback({
+          maGV: selectedLecturer.maGV,
+          hoTen: selectedLecturer.hoTen,
+          tenHocPhan: feedbackSubject || 'Thù lao kê khai',
+          noiDung:
+            `[Đề xuất điều chỉnh ${newProposals.length} hàng]:\n` +
+            newProposals
+              .map(
+                (p) =>
+                  `• Dòng ${p.tt} (${p.adjustedData.tenHocPhan}): Giờ TG ${p.originalData.soGioThucGiang}h -> ${p.adjustedData.soGioThucGiang}h (QC: ${p.adjustedData.soGioQuyChuan}h). Lý do: ${p.feedbackNote}`
+              )
+              .join('\n'),
+          loaiPhanHoi: feedbackCategory,
+          ngayGui: dateStr,
+          trangThai: 'cho_xu_ly',
+        });
+      }
+      return;
+    }
+
+    // 2. Nếu không chọn hàng cụ thể -> Gửi phản hồi chung
+    if (!feedbackContent.trim()) return;
 
     setCategoryStates((prev) => {
       const lecturerMap = prev[selectedLecturer.maGV] || ({} as Record<TabKey, CategoryApprovalStatus>);
@@ -449,9 +740,70 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       });
     }
 
-    showToast('Đã gửi phản hồi thành công đến Phòng Chuyên môn!');
     setIsFeedbackOpen(false);
     setFeedbackContent('');
+    showToast('Đã gửi phản hồi thành công đến Phòng Chuyên môn!');
+  };
+
+  // Khi bên Đào tạo duyệt đề xuất điều chỉnh -> Cập nhật bảng và tạo Version mới (Version 2, Version 3...)
+  const handleApproveProposal = (proposalId?: string) => {
+    const toApprove = proposalId
+      ? pendingAdjustments.filter((p) => p.id === proposalId && p.status === 'da_gui')
+      : pendingAdjustments.filter((p) => p.status === 'da_gui');
+
+    if (toApprove.length === 0) return;
+
+    const newVersionNum = versions.length + 1; // Tạo Version 2, Version 3...
+    const now = new Date();
+    const dateStr = `${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
+
+    const currentRecords = activeRecords;
+    const updatedRecords = currentRecords.map((r) => {
+      const match = toApprove.find((p) => p.targetRecordId === r.id);
+      if (!match) return r;
+      return {
+        ...r,
+        soGioThucGiang: match.adjustedData.soGioThucGiang,
+        heSoLopNhom: match.adjustedData.heSoLopNhom,
+        heSoLop: match.adjustedData.heSoLopNhom,
+        soGioQuyChuan: match.adjustedData.soGioQuyChuan,
+        tongTietQC: match.adjustedData.soGioQuyChuan,
+        donGiaTiet: match.adjustedData.donGiaTiet,
+        tongTienThuLao: match.adjustedData.tongTienThuLao,
+        thueTNCN: Math.round(match.adjustedData.tongTienThuLao * 0.1),
+        thucNhan: match.adjustedData.thucNhan,
+        ghiChu: `[Đã duyệt Version ${newVersionNum}]: ${match.feedbackNote}`,
+      };
+    });
+
+    const newSnapshot: VersionSnapshot = {
+      version: newVersionNum,
+      title: `Version ${newVersionNum} (Đào tạo đã duyệt đợt ${newVersionNum - 1})`,
+      createdAt: dateStr,
+      approvedBy: 'Phòng Đào tạo',
+      records: updatedRecords,
+      approvedAdjustments: toApprove,
+    };
+
+    setVersions((prev) => [...prev, newSnapshot]);
+    setCurrentVersion(newVersionNum);
+    setActiveRecords(updatedRecords);
+
+    const approvedIds = new Set(toApprove.map((p) => p.id));
+    setPendingAdjustments((prev) => prev.filter((p) => !approvedIds.has(p.id)));
+
+    showToast(`Bên Đào tạo đã duyệt! Đã cập nhật lại bảng thành Version ${newVersionNum} kế con mắt xem.`);
+  };
+
+  const handleSwitchVersion = (versionNum: number) => {
+    const targetVer = versions.find((v) => v.version === versionNum);
+    if (!targetVer) return;
+    setCurrentVersion(versionNum);
+    setActiveRecords(targetVer.records);
+    showToast(`Đã chuyển sang xem Version ${versionNum}`);
   };
 
   // Current tab records
@@ -584,7 +936,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
             return (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => handleTabChange(tab.key)}
                 className={`h-[30px] px-2.5 rounded-lg flex items-center transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 ${buttonStyle}`}
                 title={`Xem chi tiết: ${tab.label}`}
               >
@@ -630,23 +982,28 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
         {/* Right: AGREE & FEEDBACK ACTION BUTTONS + EYE (CHẾ ĐỘ HIỂN THỊ) & 3 DOTS (TÙY CHỌN) */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => handleOpenFeedbackForTab(activeTab)}
-            className={`h-[30px] px-3 rounded-lg flex items-center text-[11.5px] font-medium transition-colors cursor-pointer whitespace-nowrap border ${
-              isFeedbackOpen
-                ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
-                : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
-            }`}
-            title="Gửi phản hồi / khiếu nại cho mục này"
-          >
-            <span>
-              {isFeedbackOpen
-                ? 'Đóng phản hồi'
-                : activeTab === 'tong_quan'
-                ? 'Gửi phản hồi / Khiếu nại'
-                : 'Phản hồi mục này'}
-            </span>
-          </button>
+          {/* Khi đã Đồng ý xác nhận -> Ẩn mục phản hồi hoàn toàn */}
+          {activeTabStatus.status !== 'confirmed' && (
+            <button
+              onClick={() => handleOpenFeedbackForTab(activeTab)}
+              className={`h-[30px] px-3 rounded-lg flex items-center text-[11.5px] font-medium transition-colors cursor-pointer whitespace-nowrap border ${
+                isFeedbackOpen
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+              }`}
+              title="Gửi phản hồi / khiếu nại cho mục này"
+            >
+              <span>
+                {isFeedbackOpen
+                  ? 'Đóng phản hồi'
+                  : selectedRowsInActiveTab.length > 0
+                  ? `Phản hồi (${selectedRowsInActiveTab.length} hàng đã chọn)`
+                  : activeTab === 'tong_quan'
+                  ? 'Gửi phản hồi / Khiếu nại'
+                  : 'Phản hồi mục này'}
+              </span>
+            </button>
+          )}
 
           <button
             onClick={() => handleConfirmCategory(activeTab)}
@@ -678,6 +1035,81 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                 : 'Đồng ý mục này'}
             </span>
           </button>
+
+          {/* Nút Bộ chọn Phiên bản: Version 1, Version 2, Version 3 (KẾ CON MẮT XEM) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsVersionMenuOpen((prev) => !prev);
+                setIsTopViewMenuOpen(false);
+                setIsTopActionMenuOpen(false);
+              }}
+              className={`h-[30px] px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs ${
+                currentVersion > 1
+                  ? 'border-emerald-600 bg-emerald-50 text-[#005325] hover:bg-emerald-100 ring-1 ring-emerald-500/30'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+              title={`Phiên bản hiện tại: Version ${currentVersion} (Bấm để xem lịch sử phiên bản)`}
+            >
+              <GitBranch className="w-3.5 h-3.5 text-[#005325]" />
+              <span>Version {currentVersion}</span>
+              <ChevronDown className="w-3 h-3 text-slate-500" />
+            </button>
+
+            {isVersionMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsVersionMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 flex flex-col">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>Lịch sử phiên bản</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
+                      {versions.length} phiên bản
+                    </span>
+                  </div>
+                  {versions.map((ver) => (
+                    <button
+                      key={ver.version}
+                      type="button"
+                      onClick={() => {
+                        handleSwitchVersion(ver.version);
+                        setIsVersionMenuOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors ${
+                        currentVersion === ver.version
+                          ? 'text-[#005325] font-semibold bg-emerald-50/70'
+                          : 'text-slate-700'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <span>Version {ver.version}</span>
+                          {ver.version === 1 ? (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-normal">
+                              Gốc
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-emerald-100 text-[#005325] px-1.5 py-0.2 rounded font-semibold">
+                              Đã duyệt
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10.5px] text-slate-400 mt-0.5">
+                          {ver.createdAt} {ver.approvedBy ? `· ${ver.approvedBy}` : ''}
+                        </div>
+                      </div>
+                      {currentVersion === ver.version && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#005325] shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Nút Con mắt: Chế độ hiển thị (kế bên dấu 3 chấm dọc) */}
           <div className="relative">
@@ -840,22 +1272,31 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       </div>
 
       {/* ========================================================================= */}
-      {/* 2B. INLINE FEEDBACK PANEL (Hiển thị trực tiếp trên giao diện, gọn đẹp)    */}
+      {/* 2B. INLINE FEEDBACK / ADJUSTMENT PANEL (Hiển thị trực tiếp trên giao diện)  */}
       {/* ========================================================================= */}
       {isFeedbackOpen && (
-        <div className="bg-slate-50/90 border-b border-slate-200 px-3.5 py-2.5 w-full max-w-full">
+        <div className="bg-slate-50/90 border-b border-slate-200 px-3.5 py-3 w-full max-w-full">
           <form
             onSubmit={handleSubmitFeedback}
-            className="bg-white rounded-xl border border-slate-200 border-l-4 border-l-amber-500 shadow-xs px-4 py-3 space-y-2.5"
+            className="bg-white rounded-xl border border-slate-200 border-l-4 border-l-amber-500 shadow-xs px-4 py-3.5 space-y-3"
           >
             {/* Dòng tiêu đề + thông tin người gửi */}
-            <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-100">
               <div className="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-[12px]">
-                <span className="font-semibold text-slate-800">Phản hồi / Đề xuất điều chỉnh số liệu</span>
+                <span className="font-semibold text-slate-800">
+                  {selectedRowsInActiveTab.length > 0
+                    ? `Điều chỉnh thông tin các hàng đã chọn (${selectedRowsInActiveTab.length} hàng)`
+                    : 'Phản hồi / Khiếu nại số liệu'}
+                </span>
                 <span className="text-slate-300">|</span>
                 <span className="text-slate-600 font-normal">
                   Giảng viên: <strong className="font-medium text-slate-800">{summary.hoTen}</strong> ({summary.maGV})
                 </span>
+                {selectedRowsInActiveTab.length > 0 && (
+                  <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium border border-amber-200">
+                    Nhập số liệu mới & chỗ sai trực tiếp bên dưới
+                  </span>
+                )}
               </div>
               <button
                 type="button"
@@ -866,74 +1307,259 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
               </button>
             </div>
 
-            {/* Các trường nhập liệu trên bố cục lưới gọn gàng */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
-              <div className="lg:col-span-4">
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Mục / Học phần cần phản hồi <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={feedbackSubject}
-                  onChange={(e) => setFeedbackSubject(e.target.value)}
-                  className="w-full h-[31px] border border-slate-200 rounded-lg px-2.5 text-[12px] text-slate-800 font-normal bg-slate-50/50 focus:bg-white focus:border-[#005325] focus:outline-none transition-colors"
-                />
-              </div>
+            {/* TRƯỜNG HỢP 1: CÁC DÒNG ĐÃ CHỌN NHẢY LÊN BOX TRÊN ĐỂ ĐIỀU CHỈNH TRỰC TIẾP */}
+            {selectedRowsInActiveTab.length > 0 ? (
+              <div className="space-y-2.5">
+                <div className="text-[11.5px] text-slate-500 flex items-center justify-between">
+                  <span>
+                    Kiểm tra và nhập thông số điều chỉnh cho từng hàng đã chọn. Sau khi bấm <strong>Gửi đề xuất</strong>, các hàng này sẽ nằm dưới hàng cũ ở trạng thái <strong>Đã gửi</strong>.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleClearSelectedRowsForTab(activeTab)}
+                    className="text-xs text-rose-600 hover:underline cursor-pointer font-normal shrink-0 ml-2"
+                  >
+                    Bỏ chọn tất cả ({selectedRowsInActiveTab.length} hàng)
+                  </button>
+                </div>
 
-              <div className="lg:col-span-3">
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Phân loại phản hồi <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={feedbackCategory}
-                  onChange={(e) => setFeedbackCategory(e.target.value as any)}
-                  className="w-full h-[31px] border border-slate-200 rounded-lg px-2 text-[12px] bg-slate-50/50 focus:bg-white text-slate-800 font-normal focus:outline-none focus:border-[#005325] transition-colors"
-                >
-                  <option value="sai_so_tiet">Sai số tiết / giờ quy chuẩn</option>
-                  <option value="thieu_lop">Thiếu lớp / nhiệm vụ / coi thi</option>
-                  <option value="sai_he_so">Sai hệ số lớp đông / chức danh</option>
-                  <option value="sai_don_gia">Sai mức đơn giá thanh toán</option>
-                  <option value="khac">Khác (Tài khoản NH, CCCD...)</option>
-                </select>
-              </div>
+                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {selectedRowsInActiveTab.map((row) => {
+                    const rec = activeRecords.find((r) => r.id === row.rowId);
+                    const draft = getRowDraft(row.rowId, rec);
+                    const heSoTC = rec?.heSoTinChi || 1.0;
+                    const donGia = rec?.donGiaTiet || 100000;
+                    const currentGio = rec?.soGioThucGiang || rec?.soGioMonHoc || 30;
+                    const currentHeSo = rec?.heSoLopNhom || rec?.heSoLop || 1.25;
+                    const currentQC = (rec?.soGioQuyChuan || rec?.tongTietQC || 37.5);
+                    const currentAmt = rec?.thucNhan || 3375000;
 
-              <div className="lg:col-span-5">
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Nội dung chi tiết <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ghi rõ số tiết thực tế, nội dung chênh lệch hoặc minh chứng..."
-                  value={feedbackContent}
-                  onChange={(e) => setFeedbackContent(e.target.value)}
-                  className="w-full h-[31px] border border-slate-200 rounded-lg px-2.5 text-[12px] bg-slate-50/50 focus:bg-white text-slate-800 font-normal focus:border-[#005325] focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
+                    const previewQC = Number((draft.newGioThucGiang * draft.newHeSo * heSoTC).toFixed(1));
+                    const previewTong = previewQC * donGia;
+                    const previewThucNhan = Math.round(previewTong * 0.9);
 
-            {/* Chân khung phản hồi */}
-            <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
-              <span className="text-[11px] text-slate-400 font-normal">
-                Nội dung phản hồi được gửi trực tiếp về bộ phận chuyên môn để đối soát và điều chỉnh.
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIsFeedbackOpen(false)}
-                  className="h-[28px] px-3 text-[11.5px] text-slate-600 font-normal hover:bg-slate-100 rounded-lg border border-slate-200 cursor-pointer bg-white transition-colors"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="h-[28px] px-3.5 bg-[#005325] hover:bg-[#00421e] text-white text-[11.5px] font-medium rounded-lg shadow-2xs cursor-pointer transition-colors"
-                >
-                  Gửi phản hồi
-                </button>
+                    return (
+                      <div
+                        key={row.rowId}
+                        className="bg-amber-50/50 border border-amber-200/90 rounded-xl p-3 space-y-2 transition-all hover:border-amber-300 shadow-2xs"
+                      >
+                        {/* Header của hàng: TT + Tên môn + Thông số cũ */}
+                        <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#005325] text-white px-2 py-0.5 rounded font-bold text-[11px]">
+                              Dòng {row.tt}
+                            </span>
+                            <span className="font-bold text-slate-800 text-[12.5px]">{row.title}</span>
+                            {row.subtitle && (
+                              <span className="text-slate-500 font-mono text-[11.5px]">({row.subtitle})</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-[11.5px] text-slate-600">
+                            <span>
+                              Hiện tại: <strong>{currentGio}h</strong> · Hệ số: <strong>{currentHeSo}</strong> · QC:{' '}
+                              <strong>{currentQC.toFixed(1)}h</strong> · Thực nhận:{' '}
+                              <strong className="text-emerald-700">{currentAmt.toLocaleString('vi-VN')} đ</strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSelectedRow(row.rowId)}
+                              className="text-slate-400 hover:text-rose-600 font-bold text-sm px-1 leading-none cursor-pointer"
+                              title="Bỏ chọn dòng này"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Các ô input điều chỉnh */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-2.5 items-end pt-1 border-t border-amber-100">
+                          <div className="md:col-span-2">
+                            <label className="block text-[10.5px] font-medium text-slate-600 mb-0.5">
+                              Số giờ thực giảng mới <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min="0"
+                              value={draft.newGioThucGiang}
+                              onChange={(e) =>
+                                updateRowDraft(row.rowId, 'newGioThucGiang', parseFloat(e.target.value) || 0, rec)
+                              }
+                              className="w-full h-[30px] border border-amber-300 rounded-lg px-2 text-[12px] font-semibold text-slate-900 bg-white focus:outline-none focus:border-[#005325]"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-[10.5px] font-medium text-slate-600 mb-0.5">
+                              Hệ số lớp nhóm mới <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              step="0.05"
+                              min="0"
+                              value={draft.newHeSo}
+                              onChange={(e) =>
+                                updateRowDraft(row.rowId, 'newHeSo', parseFloat(e.target.value) || 0, rec)
+                              }
+                              className="w-full h-[30px] border border-amber-300 rounded-lg px-2 text-[12px] font-semibold text-slate-900 bg-white focus:outline-none focus:border-[#005325]"
+                            />
+                          </div>
+
+                          <div className="md:col-span-5">
+                            <label className="block text-[10.5px] font-medium text-slate-600 mb-0.5">
+                              Chỗ sai / Lý do điều chỉnh <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Ví dụ: Thiếu 5 tiết dạy bù ngày 12/10; điều chỉnh hệ số lớp 70 SV..."
+                              value={draft.note}
+                              onChange={(e) => updateRowDraft(row.rowId, 'note', e.target.value, rec)}
+                              className="w-full h-[30px] border border-amber-300 rounded-lg px-2.5 text-[12px] text-slate-900 bg-white focus:outline-none focus:border-[#005325]"
+                            />
+                          </div>
+
+                          <div className="md:col-span-3 bg-white/90 border border-emerald-200 rounded-lg px-2.5 py-1 flex items-center justify-between text-[11px] h-[30px]">
+                            <div>
+                              <span className="text-slate-500">QC mới: </span>
+                              <span className="font-bold text-emerald-800">{previewQC.toFixed(1)}h</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Thực nhận: </span>
+                              <span className="font-bold text-emerald-800">{previewThucNhan.toLocaleString('vi-VN')} đ</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer của form điều chỉnh nhiều hàng */}
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200">
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Sau khi bấm Gửi, hàng điều chỉnh sẽ hiển thị ngay dưới hàng cũ với trạng thái <strong>Đã gửi</strong> để Đào tạo duyệt.
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsFeedbackOpen(false)}
+                      className="h-[30px] px-3.5 text-xs text-slate-600 font-medium hover:bg-slate-100 rounded-lg border border-slate-200 bg-white cursor-pointer transition-colors"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      className="h-[30px] px-4 bg-[#005325] hover:bg-[#00421e] text-white text-xs font-semibold rounded-lg shadow-sm cursor-pointer transition-colors flex items-center gap-1.5"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Gửi đề xuất điều chỉnh ({selectedRowsInActiveTab.length} hàng)</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* TRƯỜNG HỢP 2: PHẢN HỒI CHUNG KHI CHƯA CHỌN HÀNG CỤ THỂ */
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-start">
+                  <div className="lg:col-span-4">
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                      Mục / Học phần cần phản hồi <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={feedbackSubject}
+                      onChange={(e) => setFeedbackSubject(e.target.value)}
+                      className="w-full h-[31px] border border-slate-200 rounded-lg px-2.5 text-[12px] text-slate-800 font-normal bg-slate-50/50 focus:bg-white focus:border-[#005325] focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="lg:col-span-3">
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                      Phân loại phản hồi <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={feedbackCategory}
+                      onChange={(e) => setFeedbackCategory(e.target.value as any)}
+                      className="w-full h-[31px] border border-slate-200 rounded-lg px-2 text-[12px] bg-slate-50/50 focus:bg-white text-slate-800 font-normal focus:outline-none focus:border-[#005325] transition-colors"
+                    >
+                      <option value="sai_so_tiet">Sai số tiết / giờ quy chuẩn</option>
+                      <option value="thieu_lop">Thiếu lớp / nhiệm vụ / coi thi</option>
+                      <option value="sai_he_so">Sai hệ số lớp đông / chức danh</option>
+                      <option value="sai_don_gia">Sai mức đơn giá thanh toán</option>
+                      <option value="khac">Khác (Tài khoản NH, CCCD...)</option>
+                    </select>
+                  </div>
+
+                  <div className="lg:col-span-5">
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                      Chỗ sai & Nội dung chi tiết <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ghi rõ số tiết thực tế, nội dung chênh lệch hoặc minh chứng..."
+                      value={feedbackContent}
+                      onChange={(e) => setFeedbackContent(e.target.value)}
+                      className="w-full h-[31px] border border-slate-200 rounded-lg px-2.5 text-[12px] bg-slate-50/50 focus:bg-white text-slate-800 font-normal focus:border-[#005325] focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Nội dung phản hồi được gửi trực tiếp về bộ phận chuyên môn để đối soát và điều chỉnh.
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsFeedbackOpen(false)}
+                      className="h-[28px] px-3 text-[11.5px] text-slate-600 font-normal hover:bg-slate-100 rounded-lg border border-slate-200 cursor-pointer bg-white transition-colors"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      className="h-[28px] px-3.5 bg-[#005325] hover:bg-[#00421e] text-white text-[11.5px] font-medium rounded-lg shadow-2xs cursor-pointer transition-colors"
+                    >
+                      Gửi phản hồi
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2C. BANNER THÔNG BÁO CÁC ĐỀ XUẤT ĐÃ GỬI (CHỜ PHÒNG ĐÀO TẠO DUYỆT)        */}
+      {/* ========================================================================= */}
+      {pendingAdjustments.some((p) => p.status === 'da_gui') && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2 text-xs text-amber-900">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              Đang có{' '}
+              <strong className="font-semibold text-amber-950">
+                {pendingAdjustments.filter((p) => p.status === 'da_gui').length} hàng
+              </strong>{' '}
+              đang ở trạng thái{' '}
+              <span className="font-semibold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded border border-amber-300">
+                Đã gửi
+              </span>{' '}
+              (nằm ngay dưới hàng cũ trong bảng, chờ Phòng Đào tạo duyệt).
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleApproveProposal()}
+            className="h-[28px] px-3 bg-[#005325] hover:bg-[#00421e] text-white text-xs font-semibold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5"
+            title="Duyệt tất cả đề xuất điều chỉnh và cập nhật lên Version mới"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Phòng Đào tạo duyệt tất cả → Cập nhật Version {versions.length + 1}</span>
+          </button>
         </div>
       )}
 
@@ -979,6 +1605,37 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                 <table className="w-full text-left border-collapse text-[12.5px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 font-semibold h-[38px]">
+                      <th className="w-[36px] px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={
+                            [
+                              'tong_quan-dao_tao',
+                              'tong_quan-khao_thi',
+                              'tong_quan-tuyen_sinh',
+                              'tong_quan-nckh',
+                              'tong_quan-co_van_hoc_tap',
+                              'tong_quan-cong_tac_khac',
+                            ].every((id) => selectedRowIdsInActiveTab.includes(id))
+                          }
+                          onChange={(e) =>
+                            handleSelectAllRowsForTab(
+                              'tong_quan',
+                              [
+                                { rowId: 'tong_quan-dao_tao', tt: 1, title: 'Thanh toán giờ giảng (Lý thuyết & Thực hành)', subtitle: 'Phòng Đào tạo', khoiLuong: `${summary.daoTaoQC.toFixed(1)} tiết`, amount: summary.daoTaoAmt },
+                                { rowId: 'tong_quan-khao_thi', tt: 2, title: 'Coi thi, ra đề, chấm thi kết thúc HP', subtitle: 'TT Khảo thí', khoiLuong: `${summary.khaoThiQC.toFixed(1)} giờ`, amount: summary.khaoThiAmt },
+                                { rowId: 'tong_quan-tuyen_sinh', tt: 3, title: 'Công tác tuyển sinh & Truyền thông', subtitle: 'P. Tuyển sinh & TT', khoiLuong: `${summary.tuyenSinhQC.toFixed(1)} tiết`, amount: summary.tuyenSinhAmt },
+                                { rowId: 'tong_quan-nckh', tt: 4, title: 'Nghiên cứu khoa học (Bài báo, đề tài, luận văn)', subtitle: 'Phòng NCKH & SĐH', khoiLuong: `${summary.nckhQC.toFixed(1)} giờ`, amount: summary.nckhAmt },
+                                { rowId: 'tong_quan-co_van_hoc_tap', tt: 5, title: 'Cố vấn học tập (CVHT lớp sinh viên)', subtitle: 'P. CTSV & Đào tạo', khoiLuong: `${summary.coVanHocTapQC.toFixed(1)} tiết`, amount: summary.coVanHocTapAmt },
+                                { rowId: 'tong_quan-cong_tac_khac', tt: 6, title: 'Công tác khác (HĐKH, Ban thanh tra thi)', subtitle: 'Ban Giám hiệu & Các đơn vị', khoiLuong: `${summary.congTacKhacQC.toFixed(1)} tiết`, amount: summary.congTacKhacAmt },
+                              ],
+                              e.target.checked
+                            )
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn tất cả để phản hồi"
+                        />
+                      </th>
                       <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
                       <th className="px-3 border-r border-slate-200 min-w-[210px]">Nội dung thanh toán thù lao</th>
                       <th className="px-3 border-r border-slate-200 w-[180px]">Đơn vị phụ trách</th>
@@ -993,6 +1650,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <tbody className="divide-y divide-[#e2e8f0]">
                     {/* Row 1: Giờ giảng */}
                     <tr className="h-[38px] hover:bg-slate-50 transition-colors">
+                      <td className="px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIdsInActiveTab.includes('tong_quan-dao_tao')}
+                          onChange={() =>
+                            handleToggleSelectRow('tong_quan', {
+                              rowId: 'tong_quan-dao_tao',
+                              tt: 1,
+                              title: 'Thanh toán giờ giảng (Lý thuyết & Thực hành)',
+                              subtitle: 'Phòng Đào tạo',
+                              khoiLuong: `${summary.daoTaoQC.toFixed(1)} tiết`,
+                              amount: summary.daoTaoAmt,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn dòng 1 để phản hồi"
+                        />
+                      </td>
                       <td className="px-2 text-center border-r border-slate-200">1</td>
                       <td className="px-3 border-r border-slate-200">Thanh toán giờ giảng (Lý thuyết & Thực hành)</td>
                       <td className="px-3 border-r border-slate-200">Phòng Đào tạo</td>
@@ -1019,6 +1694,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
                     {/* Row 2: Khảo thí */}
                     <tr className="h-[38px] hover:bg-slate-50 transition-colors">
+                      <td className="px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIdsInActiveTab.includes('tong_quan-khao_thi')}
+                          onChange={() =>
+                            handleToggleSelectRow('tong_quan', {
+                              rowId: 'tong_quan-khao_thi',
+                              tt: 2,
+                              title: 'Coi thi, ra đề, chấm thi kết thúc HP',
+                              subtitle: 'TT Khảo thí',
+                              khoiLuong: `${summary.khaoThiQC.toFixed(1)} giờ`,
+                              amount: summary.khaoThiAmt,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn dòng 2 để phản hồi"
+                        />
+                      </td>
                       <td className="px-2 text-center border-r border-slate-200">2</td>
                       <td className="px-3 border-r border-slate-200">Coi thi, ra đề, chấm thi kết thúc HP</td>
                       <td className="px-3 border-r border-slate-200">TT Khảo thí</td>
@@ -1045,6 +1738,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
                     {/* Row 3: Tuyển sinh */}
                     <tr className="h-[38px] hover:bg-slate-50 transition-colors">
+                      <td className="px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIdsInActiveTab.includes('tong_quan-tuyen_sinh')}
+                          onChange={() =>
+                            handleToggleSelectRow('tong_quan', {
+                              rowId: 'tong_quan-tuyen_sinh',
+                              tt: 3,
+                              title: 'Công tác tuyển sinh & Truyền thông',
+                              subtitle: 'P. Tuyển sinh & TT',
+                              khoiLuong: `${summary.tuyenSinhQC.toFixed(1)} tiết`,
+                              amount: summary.tuyenSinhAmt,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn dòng 3 để phản hồi"
+                        />
+                      </td>
                       <td className="px-2 text-center border-r border-slate-200">3</td>
                       <td className="px-3 border-r border-slate-200">Công tác tuyển sinh & Truyền thông</td>
                       <td className="px-3 border-r border-slate-200">P. Tuyển sinh & TT</td>
@@ -1071,6 +1782,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
                     {/* Row 4: NCKH */}
                     <tr className="h-[38px] hover:bg-slate-50 transition-colors">
+                      <td className="px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIdsInActiveTab.includes('tong_quan-nckh')}
+                          onChange={() =>
+                            handleToggleSelectRow('tong_quan', {
+                              rowId: 'tong_quan-nckh',
+                              tt: 4,
+                              title: 'Nghiên cứu khoa học (Bài báo, đề tài, luận văn)',
+                              subtitle: 'Phòng NCKH & SĐH',
+                              khoiLuong: `${summary.nckhQC.toFixed(1)} giờ`,
+                              amount: summary.nckhAmt,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn dòng 4 để phản hồi"
+                        />
+                      </td>
                       <td className="px-2 text-center border-r border-slate-200">4</td>
                       <td className="px-3 border-r border-slate-200">Nghiên cứu khoa học (Bài báo, đề tài, luận văn)</td>
                       <td className="px-3 border-r border-slate-200">Phòng NCKH & SĐH</td>
@@ -1097,6 +1826,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
                     {/* Row 5: Cố vấn học tập */}
                     <tr className="h-[38px] hover:bg-slate-50 transition-colors">
+                      <td className="px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIdsInActiveTab.includes('tong_quan-co_van_hoc_tap')}
+                          onChange={() =>
+                            handleToggleSelectRow('tong_quan', {
+                              rowId: 'tong_quan-co_van_hoc_tap',
+                              tt: 5,
+                              title: 'Cố vấn học tập (CVHT lớp sinh viên)',
+                              subtitle: 'P. CTSV & Đào tạo',
+                              khoiLuong: `${summary.coVanHocTapQC.toFixed(1)} tiết`,
+                              amount: summary.coVanHocTapAmt,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn dòng 5 để phản hồi"
+                        />
+                      </td>
                       <td className="px-2 text-center border-r border-slate-200">5</td>
                       <td className="px-3 border-r border-slate-200">Cố vấn học tập (CVHT lớp sinh viên)</td>
                       <td className="px-3 border-r border-slate-200">P. CTSV & Đào tạo</td>
@@ -1123,6 +1870,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
                     {/* Row 6: Công tác khác */}
                     <tr className="h-[38px] hover:bg-slate-50 transition-colors">
+                      <td className="px-1 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={selectedRowIdsInActiveTab.includes('tong_quan-cong_tac_khac')}
+                          onChange={() =>
+                            handleToggleSelectRow('tong_quan', {
+                              rowId: 'tong_quan-cong_tac_khac',
+                              tt: 6,
+                              title: 'Công tác khác (HĐKH, Ban thanh tra thi)',
+                              subtitle: 'Ban Giám hiệu & Các đơn vị',
+                              khoiLuong: `${summary.congTacKhacQC.toFixed(1)} tiết`,
+                              amount: summary.congTacKhacAmt,
+                            })
+                          }
+                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                          title="Chọn dòng 6 để phản hồi"
+                        />
+                      </td>
                       <td className="px-2 text-center border-r border-slate-200">6</td>
                       <td className="px-3 border-r border-slate-200">Công tác khác (HĐKH, Ban thanh tra thi)</td>
                       <td className="px-3 border-r border-slate-200">Ban Giám hiệu & Các đơn vị</td>
@@ -1151,7 +1916,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   {/* Total footer */}
                   <tfoot>
                     <tr className="bg-slate-100 border-t border-slate-300 font-semibold h-[38px] text-slate-900">
-                      <td colSpan={3} className="px-3 text-right">
+                      <td colSpan={4} className="px-3 text-right">
                         Tổng cộng (6 nguồn hoạt động):
                       </td>
                       <td className="px-2.5 text-right">
@@ -1198,9 +1963,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <TeachingScheduleReport
                       maGV={selectedLecturer?.maGV}
-                      records={records}
+                      records={activeRecords}
                       allLecturers={availableLecturers.map((l) => {
-                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
                         return {
                           maGV: l.maGV,
                           hoTen: l.hoTen,
@@ -1211,11 +1976,38 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                       onSelectLecturer={(newMa) => setSearchQuery(newMa)}
                       viewMode={teachingViewMode}
                       onViewModeChange={setTeachingViewMode}
+                      selectedRowIds={selectedRowIdsInActiveTab}
+                      onToggleSelectRow={(row) => handleToggleSelectRow('dao_tao', row)}
+                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('dao_tao', rows, sel)}
+                      pendingAdjustments={pendingAdjustments}
+                      onApproveProposal={handleApproveProposal}
                       compactContent={
                         <div className="w-full max-w-full min-w-0 overflow-x-auto relative">
                           <table className="w-max min-w-full text-left border-separate border-spacing-0 text-[12px]">
                             <thead>
                               <tr className="bg-[#f8fafc] text-[#1e293b] font-semibold h-[38px] text-[12px]">
+                                <th className="sticky top-0 z-10 w-[34px] min-w-[34px] max-w-[34px] px-1 text-center border-b border-r border-slate-200 bg-[#f8fafc]">
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      currentTabRecords.length > 0 &&
+                                      currentTabRecords.every((r) => selectedRowIdsInActiveTab.includes(r.id))
+                                    }
+                                    onChange={(e) => {
+                                      const allRows: FeedbackRowInfo[] = currentTabRecords.map((r, i) => ({
+                                        rowId: r.id,
+                                        tt: i + 1,
+                                        title: r.tenHocPhan,
+                                        subtitle: `Lớp ${r.maLopHocPhan}`,
+                                        khoiLuong: `${(r.soGioQuyChuan || r.tongTietQC).toFixed(1)} tiết QC`,
+                                        amount: r.thucNhan,
+                                      }));
+                                      handleSelectAllRowsForTab('dao_tao', allRows, e.target.checked);
+                                    }}
+                                    className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                                    title="Chọn tất cả để phản hồi"
+                                  />
+                                </th>
                                 <th className="sticky top-0 z-10 w-[42px] min-w-[42px] max-w-[42px] px-2 text-center border-b border-r border-slate-200 bg-[#f8fafc]">
                                   STT
                                 </th>
@@ -1283,97 +2075,256 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                                   Thực nhận (VNĐ)
                                 </th>
                                 <th className="min-w-[155px] px-2.5 border-b border-slate-200 bg-[#f8fafc] whitespace-nowrap">
-                                  Đợt thanh toán
+                                  Đợt thanh toán / Thao tác
                                 </th>
                               </tr>
                             </thead>
                             <tbody className="text-[#475569] font-normal">
                               {currentTabRecords.length === 0 ? (
                                 <tr>
-                                  <td colSpan={23} className="py-10 text-center text-slate-500 font-normal border-b border-slate-200">
+                                  <td colSpan={24} className="py-10 text-center text-slate-500 font-normal border-b border-slate-200">
                                     Chưa có dữ liệu kê khai giờ giảng cho Thầy/Cô trong học kỳ này.
                                   </td>
                                 </tr>
                               ) : (
-                                currentTabRecords.map((rec, idx) => (
-                                  <tr key={rec.id} className="group h-[38px] bg-white hover:bg-[#f8fafc] transition-colors">
-                                    <td className="w-[42px] min-w-[42px] max-w-[42px] px-2 text-center font-mono border-b border-r border-[#e2e8f0]">
-                                      {idx + 1}
-                                    </td>
-                                    <td className="w-[95px] min-w-[95px] max-w-[95px] px-2.5 font-mono text-slate-700 border-b border-r border-slate-200 whitespace-nowrap">
-                                      {rec.maGV}
-                                    </td>
-                                    <td className="w-[185px] min-w-[185px] max-w-[185px] px-3 text-slate-700 border-b border-r border-slate-200 whitespace-nowrap">
-                                      <span className="truncate block w-full" title={rec.hoTen}>
-                                        {rec.hoTen}
-                                      </span>
-                                    </td>
-                                    <td className="px-2 text-center border-b border-r border-[#f1f5f9] whitespace-nowrap">
-                                      {rec.hocHamHocVi || '—'}
-                                    </td>
-                                    <td className="px-2.5 border-b border-r border-[#f1f5f9] whitespace-nowrap">
-                                      {rec.khoaBoMon}
-                                    </td>
-                                    <td className="px-3 border-b border-r border-[#f1f5f9] whitespace-nowrap font-normal text-slate-700">
-                                      <span className="truncate block max-w-[250px]" title={rec.tenHocPhan}>
-                                        {rec.tenHocPhan}
-                                      </span>
-                                    </td>
-                                    <td className="px-2.5 text-center border-b border-r border-[#f1f5f9] whitespace-nowrap">
-                                      {rec.phanLoaiGiangDay === 'thuc_hanh_thuc_tap'
-                                        ? 'Thực hành, thực tập'
-                                        : 'Lý thuyết'}
-                                    </td>
-                                    <td className="px-2.5 text-center font-mono border-b border-r border-[#f1f5f9] whitespace-nowrap">
-                                      {rec.maLopHocPhan}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soTinChi ?? 3}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soSinhVien || 60}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soNhom || 1}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soGioMonHoc || 45}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soGioThucGiang || 30}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soTietLT ?? 0}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.soTietTH ?? 0}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.heSoLopNhom || rec.heSoLop || 1.25}
-                                    </td>
-                                    <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
-                                      {rec.heSoTinChi || 1.0}
-                                    </td>
-                                    <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-[#f1f5f9]">
-                                      {(rec.soGioQuyChuan || rec.tongTietQC).toFixed(1)}
-                                    </td>
-                                    <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-[#f1f5f9]">
-                                      {(rec.donGiaTiet || 0).toLocaleString('vi-VN')}
-                                    </td>
-                                    <td className="px-3 text-right font-mono tabular-nums border-b border-r border-[#f1f5f9]">
-                                      {rec.tongTienThuLao.toLocaleString('vi-VN')}
-                                    </td>
-                                    <td className="px-2.5 text-right font-mono tabular-nums text-rose-600 border-b border-r border-[#f1f5f9]">
-                                      -{(rec.thueTNCN || 0).toLocaleString('vi-VN')}
-                                    </td>
-                                    <td className="px-3 text-right font-mono tabular-nums text-[#005325] border-b border-r border-[#f1f5f9]">
-                                      {rec.thucNhan.toLocaleString('vi-VN')}
-                                    </td>
-                                    <td className="px-2.5 border-b border-[#f1f5f9] whitespace-nowrap">
-                                      {rec.dotThanhToan || '—'}
-                                    </td>
-                                  </tr>
-                                ))
+                                currentTabRecords.map((rec, idx) => {
+                                  const matchingProposal = pendingAdjustments.find(
+                                    (p) =>
+                                      p.status === 'da_gui' &&
+                                      (p.targetRecordId === rec.id ||
+                                        (p.originalData &&
+                                          p.originalData.tenHocPhan === rec.tenHocPhan &&
+                                          p.originalData.maLopHocPhan === rec.maLopHocPhan))
+                                  );
+
+                                  return (
+                                    <React.Fragment key={rec.id}>
+                                      {/* HÀNG CŨ GỐC */}
+                                      <tr className="group h-[38px] bg-white hover:bg-[#f8fafc] transition-colors">
+                                        <td className="w-[34px] min-w-[34px] max-w-[34px] px-1 text-center border-b border-r border-[#e2e8f0]">
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedRowIdsInActiveTab.includes(rec.id)}
+                                            onChange={() =>
+                                              handleToggleSelectRow('dao_tao', {
+                                                rowId: rec.id,
+                                                tt: idx + 1,
+                                                title: rec.tenHocPhan,
+                                                subtitle: `Lớp ${rec.maLopHocPhan}`,
+                                                khoiLuong: `${(rec.soGioQuyChuan || rec.tongTietQC).toFixed(1)} tiết QC`,
+                                                amount: rec.thucNhan,
+                                              })
+                                            }
+                                            className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                                            title={`Chọn dòng ${idx + 1} để phản hồi`}
+                                          />
+                                        </td>
+                                        <td className="w-[42px] min-w-[42px] max-w-[42px] px-2 text-center font-mono border-b border-r border-[#e2e8f0]">
+                                          {idx + 1}
+                                        </td>
+                                        <td className="w-[95px] min-w-[95px] max-w-[95px] px-2.5 font-mono text-slate-700 border-b border-r border-slate-200 whitespace-nowrap">
+                                          {rec.maGV}
+                                        </td>
+                                        <td className="w-[185px] min-w-[185px] max-w-[185px] px-3 text-slate-700 border-b border-r border-slate-200 whitespace-nowrap">
+                                          <span className="truncate block w-full" title={rec.hoTen}>
+                                            {rec.hoTen}
+                                          </span>
+                                        </td>
+                                        <td className="px-2 text-center border-b border-r border-[#f1f5f9] whitespace-nowrap">
+                                          {rec.hocHamHocVi || '—'}
+                                        </td>
+                                        <td className="px-2.5 border-b border-r border-[#f1f5f9] whitespace-nowrap">
+                                          {rec.khoaBoMon}
+                                        </td>
+                                        <td className="px-3 border-b border-r border-[#f1f5f9] whitespace-nowrap font-normal text-slate-700">
+                                          <span className="truncate block max-w-[250px]" title={rec.tenHocPhan}>
+                                            {rec.tenHocPhan}
+                                          </span>
+                                        </td>
+                                        <td className="px-2.5 text-center border-b border-r border-[#f1f5f9] whitespace-nowrap">
+                                          {rec.phanLoaiGiangDay === 'thuc_hanh_thuc_tap'
+                                            ? 'Thực hành, thực tập'
+                                            : 'Lý thuyết'}
+                                        </td>
+                                        <td className="px-2.5 text-center font-mono border-b border-r border-[#f1f5f9] whitespace-nowrap">
+                                          {rec.maLopHocPhan}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soTinChi ?? 3}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soSinhVien || 60}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soNhom || 1}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soGioMonHoc || 45}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soGioThucGiang || 30}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soTietLT ?? 0}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.soTietTH ?? 0}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.heSoLopNhom || rec.heSoLop || 1.25}
+                                        </td>
+                                        <td className="px-2 text-center font-mono border-b border-r border-[#f1f5f9]">
+                                          {rec.heSoTinChi || 1.0}
+                                        </td>
+                                        <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-[#f1f5f9]">
+                                          {(rec.soGioQuyChuan || rec.tongTietQC).toFixed(1)}
+                                        </td>
+                                        <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-[#f1f5f9]">
+                                          {(rec.donGiaTiet || 0).toLocaleString('vi-VN')}
+                                        </td>
+                                        <td className="px-3 text-right font-mono tabular-nums border-b border-r border-[#f1f5f9]">
+                                          {rec.tongTienThuLao.toLocaleString('vi-VN')}
+                                        </td>
+                                        <td className="px-2.5 text-right font-mono tabular-nums text-rose-600 border-b border-r border-[#f1f5f9]">
+                                          -{(rec.thueTNCN || 0).toLocaleString('vi-VN')}
+                                        </td>
+                                        <td className="px-3 text-right font-mono tabular-nums text-[#005325] border-b border-r border-[#f1f5f9]">
+                                          {rec.thucNhan.toLocaleString('vi-VN')}
+                                        </td>
+                                        <td className="px-2.5 border-b border-[#f1f5f9] whitespace-nowrap">
+                                          {rec.dotThanhToan || '—'}
+                                        </td>
+                                      </tr>
+
+                                      {/* HÀNG ĐIỀU CHỈNH NẰM NGAY DƯỚI HÀNG CŨ Ở TRẠNG THÁI "ĐÃ GỬI" */}
+                                      {matchingProposal && (
+                                        <tr className="bg-amber-50/90 text-slate-800 border-b border-amber-300">
+                                          <td className="w-[34px] px-1 text-center border-b border-r border-amber-300 text-amber-700 font-bold">
+                                            ↳
+                                          </td>
+                                          <td className="w-[42px] px-2 text-center font-bold text-amber-900 border-b border-r border-amber-300 text-[11px]">
+                                            {idx + 1}.1
+                                          </td>
+                                          <td className="w-[95px] px-2.5 font-mono text-slate-700 border-b border-r border-amber-300">
+                                            {rec.maGV}
+                                          </td>
+                                          <td className="w-[185px] px-3 text-slate-700 border-b border-r border-amber-300 truncate">
+                                            {rec.hoTen}
+                                          </td>
+                                          <td className="px-2 text-center border-b border-r border-amber-300">
+                                            {rec.hocHamHocVi || '—'}
+                                          </td>
+                                          <td className="px-2.5 border-b border-r border-amber-300">
+                                            {rec.khoaBoMon}
+                                          </td>
+                                          <td className="px-3 border-b border-r border-amber-300 bg-amber-100/50">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              <span className="font-semibold text-slate-900">
+                                                {matchingProposal.adjustedData.tenHocPhan}
+                                              </span>
+                                              <span className="text-[9.5px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">
+                                                Đề xuất điều chỉnh
+                                              </span>
+                                            </div>
+                                            {matchingProposal.feedbackNote && (
+                                              <div className="text-[11px] text-amber-900 mt-0.5 italic">
+                                                Chỗ sai / Lý do: {matchingProposal.feedbackNote}
+                                              </div>
+                                            )}
+                                          </td>
+                                          <td className="px-2.5 text-center border-b border-r border-amber-300">
+                                            {rec.phanLoaiGiangDay === 'thuc_hanh_thuc_tap'
+                                              ? 'Thực hành, thực tập'
+                                              : 'Lý thuyết'}
+                                          </td>
+                                          <td className="px-2.5 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.maLopHocPhan}
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.soTinChi ?? 3}
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.soSinhVien || 60}
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.soNhom || 1}
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.soGioMonHoc || 45}
+                                          </td>
+                                          {/* Giờ thực giảng mới */}
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300 bg-amber-100/70">
+                                            <div className="text-[10px] text-slate-400 line-through">
+                                              {rec.soGioThucGiang || 30}
+                                            </div>
+                                            <div className="font-bold text-emerald-800">
+                                              {matchingProposal.adjustedData.soGioThucGiang}
+                                            </div>
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.soTietLT ?? 0}
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.soTietTH ?? 0}
+                                          </td>
+                                          {/* Hệ số nhóm mới */}
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300 bg-amber-100/70">
+                                            <div className="text-[10px] text-slate-400 line-through">
+                                              {rec.heSoLopNhom || rec.heSoLop || 1.25}
+                                            </div>
+                                            <div className="font-bold text-emerald-800">
+                                              {matchingProposal.adjustedData.heSoLopNhom}
+                                            </div>
+                                          </td>
+                                          <td className="px-2 text-center font-mono border-b border-r border-amber-300">
+                                            {rec.heSoTinChi || 1.0}
+                                          </td>
+                                          {/* QC mới */}
+                                          <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-amber-300 bg-amber-100/70">
+                                            <div className="text-[10px] text-slate-400 line-through">
+                                              {(rec.soGioQuyChuan || rec.tongTietQC).toFixed(1)}
+                                            </div>
+                                            <div className="font-bold text-emerald-800">
+                                              {matchingProposal.adjustedData.soGioQuyChuan.toFixed(1)}
+                                            </div>
+                                          </td>
+                                          <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-amber-300">
+                                            {(rec.donGiaTiet || 0).toLocaleString('vi-VN')}
+                                          </td>
+                                          {/* Thù lao mới */}
+                                          <td className="px-3 text-right font-mono tabular-nums border-b border-r border-amber-300">
+                                            {matchingProposal.adjustedData.tongTienThuLao.toLocaleString('vi-VN')}
+                                          </td>
+                                          {/* Thuế 10% */}
+                                          <td className="px-2.5 text-right font-mono tabular-nums text-rose-600 border-b border-r border-amber-300">
+                                            -{Math.round(matchingProposal.adjustedData.tongTienThuLao * 0.1).toLocaleString('vi-VN')}
+                                          </td>
+                                          {/* Thực nhận mới */}
+                                          <td className="px-3 text-right font-mono tabular-nums font-bold text-emerald-800 border-b border-r border-amber-300">
+                                            {matchingProposal.adjustedData.thucNhan.toLocaleString('vi-VN')}
+                                          </td>
+                                          {/* Cột thao tác: Badge Đã gửi + Nút Duyệt của Đào tạo */}
+                                          <td className="px-2.5 border-b border-amber-300 whitespace-nowrap bg-amber-100/40">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-bold bg-amber-200 text-amber-900 border border-amber-300">
+                                                Đã gửi
+                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleApproveProposal(matchingProposal.id)}
+                                                className="px-2.5 py-1 text-[11px] font-semibold bg-[#005325] hover:bg-[#00421e] text-white rounded cursor-pointer transition-colors shadow-2xs flex items-center gap-1"
+                                                title="Phòng Đào tạo duyệt đề xuất này để nâng Version"
+                                              >
+                                                <CheckCircle2 className="w-3 h-3" />
+                                                <span>Duyệt</span>
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })
                               )}
                             </tbody>
                           </table>
@@ -1390,9 +2341,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <ExamScheduleReport
                       maGV={selectedLecturer?.maGV}
-                      records={records}
+                      records={activeRecords}
                       allLecturers={availableLecturers.map((l) => {
-                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
                         return {
                           maGV: l.maGV,
                           hoTen: l.hoTen,
@@ -1401,6 +2352,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                         };
                       })}
                       onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                      selectedRowIds={selectedRowIdsInActiveTab}
+                      onToggleSelectRow={(row) => handleToggleSelectRow('khao_thi', row)}
+                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('khao_thi', rows, sel)}
                     />
                   </div>
                 </div>
@@ -1412,9 +2366,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <AdmissionScheduleReport
                       maGV={selectedLecturer?.maGV}
-                      records={records}
+                      records={activeRecords}
                       allLecturers={availableLecturers.map((l) => {
-                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
                         return {
                           maGV: l.maGV,
                           hoTen: l.hoTen,
@@ -1423,6 +2377,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                         };
                       })}
                       onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                      selectedRowIds={selectedRowIdsInActiveTab}
+                      onToggleSelectRow={(row) => handleToggleSelectRow('tuyen_sinh', row)}
+                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('tuyen_sinh', rows, sel)}
                     />
                   </div>
                 </div>
@@ -1434,9 +2391,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <ResearchScheduleReport
                       maGV={selectedLecturer?.maGV}
-                      records={records}
+                      records={activeRecords}
                       allLecturers={availableLecturers.map((l) => {
-                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
                         return {
                           maGV: l.maGV,
                           hoTen: l.hoTen,
@@ -1448,10 +2405,35 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                       showInfoBox={false}
                       viewMode={researchViewMode}
                       onViewModeChange={setResearchViewMode}
+                      selectedRowIds={selectedRowIdsInActiveTab}
+                      onToggleSelectRow={(row) => handleToggleSelectRow('nckh', row)}
+                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('nckh', rows, sel)}
                       compactContent={
                         <table className="w-full text-left border-collapse min-w-[1100px] text-[12px]">
                           <thead>
                             <tr className="bg-slate-100 text-slate-800 border-b-2 border-slate-300 font-semibold h-[38px] text-[11.5px] uppercase tracking-wider">
+                              <th className="w-[34px] px-1 text-center border-r border-slate-200">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    currentTabRecords.length > 0 &&
+                                    currentTabRecords.every((r) => selectedRowIdsInActiveTab.includes(r.id))
+                                  }
+                                  onChange={(e) => {
+                                    const allRows: FeedbackRowInfo[] = currentTabRecords.map((r, i) => ({
+                                      rowId: r.id,
+                                      tt: i + 1,
+                                      title: r.noiDungNCKH || r.tenHocPhan,
+                                      subtitle: r.theLoaiNCKH,
+                                      khoiLuong: `${r.soGioQCNCKH || r.tongTietQC} h`,
+                                      amount: r.thucNhan,
+                                    }));
+                                    handleSelectAllRowsForTab('nckh', allRows, e.target.checked);
+                                  }}
+                                  className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                                  title="Chọn tất cả để phản hồi"
+                                />
+                              </th>
                               <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
                               <th className="px-3 border-r border-slate-200 min-w-[260px]">Nội dung NCKH (Đề tài / Bài báo / Luận văn)</th>
                               <th className="px-3 border-r border-slate-200 w-[190px]">Thể loại</th>
@@ -1465,13 +2447,31 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                           <tbody className="divide-y divide-[#e2e8f0]">
                             {currentTabRecords.length === 0 ? (
                               <tr>
-                                <td colSpan={8} className="py-10 text-center text-slate-500 font-normal">
+                                <td colSpan={9} className="py-10 text-center text-slate-500 font-normal">
                                   Chưa có dữ liệu kê khai Nghiên cứu khoa học cho Thầy/Cô.
                                 </td>
                               </tr>
                             ) : (
                               currentTabRecords.map((rec, idx) => (
                                 <tr key={rec.id} className="h-[38px] hover:bg-emerald-50/50 even:bg-slate-50/40 transition-colors">
+                                  <td className="px-1 text-center border-r border-[#f1f5f9]">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedRowIdsInActiveTab.includes(rec.id)}
+                                      onChange={() =>
+                                        handleToggleSelectRow('nckh', {
+                                          rowId: rec.id,
+                                          tt: idx + 1,
+                                          title: rec.noiDungNCKH || rec.tenHocPhan,
+                                          subtitle: rec.theLoaiNCKH,
+                                          khoiLuong: `${rec.soGioQCNCKH || rec.tongTietQC} h`,
+                                          amount: rec.thucNhan,
+                                        })
+                                      }
+                                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                                      title={`Chọn dòng ${idx + 1} để phản hồi`}
+                                    />
+                                  </td>
                                   <td className="px-2 text-center font-mono border-r border-[#f1f5f9]">{idx + 1}</td>
                                   <td className="px-3 border-r border-[#f1f5f9] whitespace-nowrap font-normal">
                                     <span className="truncate block max-w-[280px]" title={rec.noiDungNCKH || rec.tenHocPhan}>
@@ -1523,9 +2523,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <AdvisorScheduleReport
                       maGV={selectedLecturer?.maGV}
-                      records={records}
+                      records={activeRecords}
                       allLecturers={availableLecturers.map((l) => {
-                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
                         return {
                           maGV: l.maGV,
                           hoTen: l.hoTen,
@@ -1534,6 +2534,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                         };
                       })}
                       onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                      selectedRowIds={selectedRowIdsInActiveTab}
+                      onToggleSelectRow={(row) => handleToggleSelectRow('co_van_hoc_tap', row)}
+                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('co_van_hoc_tap', rows, sel)}
                     />
                   </div>
                 </div>
@@ -1545,9 +2548,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <OtherDutiesScheduleReport
                       maGV={selectedLecturer?.maGV}
-                      records={records}
+                      records={activeRecords}
                       allLecturers={availableLecturers.map((l) => {
-                        const r = records.find((rec) => rec.maGV === l.maGV);
+                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
                         return {
                           maGV: l.maGV,
                           hoTen: l.hoTen,
@@ -1557,6 +2560,9 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                         };
                       })}
                       onSelectLecturer={(newMa) => setSearchQuery(newMa)}
+                      selectedRowIds={selectedRowIdsInActiveTab}
+                      onToggleSelectRow={(row) => handleToggleSelectRow('cong_tac_khac', row)}
+                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('cong_tac_khac', rows, sel)}
                     />
                   </div>
                 </div>
@@ -1610,35 +2616,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                       .reduce((s, r) => s + r.thucNhan, 0)
                       .toLocaleString('vi-VN')}{' '}
                   </span>
-                </div>
-
-                <span className="text-slate-300 hidden md:inline">·</span>
-
-                {/* Bottom Action buttons (Text Only, No Icons) */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => handleOpenFeedbackForTab(activeTab)}
-                    className="h-[28px] px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg flex items-center text-[11.5px] font-medium transition-colors cursor-pointer whitespace-nowrap"
-                    title="Gửi phản hồi / khiếu nại cho mục này"
-                  >
-                    <span>{isFeedbackOpen ? 'Đóng phản hồi' : 'Phản hồi mục này'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleConfirmCategory(activeTab)}
-                    className={`h-[28px] px-3 rounded-lg flex items-center text-[11.5px] font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                      activeTabStatus.status === 'confirmed'
-                        ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300'
-                        : 'bg-[#005325] hover:bg-[#00421e] text-white shadow-2xs'
-                    }`}
-                    title={
-                      activeTabStatus.status === 'confirmed'
-                        ? 'Bấm để bỏ đồng ý xác nhận mục này'
-                        : 'Đồng ý xác nhận số liệu mục này'
-                    }
-                  >
-                    <span>{activeTabStatus.status === 'confirmed' ? 'Bỏ đồng ý mục này' : 'Đồng ý mục này'}</span>
-                  </button>
                 </div>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TeachingRecord } from '../types';
+import { TeachingRecord, FeedbackRowInfo } from '../types';
 import {
   Printer,
   Download,
@@ -38,6 +38,9 @@ interface AdvisorScheduleReportProps {
   academicYear?: string;
   viewMode?: 'excel_sheet' | 'compact_table';
   onViewModeChange?: (mode: 'excel_sheet' | 'compact_table') => void;
+  selectedRowIds?: string[];
+  onToggleSelectRow?: (row: FeedbackRowInfo) => void;
+  onSelectAllRows?: (rows: FeedbackRowInfo[], selectAll: boolean) => void;
 }
 
 export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
@@ -49,6 +52,9 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
   isModal = false,
   onClose,
   academicYear = '2025 - 2026',
+  selectedRowIds = [],
+  onToggleSelectRow,
+  onSelectAllRows,
 }) => {
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
@@ -351,6 +357,20 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
     setAdvisorRows(updated);
   };
 
+  const allSelectableRows = useMemo(() => {
+    return advisorRows.map((r) => ({
+      rowId: r.id,
+      tt: r.tt,
+      title: `Cố vấn lớp ${r.lopCVHT}`,
+      subtitle: `${r.khoaNganh} · ${r.dotPhuTrach}`,
+      khoiLuong: `${r.soTietDinhMucQC} tiết QC`,
+    }));
+  }, [advisorRows]);
+
+  const areAllSelected =
+    allSelectableRows.length > 0 &&
+    allSelectableRows.every((r) => selectedRowIds.includes(r.rowId));
+
   return (
     <div className="w-full bg-slate-100 min-h-screen py-4 px-2 sm:px-4 font-sans text-slate-800">
       {/* 1. Header Toolbar */}
@@ -510,6 +530,15 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
           <table className="w-full border-collapse text-[12px] text-center">
             <thead>
               <tr className="bg-[#FFFF99] text-slate-900 font-bold border-b border-slate-400">
+                <th className="p-2 border-r border-slate-400 w-9 text-center bg-[#FFFF99] print:hidden">
+                  <input
+                    type="checkbox"
+                    checked={areAllSelected}
+                    onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                    className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                    title="Chọn tất cả để phản hồi"
+                  />
+                </th>
                 <th className="p-2 border-r border-slate-400 w-10">TT</th>
                 <th className="p-2 border-r border-slate-400 min-w-[120px]">Lớp phụ trách</th>
                 <th className="p-2 border-r border-slate-400 text-left min-w-[200px]">Khóa / Ngành đào tạo</th>
@@ -526,6 +555,23 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
             <tbody>
               {advisorRows.map((row, idx) => (
                 <tr key={row.id} className="border-b border-slate-300 hover:bg-slate-50/50">
+                  <td className="p-2 border-r border-slate-300 text-center print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={selectedRowIds.includes(row.id)}
+                      onChange={() =>
+                        onToggleSelectRow?.({
+                          rowId: row.id,
+                          tt: row.tt,
+                          title: `Cố vấn lớp ${row.lopCVHT}`,
+                          subtitle: `${row.khoaNganh} · ${row.dotPhuTrach}`,
+                          khoiLuong: `${row.soTietDinhMucQC} tiết QC`,
+                        })
+                      }
+                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                      title={`Chọn dòng ${row.tt} để phản hồi`}
+                    />
+                  </td>
                   <td className="p-2 border-r border-slate-300 font-semibold">{row.tt}</td>
                   <td className="p-2 border-r border-slate-300 font-mono font-bold text-slate-800">
                     <input
@@ -614,7 +660,7 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
 
               {/* Summary Total Row */}
               <tr className="bg-slate-100 font-bold text-[12.5px] border-t-2 border-slate-500">
-                <td colSpan={3} className="p-2.5 text-center text-[#005325] uppercase tracking-wide border-r border-slate-400">
+                <td colSpan={4} className="p-2.5 text-center text-[#005325] uppercase tracking-wide border-r border-slate-400">
                   TỔNG CỘNG CÔNG TÁC CỐ VẤN HỌC TẬP:
                 </td>
                 <td className="p-2.5 text-center border-r border-slate-400 font-mono text-slate-900">

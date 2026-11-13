@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TeachingRecord } from '../types';
+import { TeachingRecord, FeedbackRowInfo } from '../types';
 import {
   Printer,
   Download,
@@ -21,6 +21,9 @@ interface OtherDutiesScheduleReportProps {
   onSelectLecturer?: (maGV: string) => void;
   onClose?: () => void;
   academicYear?: string;
+  selectedRowIds?: string[];
+  onToggleSelectRow?: (row: FeedbackRowInfo) => void;
+  onSelectAllRows?: (rows: FeedbackRowInfo[], selectAll: boolean) => void;
 }
 
 export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps> = ({
@@ -30,6 +33,9 @@ export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps>
   onSelectLecturer,
   onClose,
   academicYear = '2025 - 2026',
+  selectedRowIds = [],
+  onToggleSelectRow,
+  onSelectAllRows,
 }) => {
   const firstRec = useMemo(() => {
     return records.find((r) => r.maGV === maGV) || {
@@ -381,6 +387,9 @@ export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps>
           <OtherDutiesSection
             isEditable={isEditable}
             onTotalHoursChange={(tot) => setTotalHours(tot)}
+            selectedRowIds={selectedRowIds}
+            onToggleSelectRow={onToggleSelectRow}
+            onSelectAllRows={onSelectAllRows}
           />
 
           {/* SIGNATURE SECTION */}

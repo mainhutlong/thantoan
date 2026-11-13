@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TeachingRecord } from '../types';
+import { TeachingRecord, FeedbackRowInfo } from '../types';
 import {
   Printer,
   Download,
@@ -44,6 +44,11 @@ interface TeachingScheduleReportProps {
   viewMode?: 'excel_sheet' | 'compact_table';
   onViewModeChange?: (mode: 'excel_sheet' | 'compact_table') => void;
   compactContent?: React.ReactNode;
+  selectedRowIds?: string[];
+  onToggleSelectRow?: (row: FeedbackRowInfo) => void;
+  onSelectAllRows?: (rows: FeedbackRowInfo[], selectAll: boolean) => void;
+  pendingAdjustments?: any[];
+  onApproveProposal?: (id?: string) => void;
 }
 
 export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
@@ -58,6 +63,11 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
   viewMode,
   onViewModeChange,
   compactContent,
+  selectedRowIds = [],
+  onToggleSelectRow,
+  onSelectAllRows,
+  pendingAdjustments = [],
+  onApproveProposal,
 }) => {
   // Find lecturer info
   const lecturerRecords = useMemo(() => {
@@ -203,6 +213,38 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
   }, [thucHanhRows]);
 
   const grandTotalQC = totalQCLyThuyet + totalQCThucHanh;
+
+  // Feedback row selection: all rows with content
+  const allSelectableRows = useMemo(() => {
+    const list: FeedbackRowInfo[] = [];
+    lyThuyetRows.forEach((r) => {
+      if (r.tenHocPhan || r.maLopHocPhan) {
+        list.push({
+          rowId: r.id,
+          tt: r.tt,
+          title: r.tenHocPhan || 'Học phần Lý thuyết',
+          subtitle: r.maLopHocPhan ? `Lớp ${r.maLopHocPhan}` : undefined,
+          khoiLuong: r.soGioThucGiang ? `${r.soGioThucGiang}h` : undefined,
+        });
+      }
+    });
+    thucHanhRows.forEach((r) => {
+      if (r.tenHocPhan || r.maLopHocPhan) {
+        list.push({
+          rowId: r.id,
+          tt: r.tt,
+          title: r.tenHocPhan || 'Học phần Thực hành',
+          subtitle: r.maLopHocPhan ? `Lớp ${r.maLopHocPhan}` : undefined,
+          khoiLuong: r.soGioThucGiang ? `${r.soGioThucGiang}h` : undefined,
+        });
+      }
+    });
+    return list;
+  }, [lyThuyetRows, thucHanhRows]);
+
+  const areAllSelected =
+    allSelectableRows.length > 0 &&
+    allSelectableRows.every((r) => selectedRowIds.includes(r.rowId));
 
   // Print handler
   const handlePrint = () => {
@@ -709,6 +751,15 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
               {/* TABLE HEADERS (2 Rows exactly matching image) */}
               <thead>
                 <tr className="bg-[#bfbfbf] text-black">
+                  <th rowSpan={2} className="w-[30px] px-0.5 py-1 text-center font-normal border border-black bg-[#bfbfbf] print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={areAllSelected}
+                      onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                      title="Chọn tất cả để phản hồi"
+                    />
+                  </th>
                   <th rowSpan={2} className="w-[36px] px-1 py-1 text-center font-normal border border-black">
                     TT
                   </th>
@@ -759,289 +810,455 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
               <tbody>
                 {/* SECTION I. LÝ THUYẾT */}
                 <tr className="bg-white">
-                  <td colSpan={11} className="px-2 py-1 text-left font-bold text-blue-700 border border-black">
+                  <td colSpan={12} className="px-2 py-1 text-left font-bold text-blue-700 border border-black">
                     I. LÝ THUYẾT
                   </td>
                 </tr>
 
                 {lyThuyetRows.map((row, index) => {
                   const qc = calculateQC(row);
+                  const matchingProposal = pendingAdjustments.find(
+                    (p) =>
+                      p.status === 'da_gui' &&
+                      (p.targetRecordId === row.id ||
+                        (p.originalData &&
+                          p.originalData.tenHocPhan === row.tenHocPhan &&
+                          p.originalData.maLopHocPhan === row.maLopHocPhan))
+                  );
                   return (
-                    <tr key={row.id} className="h-[25px]">
-                      {/* TT */}
-                      <td className="px-1 py-0 text-center font-normal border border-black bg-white">
-                        {row.tt}
-                      </td>
-
-                      {/* Môn giảng dạy */}
-                      <td className={`px-1.5 py-0 border border-black ${getCellBg(row.tenHocPhan)}`}>
-                        {isEditable ? (
+                    <React.Fragment key={row.id}>
+                      <tr className="h-[25px]">
+                        {/* Checkbox trước TT */}
+                        <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
                           <input
-                            type="text"
-                            value={row.tenHocPhan}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'tenHocPhan', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-black"
+                            type="checkbox"
+                            checked={selectedRowIds.includes(row.id)}
+                            onChange={() =>
+                              onToggleSelectRow?.({
+                                rowId: row.id,
+                                tt: row.tt,
+                                title: row.tenHocPhan || 'Học phần lý thuyết',
+                                subtitle: row.maLopHocPhan ? `Lớp ${row.maLopHocPhan}` : undefined,
+                                khoiLuong: row.soGioThucGiang ? `${row.soGioThucGiang}h` : undefined,
+                              })
+                            }
+                            className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                            title={`Chọn dòng ${row.tt} để phản hồi`}
                           />
-                        ) : (
-                          <span>{row.tenHocPhan}</span>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Lớp */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.maLopHocPhan)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.maLopHocPhan}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'maLopHocPhan', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.maLopHocPhan}</span>
-                        )}
-                      </td>
+                        {/* TT */}
+                        <td className="px-1 py-0 text-center font-normal border border-black bg-white">
+                          {row.tt}
+                        </td>
 
-                      {/* Số SV */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soSinhVien)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soSinhVien}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'soSinhVien', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soSinhVien}</span>
-                        )}
-                      </td>
+                        {/* Môn giảng dạy */}
+                        <td className={`px-1.5 py-0 border border-black ${getCellBg(row.tenHocPhan)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.tenHocPhan}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'tenHocPhan', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-black"
+                            />
+                          ) : (
+                            <span>{row.tenHocPhan}</span>
+                          )}
+                        </td>
 
-                      {/* Số nhóm */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soNhom)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soNhom}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'soNhom', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soNhom}</span>
-                        )}
-                      </td>
+                        {/* Lớp */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.maLopHocPhan)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.maLopHocPhan}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'maLopHocPhan', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.maLopHocPhan}</span>
+                          )}
+                        </td>
 
-                      {/* Số giờ môn học */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioMonHoc)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soGioMonHoc}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'soGioMonHoc', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soGioMonHoc}</span>
-                        )}
-                      </td>
+                        {/* Số SV */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soSinhVien)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soSinhVien}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'soSinhVien', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soSinhVien}</span>
+                          )}
+                        </td>
 
-                      {/* Số giờ thực giảng (1) */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioThucGiang)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soGioThucGiang}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'soGioThucGiang', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soGioThucGiang}</span>
-                        )}
-                      </td>
+                        {/* Số nhóm */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soNhom)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soNhom}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'soNhom', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soNhom}</span>
+                          )}
+                        </td>
 
-                      {/* Hệ số lớp, nhóm (2) */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoLopNhom)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.heSoLopNhom}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'heSoLopNhom', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.heSoLopNhom}</span>
-                        )}
-                      </td>
+                        {/* Số giờ môn học */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioMonHoc)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soGioMonHoc}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'soGioMonHoc', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soGioMonHoc}</span>
+                          )}
+                        </td>
 
-                      {/* Hệ số tín chỉ (3) */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoTinChi)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.heSoTinChi}
-                            onChange={(e) => handleCellChange('ly_thuyet', index, 'heSoTinChi', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.heSoTinChi}</span>
-                        )}
-                      </td>
+                        {/* Số giờ thực giảng (1) */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioThucGiang)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soGioThucGiang}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'soGioThucGiang', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soGioThucGiang}</span>
+                          )}
+                        </td>
 
-                      {/* Số giờ quy chuẩn (4) - White background, '-' when empty */}
-                      <td className="px-1 py-0 border border-black text-center bg-white text-black font-normal">
-                        {qc !== null ? qc.toFixed(qc % 1 === 0 ? 0 : 2) : '-'}
-                      </td>
+                        {/* Hệ số lớp, nhóm (2) */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoLopNhom)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.heSoLopNhom}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'heSoLopNhom', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.heSoLopNhom}</span>
+                          )}
+                        </td>
 
-                      {/* Xác nhận của Khoa */}
-                      <td className="px-1 py-0 border border-black text-center bg-white text-black text-[10.5px]">
-                        {row.xacNhanKhoa || ''}
-                      </td>
-                    </tr>
+                        {/* Hệ số tín chỉ (3) */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoTinChi)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.heSoTinChi}
+                              onChange={(e) => handleCellChange('ly_thuyet', index, 'heSoTinChi', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.heSoTinChi}</span>
+                          )}
+                        </td>
+
+                        {/* Số giờ quy chuẩn (4) - White background, '-' when empty */}
+                        <td className="px-1 py-0 border border-black text-center bg-white text-black font-normal">
+                          {qc !== null ? qc.toFixed(qc % 1 === 0 ? 0 : 2) : '-'}
+                        </td>
+
+                        {/* Xác nhận của Khoa */}
+                        <td className="px-1 py-0 border border-black text-center bg-white text-black text-[10.5px]">
+                          {row.xacNhanKhoa || ''}
+                        </td>
+                      </tr>
+
+                      {/* HÀNG NẰM DƯỚI HÀNG CŨ Ở TRẠNG THÁI "ĐÃ GỬI" */}
+                      {matchingProposal && (
+                        <tr className="h-[25px] bg-amber-50 text-black border border-black font-normal">
+                          <td className="px-0.5 text-center border border-black text-amber-700 font-bold print:hidden">
+                            ↳
+                          </td>
+                          <td className="px-1 text-center border border-black font-semibold text-amber-900 text-[10.5px]">
+                            {row.tt}.1
+                          </td>
+                          <td className="px-1.5 border border-black font-medium text-amber-950 bg-amber-100/60">
+                            <div className="flex items-center justify-between gap-1">
+                              <span>{matchingProposal.adjustedData.tenHocPhan}</span>
+                              <span className="text-[9px] bg-amber-200 text-amber-900 px-1 rounded font-bold whitespace-nowrap">
+                                ĐIỀU CHỈNH
+                              </span>
+                            </div>
+                            {matchingProposal.feedbackNote && (
+                              <div className="text-[10px] text-amber-800 italic">{matchingProposal.feedbackNote}</div>
+                            )}
+                          </td>
+                          <td className="px-1 border border-black text-center">{row.maLopHocPhan}</td>
+                          <td className="px-1 border border-black text-center">{row.soSinhVien}</td>
+                          <td className="px-1 border border-black text-center">{row.soNhom}</td>
+                          <td className="px-1 border border-black text-center">{row.soGioMonHoc}</td>
+                          <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
+                            {matchingProposal.adjustedData.soGioThucGiang}
+                          </td>
+                          <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
+                            {matchingProposal.adjustedData.heSoLopNhom}
+                          </td>
+                          <td className="px-1 border border-black text-center">{row.heSoTinChi}</td>
+                          <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
+                            {matchingProposal.adjustedData.soGioQuyChuan.toFixed(1)}
+                          </td>
+                          <td className="px-1 border border-black text-center">
+                            <div className="flex items-center gap-1 justify-center">
+                              <span className="text-[9.5px] text-amber-900 font-bold bg-amber-200 px-1 py-0.2 rounded whitespace-nowrap">
+                                Đã gửi
+                              </span>
+                              {onApproveProposal && (
+                                <button
+                                  type="button"
+                                  onClick={() => onApproveProposal(matchingProposal.id)}
+                                  className="text-[9.5px] bg-[#005325] text-white px-1 py-0.5 rounded cursor-pointer font-bold hover:bg-[#00421e] whitespace-nowrap"
+                                  title="Đào tạo duyệt điều chỉnh dòng này"
+                                >
+                                  Duyệt
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
 
                 {/* SECTION II. THỰC HÀNH, THỰC TẬP */}
                 <tr className="bg-white">
-                  <td colSpan={11} className="px-2 py-1 text-left font-bold text-blue-700 border border-black">
+                  <td colSpan={12} className="px-2 py-1 text-left font-bold text-blue-700 border border-black">
                     II. THỰC HÀNH, THỰC TẬP
                   </td>
                 </tr>
 
                 {thucHanhRows.map((row, index) => {
                   const qc = calculateQC(row);
+                  const matchingProposal = pendingAdjustments.find(
+                    (p) =>
+                      p.status === 'da_gui' &&
+                      (p.targetRecordId === row.id ||
+                        (p.originalData &&
+                          p.originalData.tenHocPhan === row.tenHocPhan &&
+                          p.originalData.maLopHocPhan === row.maLopHocPhan))
+                  );
                   return (
-                    <tr key={row.id} className="h-[25px]">
-                      {/* TT */}
-                      <td className="px-1 py-0 text-center font-normal border border-black bg-white">
-                        {row.tt}
-                      </td>
-
-                      {/* Môn giảng dạy */}
-                      <td className={`px-1.5 py-0 border border-black ${getCellBg(row.tenHocPhan)}`}>
-                        {isEditable ? (
+                    <React.Fragment key={row.id}>
+                      <tr className="h-[25px]">
+                        {/* Checkbox trước TT */}
+                        <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
                           <input
-                            type="text"
-                            value={row.tenHocPhan}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'tenHocPhan', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-black"
+                            type="checkbox"
+                            checked={selectedRowIds.includes(row.id)}
+                            onChange={() =>
+                              onToggleSelectRow?.({
+                                rowId: row.id,
+                                tt: row.tt,
+                                title: row.tenHocPhan || 'Học phần thực hành',
+                                subtitle: row.maLopHocPhan ? `Lớp ${row.maLopHocPhan}` : undefined,
+                                khoiLuong: row.soGioThucGiang ? `${row.soGioThucGiang}h` : undefined,
+                              })
+                            }
+                            className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                            title={`Chọn dòng ${row.tt} để phản hồi`}
                           />
-                        ) : (
-                          <span>{row.tenHocPhan}</span>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Lớp */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.maLopHocPhan)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.maLopHocPhan}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'maLopHocPhan', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.maLopHocPhan}</span>
-                        )}
-                      </td>
+                        {/* TT */}
+                        <td className="px-1 py-0 text-center font-normal border border-black bg-white">
+                          {row.tt}
+                        </td>
 
-                      {/* Số SV */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soSinhVien)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soSinhVien}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soSinhVien', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soSinhVien}</span>
-                        )}
-                      </td>
+                        {/* Môn giảng dạy */}
+                        <td className={`px-1.5 py-0 border border-black ${getCellBg(row.tenHocPhan)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.tenHocPhan}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'tenHocPhan', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-black"
+                            />
+                          ) : (
+                            <span>{row.tenHocPhan}</span>
+                          )}
+                        </td>
 
-                      {/* Số nhóm */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soNhom)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soNhom}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soNhom', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soNhom}</span>
-                        )}
-                      </td>
+                        {/* Lớp */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.maLopHocPhan)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.maLopHocPhan}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'maLopHocPhan', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.maLopHocPhan}</span>
+                          )}
+                        </td>
 
-                      {/* Số giờ môn học */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioMonHoc)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soGioMonHoc}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soGioMonHoc', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soGioMonHoc}</span>
-                        )}
-                      </td>
+                        {/* Số SV */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soSinhVien)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soSinhVien}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soSinhVien', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soSinhVien}</span>
+                          )}
+                        </td>
 
-                      {/* Số giờ thực giảng (1) */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioThucGiang)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.soGioThucGiang}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soGioThucGiang', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.soGioThucGiang}</span>
-                        )}
-                      </td>
+                        {/* Số nhóm */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soNhom)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soNhom}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soNhom', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soNhom}</span>
+                          )}
+                        </td>
 
-                      {/* Hệ số lớp, nhóm (2) */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoLopNhom)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.heSoLopNhom}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'heSoLopNhom', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.heSoLopNhom}</span>
-                        )}
-                      </td>
+                        {/* Số giờ môn học */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioMonHoc)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soGioMonHoc}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soGioMonHoc', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soGioMonHoc}</span>
+                          )}
+                        </td>
 
-                      {/* Hệ số tín chỉ (3) */}
-                      <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoTinChi)}`}>
-                        {isEditable ? (
-                          <input
-                            type="text"
-                            value={row.heSoTinChi}
-                            onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'heSoTinChi', e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
-                          />
-                        ) : (
-                          <span>{row.heSoTinChi}</span>
-                        )}
-                      </td>
+                        {/* Số giờ thực giảng (1) */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.soGioThucGiang)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.soGioThucGiang}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'soGioThucGiang', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.soGioThucGiang}</span>
+                          )}
+                        </td>
 
-                      {/* Số giờ quy chuẩn (4) */}
-                      <td className="px-1 py-0 border border-black text-center bg-white text-black font-normal">
-                        {qc !== null ? qc.toFixed(qc % 1 === 0 ? 0 : 2) : '-'}
-                      </td>
+                        {/* Hệ số lớp, nhóm (2) */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoLopNhom)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.heSoLopNhom}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'heSoLopNhom', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.heSoLopNhom}</span>
+                          )}
+                        </td>
 
-                      {/* Xác nhận của Khoa */}
-                      <td className="px-1 py-0 border border-black text-center bg-white text-black text-[10.5px]">
-                        {row.xacNhanKhoa || ''}
-                      </td>
-                    </tr>
+                        {/* Hệ số tín chỉ (3) */}
+                        <td className={`px-1 py-0 border border-black text-center ${getCellBg(row.heSoTinChi)}`}>
+                          {isEditable ? (
+                            <input
+                              type="text"
+                              value={row.heSoTinChi}
+                              onChange={(e) => handleCellChange('thuc_hanh_thuc_tap', index, 'heSoTinChi', e.target.value)}
+                              className="w-full bg-transparent border-none outline-none text-[11.5px] text-center text-black"
+                            />
+                          ) : (
+                            <span>{row.heSoTinChi}</span>
+                          )}
+                        </td>
+
+                        {/* Số giờ quy chuẩn (4) */}
+                        <td className="px-1 py-0 border border-black text-center bg-white text-black font-normal">
+                          {qc !== null ? qc.toFixed(qc % 1 === 0 ? 0 : 2) : '-'}
+                        </td>
+
+                        {/* Xác nhận của Khoa */}
+                        <td className="px-1 py-0 border border-black text-center bg-white text-black text-[10.5px]">
+                          {row.xacNhanKhoa || ''}
+                        </td>
+                      </tr>
+
+                      {/* HÀNG NẰM DƯỚI HÀNG CŨ Ở TRẠNG THÁI "ĐÃ GỬI" */}
+                      {matchingProposal && (
+                        <tr className="h-[25px] bg-amber-50 text-black border border-black font-normal">
+                          <td className="px-0.5 text-center border border-black text-amber-700 font-bold print:hidden">
+                            ↳
+                          </td>
+                          <td className="px-1 text-center border border-black font-semibold text-amber-900 text-[10.5px]">
+                            {row.tt}.1
+                          </td>
+                          <td className="px-1.5 border border-black font-medium text-amber-950 bg-amber-100/60">
+                            <div className="flex items-center justify-between gap-1">
+                              <span>{matchingProposal.adjustedData.tenHocPhan}</span>
+                              <span className="text-[9px] bg-amber-200 text-amber-900 px-1 rounded font-bold whitespace-nowrap">
+                                ĐIỀU CHỈNH
+                              </span>
+                            </div>
+                            {matchingProposal.feedbackNote && (
+                              <div className="text-[10px] text-amber-800 italic">{matchingProposal.feedbackNote}</div>
+                            )}
+                          </td>
+                          <td className="px-1 border border-black text-center">{row.maLopHocPhan}</td>
+                          <td className="px-1 border border-black text-center">{row.soSinhVien}</td>
+                          <td className="px-1 border border-black text-center">{row.soNhom}</td>
+                          <td className="px-1 border border-black text-center">{row.soGioMonHoc}</td>
+                          <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
+                            {matchingProposal.adjustedData.soGioThucGiang}
+                          </td>
+                          <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
+                            {matchingProposal.adjustedData.heSoLopNhom}
+                          </td>
+                          <td className="px-1 border border-black text-center">{row.heSoTinChi}</td>
+                          <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
+                            {matchingProposal.adjustedData.soGioQuyChuan.toFixed(1)}
+                          </td>
+                          <td className="px-1 border border-black text-center">
+                            <div className="flex items-center gap-1 justify-center">
+                              <span className="text-[9.5px] text-amber-900 font-bold bg-amber-200 px-1 py-0.2 rounded whitespace-nowrap">
+                                Đã gửi
+                              </span>
+                              {onApproveProposal && (
+                                <button
+                                  type="button"
+                                  onClick={() => onApproveProposal(matchingProposal.id)}
+                                  className="text-[9.5px] bg-[#005325] text-white px-1 py-0.5 rounded cursor-pointer font-bold hover:bg-[#00421e] whitespace-nowrap"
+                                  title="Đào tạo duyệt điều chỉnh dòng này"
+                                >
+                                  Duyệt
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
 
                 {/* FOOTER ROW: TỔNG SỐ GIỜ GIẢNG DẠY */}
                 <tr className="bg-white font-bold h-[28px]">
-                  <td colSpan={9} className="px-2 py-1 text-center font-bold text-blue-700 border border-black text-[12px]">
+                  <td colSpan={10} className="px-2 py-1 text-center font-bold text-blue-700 border border-black text-[12px]">
                     Tổng số giờ giảng dạy
                   </td>
                   <td className="px-1 py-1 text-center font-bold text-black border border-black text-[12px]">
