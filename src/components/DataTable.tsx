@@ -757,47 +757,32 @@ export const DataTable: React.FC<DataTableProps> = ({
     );
   }, [sortedLecturers]);
 
-  const isAllSelected =
-    sortedLecturers.length > 0 &&
-    sortedLecturers.every((l) => l.records.some((r) => selectedIds.includes(r.id)));
-
   return (
     <div className="w-full min-w-0 bg-white select-none flex flex-col flex-1 h-full min-h-0 overflow-hidden">
       {/* Scrollable table container */}
       <div
         id="main-datatable-scroll-container"
-        className="w-full min-w-0 overflow-auto relative border-t border-b border-slate-200 flex-1 h-full"
+        className="w-full min-w-0 overflow-auto relative border-t border-b border-slate-200 max-h-full"
       >
         <table className="w-max min-w-full text-left border-separate border-spacing-0 font-sans">
-          {/* Table Header: 4 cột cố định (Checkbox, TT, Mã GV, Họ và tên) + Các cột số liệu tùy theo Chuyên mục */}
+          {/* Table Header: 3 cột cố định (TT, Mã GV, Họ và tên) + Các cột số liệu tùy theo Chuyên mục */}
           <thead>
             <tr className="bg-[#f8fafc] text-[#1e293b] text-[12px] font-semibold h-[38px]">
-              {/* Col 0: Checkbox + Refresh */}
-              <th className="sticky top-0 z-10 w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc]">
+              {/* Col 0: TT */}
+              <th className="sticky top-0 z-10 w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc] text-[#1e293b] font-semibold">
                 <div className="flex items-center justify-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={onToggleSelectAll}
-                    className="w-3.5 h-3.5 rounded-sm border-gray-300 text-black focus:ring-0 cursor-pointer"
-                    title="Chọn tất cả"
-                  />
+                  <span>TT</span>
                   <button
                     onClick={onRefresh}
                     title="Làm mới dữ liệu"
-                    className="text-black hover:text-black p-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer inline-flex items-center justify-center"
+                    className="text-slate-400 hover:text-black p-0.5 rounded hover:bg-slate-200 transition-colors cursor-pointer inline-flex items-center justify-center"
                   >
                     <RotateCw className="w-3 h-3" />
                   </button>
                 </div>
               </th>
 
-              {/* Col 1: TT */}
-              <th className="sticky top-0 z-10 w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc] text-[#1e293b] font-semibold">
-                TT
-              </th>
-
-              {/* Col 2: Mã GV */}
+              {/* Col 1: Mã GV */}
               <th
                 onClick={() => handleSort('maGV')}
                 className="sticky top-0 z-10 w-[115px] min-w-[115px] max-w-[115px] px-2.5 border-b border-r border-[#cbd5e1] bg-[#f8fafc] cursor-pointer hover:bg-slate-200/60 transition-colors text-[#1e293b] font-semibold"
@@ -1126,36 +1111,33 @@ export const DataTable: React.FC<DataTableProps> = ({
                 onKeyDown={handleDraftKeyDown}
                 className="bg-white border-b border-slate-300 h-[40px] transition-colors shadow-2xs"
               >
-                {/* Col đầu (Cột 0 + 1 gộp): Hủy và Lưu */}
+                {/* Col 0: Hủy và Lưu */}
                 <td
-                  colSpan={2}
-                  className="w-[108px] min-w-[108px] max-w-[108px] px-1.5 py-1 text-center border-b border-r border-slate-200 bg-white"
+                  className="w-[54px] min-w-[54px] max-w-[54px] px-0.5 py-1 text-center border-b border-r border-slate-200 bg-white"
                 >
-                  <div className="flex items-center justify-center gap-1.5">
+                  <div className="flex items-center justify-center gap-1">
                     {onCancelAddInline && (
                       <button
                         type="button"
                         onClick={onCancelAddInline}
                         title="Hủy bỏ thêm mới (Esc)"
-                        className="h-[26px] px-2 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-rose-600 text-[11.5px] font-sans font-medium flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        className="w-5 h-5 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-rose-600 flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
                       >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Hủy</span>
+                        <X className="w-3 h-3" />
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={handleSaveDraft}
                       title="Lưu dòng giảng viên này (Enter)"
-                      className="h-[26px] px-2.5 rounded bg-[#005325] hover:bg-[#00421e] text-white text-[11.5px] font-sans font-medium flex items-center gap-1 cursor-pointer shadow-xs transition-colors"
+                      className="w-5 h-5 rounded bg-[#005325] hover:bg-[#00421e] text-white flex items-center justify-center cursor-pointer shadow-xs transition-colors"
                     >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Lưu</span>
+                      <Check className="w-3 h-3" />
                     </button>
                   </div>
                 </td>
 
-                {/* Col 2: Mã GV */}
+                {/* Col 1: Mã GV */}
                 <td className="w-[115px] min-w-[115px] max-w-[115px] p-1 border-b border-r border-slate-200 bg-white">
                   <input
                     type="text"
@@ -1495,7 +1477,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             {sortedLecturers.length === 0 && !isAddingInline ? (
               <tr>
                 <td
-                  colSpan={isResearch ? 7 : (isThesis || isAdmission || isOther || isAdvisor) ? 8 : 11}
+                  colSpan={isResearch ? 6 : (isThesis || isAdmission || isOther || isAdvisor) ? 7 : 10}
                   className="py-12 text-center text-slate-500 border-b border-[#e2e8f0]"
                 >
                   <div className="flex flex-col items-center justify-center gap-1">
@@ -1520,22 +1502,12 @@ export const DataTable: React.FC<DataTableProps> = ({
                       isSelected ? 'bg-[#f1f5f9]' : 'bg-white hover:bg-[#f8fafc]'
                     }`}
                   >
-                    {/* Col 0: Checkbox */}
-                    <td className="w-[54px] min-w-[54px] max-w-[54px] px-2 text-center border-b border-r border-[#e2e8f0]">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleSelectRow(lecturer.primaryRecord.id)}
-                        className="w-3.5 h-3.5 rounded-sm border-gray-300 text-black focus:ring-0 cursor-pointer"
-                      />
-                    </td>
-
-                    {/* Col 1: TT */}
+                    {/* Col 0: TT */}
                     <td className="w-[54px] min-w-[54px] max-w-[54px] px-2 text-center font-mono text-slate-500 border-b border-r border-[#e2e8f0] whitespace-nowrap">
                       {index + 1}
                     </td>
 
-                    {/* Col 2: Mã GV */}
+                    {/* Col 1: Mã GV */}
                     <td className="w-[115px] min-w-[115px] max-w-[115px] px-2.5 font-mono font-medium text-slate-700 border-b border-r border-[#e2e8f0] whitespace-nowrap">
                       {lecturer.maGV || '—'}
                     </td>
@@ -1790,9 +1762,9 @@ export const DataTable: React.FC<DataTableProps> = ({
           {sortedLecturers.length > 0 && (
             <tfoot className="bg-[#f8fafc] text-[12px] font-sans font-semibold text-slate-800 border-t-2 border-[#cbd5e1] sticky bottom-0 z-20">
               <tr className="h-[40px]">
-                {/* Col 0, 1, 2, 3 merged: TỔNG CỘNG */}
+                {/* Col 0, 1, 2 merged: TỔNG CỘNG */}
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   className="px-4 text-left font-bold text-slate-900 border-r border-[#cbd5e1] bg-[#f8fafc] whitespace-nowrap"
                 >
                   TỔNG CỘNG ({sortedLecturers.length} Giảng viên)

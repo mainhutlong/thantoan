@@ -717,7 +717,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
           {compactContent}
         </div>
       ) : (
-      <div className="w-full max-w-full min-w-0 overflow-x-auto bg-white print:p-0 print:overflow-visible">
+      <div className="w-full max-w-full min-w-0 bg-white print:p-0 print:overflow-visible">
         <div className="w-full min-w-[760px] mx-auto p-3 sm:p-5 bg-white font-sans text-black border border-slate-300 shadow-xs print:border-none print:shadow-none">
           {/* TITLE CENTERED */}
           <div className="text-center mb-4 pb-2.5 border-b border-slate-200">
@@ -746,20 +746,22 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
           </div>
 
           {/* MAIN SPREADSHEET TABLE */}
-          <div className="w-full border-t border-black">
-            <table className="w-full border-collapse border border-black text-[11.5px]">
+          <div className="w-full border-t border-black overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse border border-black text-[11.5px]">
               {/* TABLE HEADERS (2 Rows exactly matching image) */}
               <thead>
                 <tr className="bg-[#bfbfbf] text-black">
-                  <th rowSpan={2} className="w-[30px] px-0.5 py-1 text-center font-normal border border-black bg-[#bfbfbf] print:hidden">
-                    <input
-                      type="checkbox"
-                      checked={areAllSelected}
-                      onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
-                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                      title="Chọn tất cả để phản hồi"
-                    />
-                  </th>
+                  {Boolean(onToggleSelectRow) && (
+                    <th rowSpan={2} className="w-[30px] px-0.5 py-1 text-center font-normal border border-black bg-[#bfbfbf] print:hidden">
+                      <input
+                        type="checkbox"
+                        checked={areAllSelected}
+                        onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                        className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                        title="Chọn tất cả để phản hồi"
+                      />
+                    </th>
+                  )}
                   <th rowSpan={2} className="w-[36px] px-1 py-1 text-center font-normal border border-black">
                     TT
                   </th>
@@ -829,23 +831,25 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                     <React.Fragment key={row.id}>
                       <tr className="h-[25px]">
                         {/* Checkbox trước TT */}
-                        <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
-                          <input
-                            type="checkbox"
-                            checked={selectedRowIds.includes(row.id)}
-                            onChange={() =>
-                              onToggleSelectRow?.({
-                                rowId: row.id,
-                                tt: row.tt,
-                                title: row.tenHocPhan || 'Học phần lý thuyết',
-                                subtitle: row.maLopHocPhan ? `Lớp ${row.maLopHocPhan}` : undefined,
-                                khoiLuong: row.soGioThucGiang ? `${row.soGioThucGiang}h` : undefined,
-                              })
-                            }
-                            className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                            title={`Chọn dòng ${row.tt} để phản hồi`}
-                          />
-                        </td>
+                        {Boolean(onToggleSelectRow) && (
+                          <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
+                            <input
+                              type="checkbox"
+                              checked={selectedRowIds.includes(row.id)}
+                              onChange={() =>
+                                onToggleSelectRow?.({
+                                  rowId: row.id,
+                                  tt: row.tt,
+                                  title: row.tenHocPhan || 'Học phần lý thuyết',
+                                  subtitle: row.maLopHocPhan ? `Lớp ${row.maLopHocPhan}` : undefined,
+                                  khoiLuong: row.soGioThucGiang ? `${row.soGioThucGiang}h` : undefined,
+                                })
+                              }
+                              className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                              title={`Chọn dòng ${row.tt} để phản hồi`}
+                            />
+                          </td>
+                        )}
 
                         {/* TT */}
                         <td className="px-1 py-0 text-center font-normal border border-black bg-white">
@@ -978,9 +982,11 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                       {/* HÀNG NẰM DƯỚI HÀNG CŨ Ở TRẠNG THÁI "ĐÃ GỬI" */}
                       {matchingProposal && (
                         <tr className="h-[25px] bg-amber-50 text-black border border-black font-normal">
-                          <td className="px-0.5 text-center border border-black text-amber-700 font-bold print:hidden">
-                            ↳
-                          </td>
+                          {Boolean(onToggleSelectRow) && (
+                            <td className="px-0.5 text-center border border-black text-amber-700 font-bold print:hidden">
+                              ↳
+                            </td>
+                          )}
                           <td className="px-1 text-center border border-black font-semibold text-amber-900 text-[10.5px]">
                             {row.tt}.1
                           </td>
@@ -1053,23 +1059,25 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                     <React.Fragment key={row.id}>
                       <tr className="h-[25px]">
                         {/* Checkbox trước TT */}
-                        <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
-                          <input
-                            type="checkbox"
-                            checked={selectedRowIds.includes(row.id)}
-                            onChange={() =>
-                              onToggleSelectRow?.({
-                                rowId: row.id,
-                                tt: row.tt,
-                                title: row.tenHocPhan || 'Học phần thực hành',
-                                subtitle: row.maLopHocPhan ? `Lớp ${row.maLopHocPhan}` : undefined,
-                                khoiLuong: row.soGioThucGiang ? `${row.soGioThucGiang}h` : undefined,
-                              })
-                            }
-                            className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                            title={`Chọn dòng ${row.tt} để phản hồi`}
-                          />
-                        </td>
+                        {Boolean(onToggleSelectRow) && (
+                          <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">
+                            <input
+                              type="checkbox"
+                              checked={selectedRowIds.includes(row.id)}
+                              onChange={() =>
+                                onToggleSelectRow?.({
+                                  rowId: row.id,
+                                  tt: row.tt,
+                                  title: row.tenHocPhan || 'Học phần thực hành',
+                                  subtitle: row.maLopHocPhan ? `Lớp ${row.maLopHocPhan}` : undefined,
+                                  khoiLuong: row.soGioThucGiang ? `${row.soGioThucGiang}h` : undefined,
+                                })
+                              }
+                              className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                              title={`Chọn dòng ${row.tt} để phản hồi`}
+                            />
+                          </td>
+                        )}
 
                         {/* TT */}
                         <td className="px-1 py-0 text-center font-normal border border-black bg-white">
@@ -1202,9 +1210,11 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                       {/* HÀNG NẰM DƯỚI HÀNG CŨ Ở TRẠNG THÁI "ĐÃ GỬI" */}
                       {matchingProposal && (
                         <tr className="h-[25px] bg-amber-50 text-black border border-black font-normal">
-                          <td className="px-0.5 text-center border border-black text-amber-700 font-bold print:hidden">
-                            ↳
-                          </td>
+                          {Boolean(onToggleSelectRow) && (
+                            <td className="px-0.5 text-center border border-black text-amber-700 font-bold print:hidden">
+                              ↳
+                            </td>
+                          )}
                           <td className="px-1 text-center border border-black font-semibold text-amber-900 text-[10.5px]">
                             {row.tt}.1
                           </td>

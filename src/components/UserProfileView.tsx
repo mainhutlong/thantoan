@@ -296,7 +296,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
       {/* 2. RIGHT MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 bg-white overflow-y-auto">
         {/* Top Title Bar */}
-        <div className="h-[52px] px-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div className="h-[64px] px-6 border-b border-slate-100 flex items-center justify-between shrink-0">
           <h2 className="text-[14.5px] font-semibold text-slate-800">
             {sectionTitles[activeSection]}
           </h2>

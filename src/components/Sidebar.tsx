@@ -95,19 +95,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside className="fixed inset-y-0 left-0 z-50 w-[285px] max-w-[85vw] bg-white flex flex-col select-none text-[13px] shadow-2xl lg:shadow-none lg:static lg:w-[265px] lg:shrink-0 lg:z-20 font-sans h-full border-r border-slate-200/90 transition-transform duration-200">
         {/* 1. TOP HEADER: Back Arrow, TDU Official Logo */}
-        <div className="h-[52px] px-3 border-b border-slate-200/90 flex items-center justify-between relative bg-white shrink-0">
-          {/* Official TDU Logo */}
-          <div className="flex items-center gap-2 pl-1">
+        <div className="h-[64px] px-3 border-b border-slate-200/90 flex items-center justify-center relative bg-white shrink-0">
+          {/* Official TDU Logo - Centered & Prominent */}
+          <div className="flex items-center justify-center">
             <img
               src={tduLogo}
               alt="Trường Đại học Tây Đô - Tay Do University"
-              className="h-[44px] w-auto object-contain"
+              className="h-[52px] max-h-[54px] w-auto object-contain drop-shadow-xs transition-transform hover:scale-105"
             />
           </div>
 
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
             title="Đóng thanh tác vụ"
           >
             <X className="w-5 h-5 lg:hidden text-slate-600" />

@@ -527,18 +527,20 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
 
         {/* Excel-style table */}
         <div className="overflow-x-auto border border-slate-400 mb-6">
-          <table className="w-full border-collapse text-[12px] text-center">
+          <table className="w-full min-w-[800px] border-collapse text-[12px] text-center">
             <thead>
               <tr className="bg-[#FFFF99] text-slate-900 font-bold border-b border-slate-400">
-                <th className="p-2 border-r border-slate-400 w-9 text-center bg-[#FFFF99] print:hidden">
-                  <input
-                    type="checkbox"
-                    checked={areAllSelected}
-                    onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
-                    className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                    title="Chọn tất cả để phản hồi"
-                  />
-                </th>
+                {Boolean(onToggleSelectRow) && (
+                  <th className="p-2 border-r border-slate-400 w-9 text-center bg-[#FFFF99] print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={areAllSelected}
+                      onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                      title="Chọn tất cả để phản hồi"
+                    />
+                  </th>
+                )}
                 <th className="p-2 border-r border-slate-400 w-10">TT</th>
                 <th className="p-2 border-r border-slate-400 min-w-[120px]">Lớp phụ trách</th>
                 <th className="p-2 border-r border-slate-400 text-left min-w-[200px]">Khóa / Ngành đào tạo</th>
@@ -555,23 +557,25 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
             <tbody>
               {advisorRows.map((row, idx) => (
                 <tr key={row.id} className="border-b border-slate-300 hover:bg-slate-50/50">
-                  <td className="p-2 border-r border-slate-300 text-center print:hidden">
-                    <input
-                      type="checkbox"
-                      checked={selectedRowIds.includes(row.id)}
-                      onChange={() =>
-                        onToggleSelectRow?.({
-                          rowId: row.id,
-                          tt: row.tt,
-                          title: `Cố vấn lớp ${row.lopCVHT}`,
-                          subtitle: `${row.khoaNganh} · ${row.dotPhuTrach}`,
-                          khoiLuong: `${row.soTietDinhMucQC} tiết QC`,
-                        })
-                      }
-                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                      title={`Chọn dòng ${row.tt} để phản hồi`}
-                    />
-                  </td>
+                  {Boolean(onToggleSelectRow) && (
+                    <td className="p-2 border-r border-slate-300 text-center print:hidden">
+                      <input
+                        type="checkbox"
+                        checked={selectedRowIds.includes(row.id)}
+                        onChange={() =>
+                          onToggleSelectRow?.({
+                            rowId: row.id,
+                            tt: row.tt,
+                            title: `Cố vấn lớp ${row.lopCVHT}`,
+                            subtitle: `${row.khoaNganh} · ${row.dotPhuTrach}`,
+                            khoiLuong: `${row.soTietDinhMucQC} tiết QC`,
+                          })
+                        }
+                        className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                        title={`Chọn dòng ${row.tt} để phản hồi`}
+                      />
+                    </td>
+                  )}
                   <td className="p-2 border-r border-slate-300 font-semibold">{row.tt}</td>
                   <td className="p-2 border-r border-slate-300 font-mono font-bold text-slate-800">
                     <input
@@ -660,7 +664,7 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
 
               {/* Summary Total Row */}
               <tr className="bg-slate-100 font-bold text-[12.5px] border-t-2 border-slate-500">
-                <td colSpan={4} className="p-2.5 text-center text-[#005325] uppercase tracking-wide border-r border-slate-400">
+                <td colSpan={Boolean(onToggleSelectRow) ? 4 : 3} className="p-2.5 text-center text-[#005325] uppercase tracking-wide border-r border-slate-400">
                   TỔNG CỘNG CÔNG TÁC CỐ VẤN HỌC TẬP:
                 </td>
                 <td className="p-2.5 text-center border-r border-slate-400 font-mono text-slate-900">

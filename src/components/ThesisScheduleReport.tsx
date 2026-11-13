@@ -520,7 +520,7 @@ export const ThesisScheduleReport: React.FC<ThesisScheduleReportProps> = ({
 
         {/* Excel-style table */}
         <div className="overflow-x-auto border border-slate-400 mb-6">
-          <table className="w-full border-collapse text-[12px] text-center">
+          <table className="w-full min-w-[850px] border-collapse text-[12px] text-center">
             <thead>
               <tr className="bg-[#FFFF99] text-slate-900 font-bold border-b border-slate-400">
                 <th className="p-2 border-r border-slate-400 w-10">TT</th>

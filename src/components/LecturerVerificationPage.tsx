@@ -2327,6 +2327,28 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                                 })
                               )}
                             </tbody>
+                            <tfoot>
+                              <tr className="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300 h-[38px] text-[12px]">
+                                <td colSpan={4} className="px-3 text-center border-r border-slate-200">
+                                  Tổng cộng ({currentTabRecords.length} môn học)
+                                </td>
+                                <td colSpan={14} className="border-r border-slate-200 bg-slate-50"></td>
+                                <td className="px-2.5 text-right font-mono border-r border-slate-200 text-[#005325]">
+                                  {currentTabRecords.reduce((sum, r) => sum + (r.soGioQuyChuan || r.tongTietQC || 0), 0).toFixed(1)}
+                                </td>
+                                <td className="border-r border-slate-200 bg-slate-50"></td>
+                                <td className="px-3 text-right font-mono border-r border-slate-200">
+                                  {currentTabRecords.reduce((sum, r) => sum + (r.tongTienThuLao || 0), 0).toLocaleString('vi-VN')}
+                                </td>
+                                <td className="px-2.5 text-right font-mono border-r border-slate-200 text-rose-600">
+                                  -{currentTabRecords.reduce((sum, r) => sum + (r.thueTNCN || Math.round((r.tongTienThuLao || 0) * 0.1)), 0).toLocaleString('vi-VN')}
+                                </td>
+                                <td className="px-3 text-right font-mono font-bold text-emerald-800 border-r border-slate-200">
+                                  {currentTabRecords.reduce((sum, r) => sum + (r.thucNhan || 0), 0).toLocaleString('vi-VN')}
+                                </td>
+                                <td className="bg-slate-50"></td>
+                              </tr>
+                            </tfoot>
                           </table>
                         </div>
                       }
@@ -2510,6 +2532,24 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                               ))
                             )}
                           </tbody>
+                          <tfoot>
+                            <tr className="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300 h-[38px] text-[12px]">
+                              <td colSpan={3} className="px-3 text-center border-r border-slate-200">
+                                Tổng cộng ({currentTabRecords.length} đề tài / bài báo)
+                              </td>
+                              <td className="border-r border-slate-200 bg-slate-50"></td>
+                              <td className="px-2.5 text-right font-mono border-r border-slate-200 text-[#005325]">
+                                {currentTabRecords.reduce((sum, r) => sum + (r.soGioQCNCKH || r.tongTietQC || 0), 0).toFixed(1)} h
+                              </td>
+                              <td colSpan={2} className="border-r border-slate-200 bg-slate-50"></td>
+                              <td className="px-3 text-right font-mono border-r border-slate-200">
+                                {currentTabRecords.reduce((sum, r) => sum + (r.tongTienThuLao || 0), 0).toLocaleString('vi-VN')} đ
+                              </td>
+                              <td className="px-3 text-right font-mono font-bold text-emerald-800">
+                                {currentTabRecords.reduce((sum, r) => sum + (r.thucNhan || 0), 0).toLocaleString('vi-VN')} đ
+                              </td>
+                            </tr>
+                          </tfoot>
                         </table>
                       }
                     />

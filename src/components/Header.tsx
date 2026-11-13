@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
     roleOptions.find((r) => r.role === currentRole) || roleOptions[2];
 
   return (
-    <header className="bg-white border-b border-slate-200/90 h-[52px] px-3 sm:px-4 flex items-center justify-between select-none z-30 shrink-0">
+    <header className="bg-white border-b border-slate-200/90 h-[64px] px-3 sm:px-4 flex items-center justify-between select-none z-30 shrink-0">
       {/* LEFT: Sidebar Toggle button & Mobile Brand Indicator */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button

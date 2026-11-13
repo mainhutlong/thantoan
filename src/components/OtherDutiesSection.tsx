@@ -164,15 +164,17 @@ export const OtherDutiesSection: React.FC<OtherDutiesSectionProps> = ({
         <table className="w-full border-collapse border border-black text-[11px] leading-tight font-sans">
           <thead>
             <tr className="bg-[#bfbfbf] text-black h-[32px] font-bold text-center">
-              <th className="w-[30px] px-0.5 py-1 border border-black font-semibold text-center bg-[#bfbfbf] print:hidden">
-                <input
-                  type="checkbox"
-                  checked={areAllSelected}
-                  onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
-                  className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                  title="Chọn tất cả để phản hồi"
-                />
-              </th>
+              {Boolean(onToggleSelectRow) && (
+                <th className="w-[30px] px-0.5 py-1 border border-black font-semibold text-center bg-[#bfbfbf] print:hidden">
+                  <input
+                    type="checkbox"
+                    checked={areAllSelected}
+                    onChange={(e) => onSelectAllRows?.(allSelectableRows, e.target.checked)}
+                    className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                    title="Chọn tất cả để phản hồi"
+                  />
+                </th>
+              )}
               <th className="w-[34px] px-1 py-1 border border-black font-semibold">STT</th>
               <th className="w-[180px] px-1.5 py-1 border border-black font-semibold text-center">Nhóm công việc</th>
               <th className="w-[75px] px-1 py-1 border border-black font-semibold">Mã CV</th>
@@ -206,23 +208,25 @@ export const OtherDutiesSection: React.FC<OtherDutiesSectionProps> = ({
               return (
                 <tr key={row.stt} className="hover:bg-slate-50 transition-colors h-[24px]">
                   {/* Checkbox trước STT */}
-                  <td className="px-0.5 py-0.5 border border-black text-center print:hidden bg-white">
-                    <input
-                      type="checkbox"
-                      checked={selectedRowIds.includes(`other-duty-${row.stt}`)}
-                      onChange={() =>
-                        onToggleSelectRow?.({
-                          rowId: `other-duty-${row.stt}`,
-                          tt: row.stt,
-                          title: row.tenCV || row.nhom,
-                          subtitle: `${row.nhom}${row.maCV ? ` · ${row.maCV}` : ''}`,
-                          khoiLuong: row.tongGio ? `${row.tongGio} giờ` : row.soLuong ? `${row.soLuong}` : undefined,
-                        })
-                      }
-                      className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                      title={`Chọn dòng ${row.stt} để phản hồi`}
-                    />
-                  </td>
+                  {Boolean(onToggleSelectRow) && (
+                    <td className="px-0.5 py-0.5 border border-black text-center print:hidden bg-white">
+                      <input
+                        type="checkbox"
+                        checked={selectedRowIds.includes(`other-duty-${row.stt}`)}
+                        onChange={() =>
+                          onToggleSelectRow?.({
+                            rowId: `other-duty-${row.stt}`,
+                            tt: row.stt,
+                            title: row.tenCV || row.nhom,
+                            subtitle: `${row.nhom}${row.maCV ? ` · ${row.maCV}` : ''}`,
+                            khoiLuong: row.tongGio ? `${row.tongGio} giờ` : row.soLuong ? `${row.soLuong}` : undefined,
+                          })
+                        }
+                        className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
+                        title={`Chọn dòng ${row.stt} để phản hồi`}
+                      />
+                    </td>
+                  )}
 
                   {/* STT */}
                   <td className="px-1 py-0.5 border border-black text-center font-normal">
@@ -330,7 +334,7 @@ export const OtherDutiesSection: React.FC<OtherDutiesSectionProps> = ({
 
             {/* FOOTER ROW: TỔNG SỐ GIỜ CÔNG TÁC KHÁC */}
             <tr className="bg-white font-bold h-[28px]">
-              <td colSpan={9} className="px-2 py-1 text-center font-bold text-blue-700 border border-black text-[12px]">
+              <td colSpan={Boolean(onToggleSelectRow) ? 9 : 8} className="px-2 py-1 text-center font-bold text-blue-700 border border-black text-[12px]">
                 Tổng số giờ công tác khác (B)
               </td>
               <td className="px-1 py-1 text-center font-bold text-red-600 border border-black text-[12px]">

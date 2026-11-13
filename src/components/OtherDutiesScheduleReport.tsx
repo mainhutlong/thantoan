@@ -362,7 +362,7 @@ export const OtherDutiesScheduleReport: React.FC<OtherDutiesScheduleReportProps>
       </div>
 
       {/* 2. SPREADSHEET SHEET */}
-      <div className="w-full max-w-full min-w-0 overflow-x-auto bg-white print:p-0 print:overflow-visible">
+      <div className="w-full max-w-full min-w-0 bg-white print:p-0 print:overflow-visible">
         <div className="w-full min-w-[760px] mx-auto p-3 sm:p-5 bg-white font-sans text-black border border-slate-300 shadow-xs print:border-none print:shadow-none">
           {/* TITLE CENTERED */}
           <div className="text-center mb-4 pb-2.5 border-b border-slate-200">
