@@ -165,14 +165,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* Action Buttons: Tìm kiếm & Đặt lại */}
-        <div className="flex items-center gap-1.5 xl:col-span-1">
+        <div className="flex items-center gap-1.5 xl:col-span-1 min-w-[110px]">
           <button
             onClick={onSearch}
-            className="flex-1 h-[34px] bg-[#005325] hover:bg-[#00421e] text-white font-medium text-[12.5px] rounded-lg flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
-            title="Áp dụng bộ lọc"
+            className="flex-1 h-[34px] bg-[#005325] hover:bg-[#00421e] text-white font-medium text-[12.5px] rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer px-2"
+            title="Tìm kiếm"
           >
             <Search className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Lọc</span>
+            <span className="whitespace-nowrap">Tìm kiếm</span>
           </button>
           <button
             onClick={handleReset}

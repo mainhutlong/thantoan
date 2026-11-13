@@ -4,6 +4,7 @@ import { DataQuality, PeriodStatus } from '../types';
 
 export interface StatusCounts {
   all: number;
+  facultyCount?: number;
   hop_le: number;
   khong_hop_le: number;
   trung_lap: number;
@@ -72,18 +73,29 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         {/* Counters */}
         <div className="flex items-center flex-wrap gap-x-3.5 gap-y-1.5 text-slate-700 font-normal">
-          {/* Tất cả */}
+          {/* Tất cả (Số lượng GV) */}
           <button
             onClick={() => onSelectFilter('all')}
             className={`flex items-center gap-1.5 transition-opacity cursor-pointer font-normal ${
-              currentFilter === 'all' ? 'text-[#0284c7] font-normal underline' : 'text-slate-700 opacity-85 hover:opacity-100'
+              currentFilter === 'all' ? 'text-[#0284c7] font-semibold underline' : 'text-slate-700 opacity-85 hover:opacity-100'
             }`}
+            title="Thống kê tất cả số lượng giảng viên"
           >
-            <span>Tất cả</span>
-            <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#0284c7] text-white text-[11px] font-normal flex items-center justify-center">
+            <span>Tất cả (Số lượng GV)</span>
+            <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#0284c7] text-white text-[11px] font-semibold flex items-center justify-center">
               {counts.all}
             </span>
           </button>
+
+          {/* Số lượng Khoa */}
+          {counts.facultyCount !== undefined && (
+            <div className="flex items-center gap-1.5 text-slate-700 font-normal pl-2 border-l border-slate-300">
+              <span className="text-slate-600 font-medium">Số lượng Khoa:</span>
+              <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-slate-700 text-white text-[11px] font-semibold flex items-center justify-center">
+                {counts.facultyCount}
+              </span>
+            </div>
+          )}
 
           {/* Hợp lệ */}
           <button

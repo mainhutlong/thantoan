@@ -18,6 +18,7 @@ import { getDepartmentTemplateFileName } from '../utils/excelTemplateGenerator';
 
 interface ActionBarProps {
   totalRecords: number;
+  totalFaculties?: number;
   totalQCHours?: number;
   totalPaymentVND?: number;
   pageSize: number;
@@ -37,6 +38,7 @@ interface ActionBarProps {
 
 export const ActionBar: React.FC<ActionBarProps> = ({
   totalRecords,
+  totalFaculties,
   totalQCHours = 0,
   totalPaymentVND = 0,
   pageSize,
@@ -182,7 +184,11 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         {/* Right side info & pagination in the same row */}
         <div className="flex items-center gap-2 text-[11.5px] text-slate-700 shrink-0 font-medium whitespace-nowrap">
           <span className="text-slate-600">
-            {totalRecords === 0 ? 'Không có dữ liệu' : `Tổng: ${totalRecords} bản ghi`}
+            {totalRecords === 0
+              ? 'Không có dữ liệu'
+              : totalFaculties !== undefined
+              ? `Thống kê: ${totalRecords} Giảng viên · ${totalFaculties} Khoa`
+              : `Tổng: ${totalRecords} bản ghi`}
           </span>
 
           <div className="flex items-center gap-0.5 border border-slate-200 rounded-lg px-1.5 h-[28px] bg-slate-50">

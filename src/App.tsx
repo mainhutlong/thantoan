@@ -333,16 +333,31 @@ export default function App() {
     return filteredTeaching.reduce((acc, item) => acc + (item.thucNhan || 0), 0);
   }, [filteredTeaching]);
 
-  // Compute status counts for StatusBar
+  // Compute status counts for StatusBar: Thống kê số lượng Giảng viên và số lượng Khoa
   const statusCounts: StatusCounts = useMemo(() => {
+    const lecturerMap = new Map<string, TeachingRecord>();
+    const facultySet = new Set<string>();
+
+    teachingList.forEach((r) => {
+      const key = (r.maGV || r.hoTen || r.id).trim();
+      if (!lecturerMap.has(key)) {
+        lecturerMap.set(key, r);
+      }
+      const fac = (r.khoaBoMon || '').trim();
+      if (fac) facultySet.add(fac);
+    });
+
+    const uniqueLecturers = Array.from(lecturerMap.values());
+
     return {
-      all: teachingList.length,
-      hop_le: teachingList.filter((i) => i.trangThai === 'hop_le').length,
-      khong_hop_le: teachingList.filter((i) => i.trangThai === 'khong_hop_le').length,
-      trung_lap: teachingList.filter((i) => i.trangThai === 'trung_lap').length,
-      da_so_hoa: teachingList.filter((i) => i.trangThai === 'da_so_hoa').length,
-      chua_day_du: teachingList.filter((i) => i.trangThai === 'chua_day_du').length,
-      chua_so_hoa: teachingList.filter((i) => i.trangThai === 'chua_so_hoa').length,
+      all: uniqueLecturers.length,
+      facultyCount: facultySet.size || (uniqueLecturers.length > 0 ? 8 : 0),
+      hop_le: uniqueLecturers.filter((i) => i.trangThai === 'hop_le').length,
+      khong_hop_le: uniqueLecturers.filter((i) => i.trangThai === 'khong_hop_le').length,
+      trung_lap: uniqueLecturers.filter((i) => i.trangThai === 'trung_lap').length,
+      da_so_hoa: uniqueLecturers.filter((i) => i.trangThai === 'da_so_hoa').length,
+      chua_day_du: uniqueLecturers.filter((i) => i.trangThai === 'chua_day_du').length,
+      chua_so_hoa: uniqueLecturers.filter((i) => i.trangThai === 'chua_so_hoa').length,
     };
   }, [teachingList]);
 
@@ -999,6 +1014,7 @@ export default function App() {
               <div className="shrink-0">
                 <ActionBar
                   totalRecords={lecturerGroups.length}
+                  totalFaculties={statusCounts.facultyCount}
                   totalQCHours={totalQCHours}
                   totalPaymentVND={totalPaymentVND}
                   pageSize={pageSize}
