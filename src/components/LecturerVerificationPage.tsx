@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   CheckCircle2,
@@ -2285,7 +2285,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                                               {(rec.soGioQuyChuan || rec.tongTietQC).toFixed(1)}
                                             </div>
                                             <div className="font-bold text-emerald-800">
-                                              {matchingProposal.adjustedData.soGioQuyChuan.toFixed(1)}
+                                              {(matchingProposal.adjustedData.soGioQuyChuan || 0).toFixed(1)}
                                             </div>
                                           </td>
                                           <td className="px-2.5 text-right font-mono tabular-nums border-b border-r border-amber-300">
@@ -2293,15 +2293,15 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                                           </td>
                                           {/* Thù lao mới */}
                                           <td className="px-3 text-right font-mono tabular-nums border-b border-r border-amber-300">
-                                            {matchingProposal.adjustedData.tongTienThuLao.toLocaleString('vi-VN')}
+                                            {(matchingProposal.adjustedData.tongTienThuLao || 0).toLocaleString('vi-VN')}
                                           </td>
                                           {/* Thuế 10% */}
                                           <td className="px-2.5 text-right font-mono tabular-nums text-rose-600 border-b border-r border-amber-300">
-                                            -{Math.round(matchingProposal.adjustedData.tongTienThuLao * 0.1).toLocaleString('vi-VN')}
+                                            -{Math.round((matchingProposal.adjustedData.tongTienThuLao || 0) * 0.1).toLocaleString('vi-VN')}
                                           </td>
                                           {/* Thực nhận mới */}
                                           <td className="px-3 text-right font-mono tabular-nums font-bold text-emerald-800 border-b border-r border-amber-300">
-                                            {matchingProposal.adjustedData.thucNhan.toLocaleString('vi-VN')}
+                                            {(matchingProposal.adjustedData.thucNhan || 0).toLocaleString('vi-VN')}
                                           </td>
                                           {/* Cột thao tác: Badge Đã gửi + Nút Duyệt của Đào tạo */}
                                           <td className="px-2.5 border-b border-amber-300 whitespace-nowrap bg-amber-100/40">

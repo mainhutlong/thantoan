@@ -23,10 +23,10 @@ export const FeedbackPageView: React.FC<FeedbackPageViewProps> = ({
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const match =
-        fb.hoTen.toLowerCase().includes(q) ||
-        fb.maGV.toLowerCase().includes(q) ||
-        fb.tenHocPhan.toLowerCase().includes(q) ||
-        fb.noiDung.toLowerCase().includes(q);
+        (fb.hoTen || '').toLowerCase().includes(q) ||
+        (fb.maGV || '').toLowerCase().includes(q) ||
+        (fb.tenHocPhan || '').toLowerCase().includes(q) ||
+        (fb.noiDung || '').toLowerCase().includes(q);
       if (!match) return false;
     }
     return true;

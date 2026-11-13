@@ -1007,7 +1007,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                           </td>
                           <td className="px-1 border border-black text-center">{row.heSoTinChi}</td>
                           <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
-                            {matchingProposal.adjustedData.soGioQuyChuan.toFixed(1)}
+                            {(matchingProposal.adjustedData.soGioQuyChuan || 0).toFixed(1)}
                           </td>
                           <td className="px-1 border border-black text-center">
                             <div className="flex items-center gap-1 justify-center">
@@ -1231,7 +1231,7 @@ export const TeachingScheduleReport: React.FC<TeachingScheduleReportProps> = ({
                           </td>
                           <td className="px-1 border border-black text-center">{row.heSoTinChi}</td>
                           <td className="px-1 border border-black text-center font-bold text-emerald-800 bg-emerald-50">
-                            {matchingProposal.adjustedData.soGioQuyChuan.toFixed(1)}
+                            {(matchingProposal.adjustedData.soGioQuyChuan || 0).toFixed(1)}
                           </td>
                           <td className="px-1 border border-black text-center">
                             <div className="flex items-center gap-1 justify-center">
