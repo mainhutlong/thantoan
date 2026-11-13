@@ -88,53 +88,6 @@ interface DataTableProps {
   onSaveInlineRecord?: (record: TeachingRecord) => void;
 }
 
-const renderStatusBadge = (status?: string) => {
-  switch (status) {
-    case 'da_so_hoa':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Đã số hóa
-        </span>
-      );
-    case 'hop_le':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-          Hợp lệ
-        </span>
-      );
-    case 'chua_day_du':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-          Cần bổ sung
-        </span>
-      );
-    case 'chua_so_hoa':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-          Chưa nghiệm thu
-        </span>
-      );
-    case 'khong_hop_le':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
-          Không hợp lệ
-        </span>
-      );
-    case 'trung_lap':
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-200">
-          Dữ liệu trùng
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Đã số hóa
-        </span>
-      );
-  }
-};
-
 export const DataTable: React.FC<DataTableProps> = ({
   selectedDepartment = 'all',
   teachingData,
@@ -1155,17 +1108,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                       <ArrowUpDown className="w-3 h-3 text-[#1e293b] shrink-0" />
                     </div>
                   </th>
-
-                  {/* Col 10 (Giờ giảng): Tình trạng */}
-                  <th
-                    onClick={() => handleSort('trangThai')}
-                    className="sticky top-0 z-10 min-w-[125px] px-3 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc] cursor-pointer hover:bg-slate-200/60 transition-colors text-[#1e293b] font-semibold whitespace-nowrap"
-                  >
-                    <div className="flex items-center justify-center gap-1">
-                      <span>Tình trạng</span>
-                      <ArrowUpDown className="w-3 h-3 text-[#1e293b] shrink-0" />
-                    </div>
-                  </th>
                 </>
               )}
 
@@ -1539,20 +1481,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                         className="w-[100px] h-[28px] px-2 text-right font-sans font-medium text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none ml-auto block transition-colors"
                       />
                     </td>
-
-                    {/* Col 10 (Giờ giảng): Tình trạng */}
-                    <td className="min-w-[125px] p-1 border-b border-r border-slate-200 bg-white">
-                      <select
-                        value={draftRow.trangThai}
-                        onChange={(e) => handleDraftChange('trangThai', e.target.value)}
-                        className="w-full h-[28px] px-1 text-center font-sans text-[11.5px] text-slate-800 bg-white border border-slate-300 rounded focus:border-[#005325] focus:ring-1 focus:ring-[#005325] focus:outline-none transition-colors"
-                      >
-                        <option value="da_so_hoa">Đã số hóa</option>
-                        <option value="hop_le">Hợp lệ</option>
-                        <option value="chua_day_du">Cần bổ sung</option>
-                        <option value="chua_so_hoa">Chưa nghiệm thu</option>
-                      </select>
-                    </td>
                   </>
                 )}
 
@@ -1567,7 +1495,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             {sortedLecturers.length === 0 && !isAddingInline ? (
               <tr>
                 <td
-                  colSpan={isResearch ? 7 : (isThesis || isAdmission || isOther || isAdvisor) ? 8 : 12}
+                  colSpan={isResearch ? 7 : (isThesis || isAdmission || isOther || isAdvisor) ? 8 : 11}
                   className="py-12 text-center text-slate-500 border-b border-[#e2e8f0]"
                 >
                   <div className="flex flex-col items-center justify-center gap-1">
@@ -1810,11 +1738,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                         <td className="px-3 text-right font-mono font-bold text-[#005325] border-b border-r border-[#f1f5f9] whitespace-nowrap tabular-nums">
                           {lecturer.tongGioGiangDay.toFixed(1)}
                         </td>
-
-                        {/* Col 10 (Giờ giảng): Tình trạng */}
-                        <td className="px-3 text-center border-b border-r border-[#f1f5f9] whitespace-nowrap">
-                          {renderStatusBadge(lecturer.trangThai)}
-                        </td>
                       </>
                     )}
 
@@ -1980,11 +1903,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                     {/* Col 9 (Giờ giảng): Tổng giờ giảng dạy */}
                     <td className="px-3 text-right font-mono font-bold text-[#005325] border-r border-[#cbd5e1] whitespace-nowrap tabular-nums">
                       {grandTotals.tongGioGiangDay.toFixed(1)}
-                    </td>
-
-                    {/* Col 10 (Giờ giảng): Tình trạng */}
-                    <td className="px-3 text-center text-slate-400 border-r border-[#cbd5e1] whitespace-nowrap">
-                      —
                     </td>
                   </>
                 )}

@@ -996,20 +996,6 @@ export default function App() {
                 />
               </div>
 
-              {/* Status Bar */}
-              <div className="shrink-0">
-                <StatusBar
-                  counts={statusCounts}
-                  currentFilter={filters.dataQuality}
-                  onSelectFilter={(quality) => setFilters((prev) => ({ ...prev, dataQuality: quality }))}
-                  periodStatus={periodStatus}
-                  pendingFeedbackCount={pendingFeedbackCount}
-                  onOpenFeedbacks={() => setIsFeedbackListOpen(true)}
-                  onTogglePeriodLock={handleTogglePeriodLock}
-                  canManagePeriod={currentRole === 'approver' || currentRole === 'accountant_specialist' || currentRole === 'admin'}
-                />
-              </div>
-
               {/* Action Bar with Department context & 6 e-Gov action buttons */}
               <div className="shrink-0">
                 <ActionBar
