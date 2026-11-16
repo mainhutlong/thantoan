@@ -8,6 +8,7 @@ import {
 import { PeriodStatus, UserRole, DepartmentUnit, UserAccount } from '../types';
 import tduLogo from '../assets/images/logo_tdu.jpg';
 import {
+  IconTrangChu,
   IconDanhMuc,
   IconHeThong,
   IconThanhToanGroup,
@@ -73,6 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   // Check group active state
+  const isTrangChuActive = activeItem === 'trang_chu';
   const isDanhMucActive = activeItem === 'ke_khai_upload';
   const isThanhToanActive = activeItem === 'tong_thanh_toan' || activeItem === 'chi_tra_tai_chinh';
   const isTraCuuActive = activeItem === 'tra_cuu_giang_vien' || activeItem === 'quan_ly_phan_hoi';
@@ -115,8 +117,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* 2. NAVIGATION MENU: 5 GROUP ACCORDIONS */}
+        {/* 2. NAVIGATION MENU: TRANG CHỦ & 5 GROUP ACCORDIONS */}
         <nav className="py-2.5 flex-1 overflow-y-auto space-y-1.5 px-2.5">
+          {/* MENU TRANG CHỦ (Hiển thị đầu tiên) */}
+          <div>
+            <button
+              onClick={() => handleItemClick('trang_chu')}
+              className={`w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 transition-all cursor-pointer ${
+                isTrangChuActive
+                  ? 'border-2 border-[#005325] bg-[#e8f5e9] text-[#005325] font-semibold shadow-2xs'
+                  : 'border-2 border-transparent text-[#1e293b] hover:bg-slate-50 font-medium'
+              }`}
+            >
+              <IconTrangChu size={20} className="shrink-0" />
+              <span className="truncate">Trang chủ</span>
+            </button>
+          </div>
+
           {/* GROUP 1: DANH MỤC THỐNG KÊ */}
           <div>
             <button

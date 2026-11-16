@@ -12,6 +12,7 @@ import { MinutesModal } from './components/MinutesModal';
 import { ColumnSettingsModal } from './components/ColumnSettingsModal';
 import { FeedbackModal } from './components/FeedbackModal';
 import { FeedbackListModal } from './components/FeedbackListModal';
+import { HomePage } from './components/HomePage';
 import { PaymentRulesModal } from './components/PaymentRulesModal';
 import { StatisticsDashboard } from './components/StatisticsDashboard';
 import { LecturerProfilesPage } from './components/LecturerProfilesPage';
@@ -65,7 +66,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
   });
-  const [activeSidebarItem, setActiveSidebarItem] = useState<string>('ke_khai_upload');
+  const [activeSidebarItem, setActiveSidebarItem] = useState<string>('trang_chu');
 
   // Department Unit Selection ('all' | 'dao_tao' | 'khao_thi' | 'tuyen_sinh' | 'nckh' | 'cong_tac_khac')
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentUnit>('dao_tao');
@@ -637,7 +638,11 @@ export default function App() {
 
         {/* Main Center Content Zone */}
         <main className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
-          {activeSidebarItem === 'nhap_lieu_phu_luc' ? (
+          {activeSidebarItem === 'trang_chu' ? (
+            <HomePage
+              onNavigate={(itemKey, dept) => handleSelectSidebarItem(itemKey, dept)}
+            />
+          ) : activeSidebarItem === 'nhap_lieu_phu_luc' ? (
             <StatisticsDashboard
               records={teachingList}
               onNavigateToCategory={(dept) => {
