@@ -47,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Accordion state: Mặc định đóng tất cả các menu con lại, chỉ hiển thị menu cha
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     danh_muc_thong_ke: false,
+    nckh: false,
     thanh_toan: false,
     tra_cuu: false,
     bao_cao: false,
@@ -89,6 +90,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
     activeItem === 'he_thong_cau_hinh' ||
     activeItem === 'he_thong_nhat_ky' ||
     activeItem === 'quan_ly_tai_khoan';
+
+  // Tự động mở menu cha tương ứng khi người dùng chuyển trang
+  React.useEffect(() => {
+    if (isDanhMucActive) {
+      setExpandedSections((prev) => ({
+        ...prev,
+        danh_muc_thong_ke: true,
+        ...(selectedDepartment === 'nckh' ? { nckh: true } : {}),
+      }));
+    } else if (isThanhToanActive) {
+      setExpandedSections((prev) => ({ ...prev, thanh_toan: true }));
+    } else if (isTraCuuActive) {
+      setExpandedSections((prev) => ({ ...prev, tra_cuu: true }));
+    } else if (isBaoCaoActive) {
+      setExpandedSections((prev) => ({ ...prev, bao_cao: true }));
+    } else if (isHeThongActive) {
+      setExpandedSections((prev) => ({ ...prev, he_thong: true }));
+    }
+  }, [activeItem, selectedDepartment]);
 
   return (
     <>
@@ -141,12 +161,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* GROUP 1: DANH MỤC THỐNG KÊ */}
           <div>
             <button
-              onClick={() => {
-                toggleSection('danh_muc_thong_ke');
-                if (!isDanhMucActive) {
-                  handleItemClick('ke_khai_upload', selectedDepartment || 'dao_tao');
-                }
-              }}
+              type="button"
+              onClick={() => toggleSection('danh_muc_thong_ke')}
               className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all cursor-pointer ${
                 isDanhMucActive
                   ? 'border-2 border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8] font-medium shadow-2xs'
@@ -184,7 +200,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* 2. Nghiên cứu Khoa học (3 tab: Bài báo, Seminar, Nghiên cứu khoa học) */}
                 <div>
                   <button
-                    onClick={() => handleItemClick('ke_khai_upload', 'nckh')}
+                    type="button"
+                    onClick={() => {
+                      toggleSection('nckh');
+                      onSelectItem('ke_khai_upload', 'nckh');
+                    }}
                     className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-all cursor-pointer text-[12.5px] ${
                       isItemActive('ke_khai_upload', 'nckh')
                         ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
@@ -192,15 +212,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   >
                     <span className="truncate">Nghiên cứu Khoa học</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                      isItemActive('ke_khai_upload', 'nckh')
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-200 text-slate-600'
-                    }`}>3 tab</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                        isItemActive('ke_khai_upload', 'nckh')
+                          ? 'bg-white/20 text-white'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}>3 tab</span>
+                      {expandedSections.nckh ? (
+                        <ChevronUp className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                      )}
+                    </div>
                   </button>
 
                   {/* 3 tab nhỏ của NCKH: Bài báo, Seminar, Nghiên cứu khoa học */}
-                  {isItemActive('ke_khai_upload', 'nckh') && (
+                  {expandedSections.nckh && (
                     <div className="mt-1 pl-3 pr-1 py-1 space-y-0.5 border-l-2 border-[#93c5fd] ml-3 animate-fadeIn">
                       <button
                         onClick={() => {
@@ -266,12 +293,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* GROUP 2: THANH TOÁN (CHỨA: QUẢN LÝ THANH TOÁN & CHI TRẢ TÀI CHÍNH) */}
           <div>
             <button
-              onClick={() => {
-                toggleSection('thanh_toan');
-                if (!isThanhToanActive) {
-                  handleItemClick('tong_thanh_toan');
-                }
-              }}
+              type="button"
+              onClick={() => toggleSection('thanh_toan')}
               className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all cursor-pointer ${
                 isThanhToanActive
                   ? 'border-2 border-[#10b981] bg-emerald-50 text-emerald-800 font-medium shadow-2xs'
@@ -333,12 +356,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* GROUP 3: TRA CỨU VÀ PHẢN HỒI */}
           <div>
             <button
-              onClick={() => {
-                toggleSection('tra_cuu');
-                if (!isTraCuuActive) {
-                  handleItemClick('tra_cuu_giang_vien');
-                }
-              }}
+              type="button"
+              onClick={() => toggleSection('tra_cuu')}
               className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all cursor-pointer ${
                 isTraCuuActive
                   ? 'border-2 border-[#0284c7] bg-sky-50 text-sky-800 font-medium shadow-2xs'
@@ -405,12 +424,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* GROUP 4: BÁO CÁO */}
           <div>
             <button
-              onClick={() => {
-                toggleSection('bao_cao');
-                if (!isBaoCaoActive) {
-                  handleItemClick('nhap_lieu_phu_luc');
-                }
-              }}
+              type="button"
+              onClick={() => toggleSection('bao_cao')}
               className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all cursor-pointer ${
                 isBaoCaoActive
                   ? 'border-2 border-[#7e22ce] bg-purple-50 text-purple-900 font-medium shadow-2xs'
@@ -463,12 +478,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* GROUP 5: HỆ THỐNG */}
           <div>
             <button
-              onClick={() => {
-                toggleSection('he_thong');
-                if (!isHeThongActive) {
-                  handleItemClick('he_thong_nguoi_dung');
-                }
-              }}
+              type="button"
+              onClick={() => toggleSection('he_thong')}
               className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all cursor-pointer ${
                 isHeThongActive
                   ? 'border-2 border-[#1e293b] bg-slate-100 text-slate-900 font-medium shadow-2xs'
