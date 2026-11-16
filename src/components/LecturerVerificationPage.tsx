@@ -111,14 +111,7 @@ interface LecturerVerificationPageProps {
   currentAccount?: UserAccount;
 }
 
-type TabKey =
-  | 'tong_quan'
-  | 'dao_tao'
-  | 'khao_thi'
-  | 'tuyen_sinh'
-  | 'nckh'
-  | 'co_van_hoc_tap'
-  | 'cong_tac_khac';
+type TabKey = 'dao_tao' | 'nckh' | 'cong_tac_khac';
 
 interface CategoryApprovalStatus {
   status: 'pending' | 'confirmed' | 'disputed';
@@ -145,8 +138,8 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   }, [currentAccount, initialMaGV]);
 
   const [searchQuery, setSearchQuery] = useState(effectiveMaGV);
-  // Default first tab is 'tong_quan': Thống kê tổng tiền theo từng nội dung
-  const [activeTab, setActiveTab] = useState<TabKey>('tong_quan');
+  // Default first tab is 'dao_tao': Thanh toán giờ giảng
+  const [activeTab, setActiveTab] = useState<TabKey>('dao_tao');
   const [teachingViewMode, setTeachingViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [researchViewMode, setResearchViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
@@ -230,7 +223,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   const [feedbackCategory, setFeedbackCategory] = useState<
     'sai_so_tiet' | 'thieu_lop' | 'sai_he_so' | 'sai_don_gia' | 'khac'
   >('sai_so_tiet');
-  const [feedbackTargetTab, setFeedbackTargetTab] = useState<TabKey>('tong_quan');
+  const [feedbackTargetTab, setFeedbackTargetTab] = useState<TabKey>('dao_tao');
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackSubject, setFeedbackSubject] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -300,21 +293,13 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     Record<string, Record<TabKey, CategoryApprovalStatus>>
   >({
     TDU00128: {
-      tong_quan: { status: 'pending' },
-      dao_tao: { status: 'pending' },
-      khao_thi: { status: 'pending' },
-      tuyen_sinh: { status: 'pending' },
-      nckh: { status: 'pending' },
-      co_van_hoc_tap: { status: 'pending' },
+      dao_tao: { status: 'confirmed', confirmedAt: '12/10/2026 14:15' },
+      nckh: { status: 'confirmed', confirmedAt: '12/10/2026 14:15' },
       cong_tac_khac: { status: 'pending' },
     },
     TDU00245: {
-      tong_quan: { status: 'pending' },
       dao_tao: { status: 'pending' },
-      khao_thi: { status: 'pending' },
-      tuyen_sinh: { status: 'pending' },
       nckh: { status: 'pending' },
-      co_van_hoc_tap: { status: 'pending' },
       cong_tac_khac: { status: 'pending' },
     },
   });
@@ -375,19 +360,11 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       if (r.phongBanQuanLy === 'dao_tao') {
         daoTaoAmt += r.tongTienThuLao;
         daoTaoQC += r.tongTietQC;
-      } else if (r.phongBanQuanLy === 'khao_thi') {
-        khaoThiAmt += r.tongTienThuLao;
-        khaoThiQC += r.tongTietQC;
-      } else if (r.phongBanQuanLy === 'tuyen_sinh') {
-        tuyenSinhAmt += r.tongTienThuLao;
-        tuyenSinhQC += r.tongTietQC;
       } else if (r.phongBanQuanLy === 'nckh') {
         nckhAmt += r.tongTienThuLao;
         nckhQC += r.tongTietQC;
-      } else if (r.phongBanQuanLy === 'co_van_hoc_tap') {
-        coVanHocTapAmt += r.tongTienThuLao;
-        coVanHocTapQC += r.tongTietQC;
-      } else if (r.phongBanQuanLy === 'cong_tac_khac') {
+      } else {
+        // Mọi công tác khác: cong_tac_khac, khao_thi, tuyen_sinh, co_van_hoc_tap
         congTacKhacAmt += r.tongTienThuLao;
         congTacKhacQC += r.tongTietQC;
       }
@@ -467,12 +444,8 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     if (!selectedLecturer) return {} as Record<TabKey, CategoryApprovalStatus>;
     return (
       categoryStates[selectedLecturer.maGV] || {
-        tong_quan: { status: 'pending' },
         dao_tao: { status: 'pending' },
-        khao_thi: { status: 'pending' },
-        tuyen_sinh: { status: 'pending' },
         nckh: { status: 'pending' },
-        co_van_hoc_tap: { status: 'pending' },
         cong_tac_khac: { status: 'pending' },
       }
     );
@@ -484,10 +457,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
   const detailTabKeys: TabKey[] = [
     'dao_tao',
-    'khao_thi',
-    'tuyen_sinh',
     'nckh',
-    'co_van_hoc_tap',
     'cong_tac_khac',
   ];
 
@@ -496,17 +466,34 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   ).length;
   const areAllDetailsConfirmed = confirmedDetailCount === detailTabKeys.length;
 
+  // Handle confirm / unconfirm all 3 tabs at once
+  const handleConfirmAll = () => {
+    if (!selectedLecturer) return;
+    const nowConfirmed = !areAllDetailsConfirmed;
+    const dateStr = new Date().toLocaleDateString('vi-VN');
+    setCategoryStates((prev) => {
+      const lecturerMap = prev[selectedLecturer.maGV] || ({} as Record<TabKey, CategoryApprovalStatus>);
+      const updated = {
+        ...lecturerMap,
+        dao_tao: { status: nowConfirmed ? 'confirmed' : 'pending', confirmedAt: nowConfirmed ? dateStr : undefined },
+        nckh: { status: nowConfirmed ? 'confirmed' : 'pending', confirmedAt: nowConfirmed ? dateStr : undefined },
+        cong_tac_khac: { status: nowConfirmed ? 'confirmed' : 'pending', confirmedAt: nowConfirmed ? dateStr : undefined },
+      };
+      return {
+        ...prev,
+        [selectedLecturer.maGV]: updated,
+      };
+    });
+    showToast(nowConfirmed ? 'Đã đồng ý xác nhận thành công tất cả 3 mục kê khai!' : 'Đã bỏ đồng ý toàn bộ 3 mục');
+  };
+
   // Handle confirm / unconfirm agree
   const handleConfirmCategory = (tabKey: TabKey) => {
     if (!selectedLecturer) return;
 
     const categoryNames: Record<TabKey, string> = {
-      tong_quan: 'Toàn bộ tổng hợp thù lao',
       dao_tao: 'Thanh toán giờ giảng',
-      khao_thi: 'Coi thi, chấm thi, ra đề',
-      tuyen_sinh: 'Công tác tuyển sinh',
       nckh: 'Nghiên cứu khoa học',
-      co_van_hoc_tap: 'Cố vấn học tập',
       cong_tac_khac: 'Công tác khác',
     };
 
@@ -520,23 +507,12 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
           ...lecturerMap,
           [tabKey]: { status: 'pending' as const },
         };
-        // Nếu bỏ đồng ý 1 mục con thì mục Thống kê tổng tiền cũng tự bỏ đồng ý toàn bộ
-        if (tabKey !== 'tong_quan') {
-          updated.tong_quan = { status: 'pending' as const };
-        }
         return {
           ...prev,
           [selectedLecturer.maGV]: updated,
         };
       });
       showToast(`Đã bỏ đồng ý xác nhận: ${categoryNames[tabKey]}`);
-      return;
-    }
-
-    if (tabKey === 'tong_quan' && !areAllDetailsConfirmed) {
-      showToast(
-        `Vui lòng bấm Đồng ý hết 6 mục chi tiết (hiện đã đồng ý ${confirmedDetailCount}/6 mục) trước khi Đồng ý toàn bộ!`
-      );
       return;
     }
 
@@ -548,11 +524,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
     // Khi đồng ý xác nhận: tự động đóng khung phản hồi nếu đang mở và xóa chọn dòng của mục đó
     setIsFeedbackOpen(false);
-    if (tabKey === 'tong_quan') {
-      setSelectedFeedbackRows([]);
-    } else {
-      setSelectedFeedbackRows((prev) => prev.filter((r) => r.tabKey !== tabKey));
-    }
+    setSelectedFeedbackRows((prev) => prev.filter((r) => r.tabKey !== tabKey));
 
     setCategoryStates((prev) => {
       const lecturerMap = prev[selectedLecturer.maGV] || ({} as Record<TabKey, CategoryApprovalStatus>);
@@ -582,20 +554,14 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     }
     setFeedbackTargetTab(tabKey);
     const categoryNames: Record<TabKey, string> = {
-      tong_quan: 'Thù lao tổng hợp các nguồn',
       dao_tao: 'Thanh toán giờ giảng (Phòng Đào tạo)',
-      khao_thi: 'Coi thi, chấm thi, ra đề (Phòng Khảo thí & ĐBCL)',
-      tuyen_sinh: 'Công tác tuyển sinh (Phòng Tuyển sinh & Truyền thông)',
       nckh: 'Nghiên cứu khoa học (Phòng Quản lý KH & HTQT)',
-      co_van_hoc_tap: 'Cố vấn học tập (Phòng CTCT & Quản lý SV)',
-      cong_tac_khac: 'Nhiệm vụ công tác khác',
+      cong_tac_khac: 'Nhiệm vụ công tác khác (Khảo thí, Tuyển sinh, CVHT...)',
     };
     setFeedbackSubject(categoryNames[tabKey] || '');
 
     if (tabKey === 'dao_tao') setFeedbackCategory('sai_so_tiet');
-    else if (tabKey === 'khao_thi') setFeedbackCategory('thieu_lop');
     else if (tabKey === 'nckh') setFeedbackCategory('sai_he_so');
-    else if (tabKey === 'tuyen_sinh') setFeedbackCategory('sai_don_gia');
     else setFeedbackCategory('khac');
 
     setIsFeedbackOpen(true);
@@ -609,12 +575,8 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       } else {
         setFeedbackTargetTab(key);
         const categoryNames: Record<TabKey, string> = {
-          tong_quan: 'Thù lao tổng hợp các nguồn',
           dao_tao: 'Thanh toán giờ giảng (Phòng Đào tạo)',
-          khao_thi: 'Coi thi, chấm thi, ra đề (Phòng Khảo thí & ĐBCL)',
-          tuyen_sinh: 'Công tác tuyển sinh (Phòng Tuyển sinh & Truyền thông)',
           nckh: 'Nghiên cứu khoa học (Phòng Quản lý KH & HTQT)',
-          co_van_hoc_tap: 'Cố vấn học tập (Phòng CTCT & Quản lý SV)',
           cong_tac_khac: 'Nhiệm vụ công tác khác',
         };
         setFeedbackSubject(categoryNames[key] || '');
@@ -719,11 +681,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
             disputeNote: feedbackContent.trim(),
             disputeDate: dateStr,
           },
-          tong_quan: {
-            status: 'disputed',
-            disputeNote: `[${feedbackSubject}] ${feedbackContent.trim()}`,
-            disputeDate: dateStr,
-          },
         },
       };
     });
@@ -806,14 +763,27 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     showToast(`Đã chuyển sang xem Version ${versionNum}`);
   };
 
-  // Current tab records
+  // Current tab records (3 tabs: dao_tao, nckh, cong_tac_khac)
   const currentTabRecords = useMemo(() => {
-    if (activeTab === 'tong_quan') return [];
-    return lecturerRecords.filter((r) => r.phongBanQuanLy === activeTab);
+    if (activeTab === 'dao_tao') {
+      return lecturerRecords.filter((r) => r.phongBanQuanLy === 'dao_tao');
+    }
+    if (activeTab === 'nckh') {
+      return lecturerRecords.filter((r) => r.phongBanQuanLy === 'nckh');
+    }
+    // cong_tac_khac: bao gồm tất cả các nhiệm vụ khác (cong_tac_khac, khao_thi, tuyen_sinh, co_van_hoc_tap)
+    return lecturerRecords.filter(
+      (r) =>
+        r.phongBanQuanLy === 'cong_tac_khac' ||
+        r.phongBanQuanLy === 'khao_thi' ||
+        r.phongBanQuanLy === 'tuyen_sinh' ||
+        r.phongBanQuanLy === 'co_van_hoc_tap'
+    );
   }, [lecturerRecords, activeTab]);
 
   const activeTabStatus = getTabStatus(activeTab);
 
+  // Đúng 3 Tab duy nhất theo quy định thống nhất của hệ thống
   const tabsConfig: {
     key: TabKey;
     label: string;
@@ -825,18 +795,8 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
     count: number;
   }[] = [
     {
-      key: 'tong_quan',
-      label: 'Thống kê tổng tiền',
-      badgeName: 'Tổng hợp 6 nguồn',
-      softStyle: 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200',
-      confirmedStyle: 'bg-[#005325] hover:bg-[#00421e] text-white border border-[#005325]',
-      amount: summary.thucNhan,
-      qc: summary.tongQC,
-      count: lecturerRecords.length,
-    },
-    {
       key: 'dao_tao',
-      label: 'Thanh toán giờ giảng',
+      label: '1. Thanh toán giờ giảng',
       badgeName: 'P. Đào tạo',
       softStyle: 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200',
       confirmedStyle: 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600',
@@ -845,28 +805,8 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       count: lecturerRecords.filter((r) => r.phongBanQuanLy === 'dao_tao').length,
     },
     {
-      key: 'khao_thi',
-      label: 'Coi thi, ra đề, chấm thi',
-      badgeName: 'TT Khảo thí',
-      softStyle: 'bg-blue-50 hover:bg-blue-100/80 text-blue-700 border border-blue-200',
-      confirmedStyle: 'bg-blue-600 hover:bg-blue-700 text-white border border-blue-600',
-      amount: summary.khaoThiAmt > 0 ? summary.khaoThiAmt * 0.9 : 0,
-      qc: summary.khaoThiQC,
-      count: lecturerRecords.filter((r) => r.phongBanQuanLy === 'khao_thi').length,
-    },
-    {
-      key: 'tuyen_sinh',
-      label: 'Công tác tuyển sinh',
-      badgeName: 'P. Tuyển sinh',
-      softStyle: 'bg-indigo-50 hover:bg-indigo-100/80 text-indigo-700 border border-indigo-200',
-      confirmedStyle: 'bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-600',
-      amount: summary.tuyenSinhAmt > 0 ? summary.tuyenSinhAmt * 0.9 : 0,
-      qc: summary.tuyenSinhQC,
-      count: lecturerRecords.filter((r) => r.phongBanQuanLy === 'tuyen_sinh').length,
-    },
-    {
       key: 'nckh',
-      label: 'Nghiên cứu khoa học',
+      label: '2. Nghiên cứu khoa học',
       badgeName: 'P. NCKH',
       softStyle: 'bg-amber-50 hover:bg-amber-100/80 text-amber-800 border border-amber-200',
       confirmedStyle: 'bg-amber-600 hover:bg-amber-700 text-white border border-amber-600',
@@ -875,24 +815,20 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       count: lecturerRecords.filter((r) => r.phongBanQuanLy === 'nckh').length,
     },
     {
-      key: 'co_van_hoc_tap',
-      label: 'Cố vấn học tập',
-      badgeName: 'P. CTSV',
-      softStyle: 'bg-teal-50 hover:bg-teal-100/80 text-teal-800 border border-teal-200',
-      confirmedStyle: 'bg-teal-600 hover:bg-teal-700 text-white border border-teal-600',
-      amount: summary.coVanHocTapAmt > 0 ? summary.coVanHocTapAmt * 0.9 : 0,
-      qc: summary.coVanHocTapQC,
-      count: lecturerRecords.filter((r) => r.phongBanQuanLy === 'co_van_hoc_tap').length,
-    },
-    {
       key: 'cong_tac_khac',
-      label: 'Công tác khác',
-      badgeName: 'HĐKH, Thanh tra',
+      label: '3. Công tác khác',
+      badgeName: 'Khảo thí, Tuyển sinh, CVHT, Khác',
       softStyle: 'bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200',
       confirmedStyle: 'bg-purple-600 hover:bg-purple-700 text-white border border-purple-600',
       amount: summary.congTacKhacAmt > 0 ? summary.congTacKhacAmt * 0.9 : 0,
       qc: summary.congTacKhacQC,
-      count: lecturerRecords.filter((r) => r.phongBanQuanLy === 'cong_tac_khac').length,
+      count: lecturerRecords.filter(
+        (r) =>
+          r.phongBanQuanLy === 'cong_tac_khac' ||
+          r.phongBanQuanLy === 'khao_thi' ||
+          r.phongBanQuanLy === 'tuyen_sinh' ||
+          r.phongBanQuanLy === 'co_van_hoc_tap'
+      ).length,
     },
   ];
 
@@ -908,10 +844,50 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       )}
 
       {/* ========================================================================= */}
-      {/* 1. HORIZONTAL TABS ON A SINGLE ROW                                        */}
-      {/*    - Chưa đồng ý & không chọn: ẩn xuống (mờ/xám nhạt, hạ thấp)            */}
-      {/*    - Click vào: hiện nổi lên                                              */}
-      {/*    - Đã bấm Đồng ý: hiện màu cố định luôn                                 */}
+      {/* 0. PERSISTENT TOTAL COMPENSATION SUMMARY BANNER                           */}
+      {/* ========================================================================= */}
+      <div className="bg-[#f8fafc] border-b border-[#e2e8f0] px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-[12px]">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-slate-600 font-medium">Tổng thực nhận (sau thuế 10%):</span>
+            <span className="text-[17px] font-bold text-[#005325]">
+              {summary.thucNhan.toLocaleString('vi-VN')} VNĐ
+            </span>
+          </div>
+          <span className="text-slate-300 hidden sm:inline">|</span>
+          <div className="flex items-center gap-2.5 text-slate-600 flex-wrap">
+            <span>Tổng QC: <strong className="text-slate-800">{summary.tongQC.toFixed(1)} tiết/h</strong></span>
+            <span>·</span>
+            <span>Thù lao gộp: <strong className="text-slate-800">{summary.tongThuLao.toLocaleString('vi-VN')} đ</strong></span>
+            <span>·</span>
+            <span>Thuế TNCN: <strong className="text-rose-700">-{summary.thueTNCN.toLocaleString('vi-VN')} đ</strong></span>
+          </div>
+        </div>
+
+        {/* Global confirmation indicator */}
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+            areAllDetailsConfirmed
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+              : 'bg-amber-50 text-amber-800 border-amber-300'
+          }`}>
+            {areAllDetailsConfirmed ? 'Đã xác nhận 3/3 mục' : `Đã xác nhận ${confirmedDetailCount}/3 mục`}
+          </span>
+          <button
+            onClick={() => handleConfirmAll()}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+              areAllDetailsConfirmed
+                ? 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100'
+                : 'bg-[#005325] text-white hover:bg-[#00421e] shadow-2xs'
+            }`}
+          >
+            {areAllDetailsConfirmed ? 'Bỏ đồng ý toàn bộ' : 'Đồng ý xác nhận tất cả'}
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 1. HORIZONTAL TABS ON A SINGLE ROW (3 TABS)                               */}
       {/* ========================================================================= */}
       <div className="bg-white border-b border-[#e2e8f0] px-3 py-2 w-full max-w-full min-w-0 flex items-center gap-1.5 flex-wrap">
         <div className="flex items-center flex-wrap gap-1.5 text-[11.5px]">
@@ -921,15 +897,12 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
             let buttonStyle = '';
             if (isConfirmed) {
-              // Đã bấm đồng ý -> Hiện màu đậm nổi bật cố định luôn
               buttonStyle = isActive
                 ? `${tab.confirmedStyle} -translate-y-[1.5px] shadow-sm ring-2 ring-offset-1 ring-slate-300 font-semibold opacity-100`
                 : `${tab.confirmedStyle} translate-y-0 shadow-xs font-semibold opacity-100`;
             } else if (isActive) {
-              // Chưa đồng ý nhưng đang click vào xem -> Hiện nổi lên với màu pastel rõ
               buttonStyle = `${tab.softStyle} -translate-y-[1.5px] shadow-xs ring-1 ring-current/25 font-semibold opacity-100`;
             } else {
-              // Chưa đồng ý và chuyển qua nút khác -> Ẩn xuống với màu pastel nhẹ dịu (không nổi bật như khi bấm đồng ý)
               buttonStyle = `${tab.softStyle} translate-y-[1.5px] opacity-65 hover:opacity-90 font-normal shadow-none`;
             }
 
@@ -937,7 +910,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`h-[30px] px-2.5 rounded-lg flex items-center transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 ${buttonStyle}`}
+                className={`h-[30px] px-3 rounded-lg flex items-center transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 ${buttonStyle}`}
                 title={`Xem chi tiết: ${tab.label}`}
               >
                 <span>{tab.label}</span>
@@ -954,9 +927,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
         {/* Left: Tab Title & Lecturer Selector */}
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-[12.5px] font-semibold text-slate-800">
-            {activeTab === 'tong_quan'
-              ? 'Bảng đối soát tổng hợp 6 nguồn hoạt động'
-              : `Bảng kê khai chi tiết: ${currentTabConfig.label}`}
+            Bảng kê khai chi tiết: {currentTabConfig.label}
           </h2>
 
           {currentRole !== 'lecturer' ? (
@@ -998,8 +969,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   ? 'Đóng phản hồi'
                   : selectedRowsInActiveTab.length > 0
                   ? `Phản hồi (${selectedRowsInActiveTab.length} hàng đã chọn)`
-                  : activeTab === 'tong_quan'
-                  ? 'Gửi phản hồi / Khiếu nại'
                   : 'Phản hồi mục này'}
               </span>
             </button>
@@ -1007,32 +976,19 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
           <button
             onClick={() => handleConfirmCategory(activeTab)}
-            disabled={activeTab === 'tong_quan' && !areAllDetailsConfirmed && activeTabStatus.status !== 'confirmed'}
-            className={`h-[30px] px-3 rounded-lg flex items-center text-[11.5px] font-medium transition-colors whitespace-nowrap ${
+            className={`h-[30px] px-3 rounded-lg flex items-center text-[11.5px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
               activeTabStatus.status === 'confirmed'
-                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer'
-                : activeTab === 'tong_quan' && !areAllDetailsConfirmed
-                ? 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed'
-                : 'bg-[#005325] hover:bg-[#00421e] text-white shadow-2xs cursor-pointer'
+                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300'
+                : 'bg-[#005325] hover:bg-[#00421e] text-white shadow-2xs'
             }`}
             title={
               activeTabStatus.status === 'confirmed'
                 ? 'Bấm để bỏ đồng ý xác nhận mục này'
-                : activeTab === 'tong_quan' && !areAllDetailsConfirmed
-                ? `Cần đồng ý hết 6 mục chi tiết (${confirmedDetailCount}/6) trước khi đồng ý toàn bộ`
                 : 'Đồng ý xác nhận số liệu mục này'
             }
           >
             <span>
-              {activeTab === 'tong_quan'
-                ? activeTabStatus.status === 'confirmed'
-                  ? 'Bỏ đồng ý toàn bộ'
-                  : areAllDetailsConfirmed
-                  ? 'Đồng ý xác nhận toàn bộ'
-                  : `Đồng ý xác nhận toàn bộ (${confirmedDetailCount}/6)`
-                : activeTabStatus.status === 'confirmed'
-                ? 'Bỏ đồng ý mục này'
-                : 'Đồng ý mục này'}
+              {activeTabStatus.status === 'confirmed' ? 'Bỏ đồng ý mục này' : 'Đồng ý mục này'}
             </span>
           </button>
 
@@ -1140,9 +1096,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                     onClick={() => {
                       setTeachingViewMode('excel_sheet');
                       setResearchViewMode('excel_sheet');
-                      if (activeTab === 'tong_quan') {
-                        setActiveTab('dao_tao');
-                      }
                       setIsTopViewMenuOpen(false);
                     }}
                     className={`w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors ${
@@ -1231,7 +1184,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                     type="button"
                     onClick={() => {
                       setIsTopActionMenuOpen(false);
-                      const exportRows = (activeTab === 'tong_quan' ? lecturerRecords : currentTabRecords).map((r, i) => ({
+                      const exportRows = currentTabRecords.map((r, i) => ({
                         STT: i + 1,
                         'Mã GV': r.maGV,
                         'Họ và tên': r.hoTen,
@@ -1567,387 +1520,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       {/* 3. TAB CONTENT: DATA TABLES & SUMMARY GRIDS                               */}
       {/* ========================================================================= */}
       <div className="flex-1 w-full max-w-full min-w-0 flex flex-col min-h-0 bg-white">
-        {/* ===================================================================== */}
-        {/* TAB 1: THỐNG KÊ TỔNG TIỀN (GỌN GÀNG, ĐƠN GIẢN)                        */}
-        {/* ===================================================================== */}
-        {activeTab === 'tong_quan' && (
-          <div className="p-4 space-y-3 w-full max-w-full min-w-0">
-            {/* Compact & Minimal Total Summary Bar */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-4 text-[12.5px]">
-              <div className="flex items-baseline gap-2">
-                <span className="text-slate-600 font-medium">Tổng thực nhận (sau thuế 10%):</span>
-                <span className="text-[18px] font-bold text-[#005325]">
-                  {summary.thucNhan.toLocaleString('vi-VN')} VNĐ
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-5 text-[12px] text-slate-600">
-                <div>
-                  <span>Tổng khối lượng QC: </span>
-                  <span className="font-semibold text-slate-800">{summary.tongQC.toFixed(1)} tiết/h</span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div>
-                  <span>Thù lao gộp: </span>
-                  <span className="font-semibold text-slate-800">{summary.tongThuLao.toLocaleString('vi-VN')} đ</span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div>
-                  <span>Thuế TNCN (10%): </span>
-                  <span className="font-semibold text-slate-800">-{summary.thueTNCN.toLocaleString('vi-VN')} đ</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Consolidated Table of All 6 Sources */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-              <div className="overflow-x-auto w-full max-w-full">
-                <table className="w-full text-left border-collapse text-[12.5px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 border-b border-slate-200 font-semibold h-[38px]">
-                      <th className="w-[36px] px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={
-                            [
-                              'tong_quan-dao_tao',
-                              'tong_quan-khao_thi',
-                              'tong_quan-tuyen_sinh',
-                              'tong_quan-nckh',
-                              'tong_quan-co_van_hoc_tap',
-                              'tong_quan-cong_tac_khac',
-                            ].every((id) => selectedRowIdsInActiveTab.includes(id))
-                          }
-                          onChange={(e) =>
-                            handleSelectAllRowsForTab(
-                              'tong_quan',
-                              [
-                                { rowId: 'tong_quan-dao_tao', tt: 1, title: 'Thanh toán giờ giảng (Lý thuyết & Thực hành)', subtitle: 'Phòng Đào tạo', khoiLuong: `${summary.daoTaoQC.toFixed(1)} tiết`, amount: summary.daoTaoAmt },
-                                { rowId: 'tong_quan-khao_thi', tt: 2, title: 'Coi thi, ra đề, chấm thi kết thúc HP', subtitle: 'TT Khảo thí', khoiLuong: `${summary.khaoThiQC.toFixed(1)} giờ`, amount: summary.khaoThiAmt },
-                                { rowId: 'tong_quan-tuyen_sinh', tt: 3, title: 'Công tác tuyển sinh & Truyền thông', subtitle: 'P. Tuyển sinh & TT', khoiLuong: `${summary.tuyenSinhQC.toFixed(1)} tiết`, amount: summary.tuyenSinhAmt },
-                                { rowId: 'tong_quan-nckh', tt: 4, title: 'Nghiên cứu khoa học (Bài báo, đề tài, luận văn)', subtitle: 'Phòng NCKH & SĐH', khoiLuong: `${summary.nckhQC.toFixed(1)} giờ`, amount: summary.nckhAmt },
-                                { rowId: 'tong_quan-co_van_hoc_tap', tt: 5, title: 'Cố vấn học tập (CVHT lớp sinh viên)', subtitle: 'P. CTSV & Đào tạo', khoiLuong: `${summary.coVanHocTapQC.toFixed(1)} tiết`, amount: summary.coVanHocTapAmt },
-                                { rowId: 'tong_quan-cong_tac_khac', tt: 6, title: 'Công tác khác (HĐKH, Ban thanh tra thi)', subtitle: 'Ban Giám hiệu & Các đơn vị', khoiLuong: `${summary.congTacKhacQC.toFixed(1)} tiết`, amount: summary.congTacKhacAmt },
-                              ],
-                              e.target.checked
-                            )
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn tất cả để phản hồi"
-                        />
-                      </th>
-                      <th className="w-[45px] px-2 text-center border-r border-slate-200">STT</th>
-                      <th className="px-3 border-r border-slate-200 min-w-[210px]">Nội dung thanh toán thù lao</th>
-                      <th className="px-3 border-r border-slate-200 w-[180px]">Đơn vị phụ trách</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[115px]">Khối lượng QC</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[130px]">Thù lao gộp (VNĐ)</th>
-                      <th className="px-2.5 text-right border-r border-slate-200 w-[115px]">Thuế 10%</th>
-                      <th className="px-3 text-right border-r border-slate-200 w-[135px]">Thực nhận (VNĐ)</th>
-                      <th className="px-2.5 text-center border-r border-slate-200 w-[120px]">Trạng thái</th>
-                      <th className="px-2.5 text-center w-[100px]">Chi tiết</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#e2e8f0]">
-                    {/* Row 1: Giờ giảng */}
-                    <tr className="h-[38px] hover:bg-slate-50 transition-colors">
-                      <td className="px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIdsInActiveTab.includes('tong_quan-dao_tao')}
-                          onChange={() =>
-                            handleToggleSelectRow('tong_quan', {
-                              rowId: 'tong_quan-dao_tao',
-                              tt: 1,
-                              title: 'Thanh toán giờ giảng (Lý thuyết & Thực hành)',
-                              subtitle: 'Phòng Đào tạo',
-                              khoiLuong: `${summary.daoTaoQC.toFixed(1)} tiết`,
-                              amount: summary.daoTaoAmt,
-                            })
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn dòng 1 để phản hồi"
-                        />
-                      </td>
-                      <td className="px-2 text-center border-r border-slate-200">1</td>
-                      <td className="px-3 border-r border-slate-200">Thanh toán giờ giảng (Lý thuyết & Thực hành)</td>
-                      <td className="px-3 border-r border-slate-200">Phòng Đào tạo</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">{summary.daoTaoQC.toFixed(1)} tiết</td>
-                      <td className="px-3 text-right border-r border-slate-200">{summary.daoTaoAmt.toLocaleString('vi-VN')} đ</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">
-                        -{(summary.daoTaoAmt * 0.1).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right border-r border-slate-200">
-                        {(summary.daoTaoAmt * 0.9).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-center border-r border-slate-200">
-                        {getTabStatus('dao_tao').status === 'confirmed' ? 'Đã đồng ý' : 'Chưa đồng ý'}
-                      </td>
-                      <td className="px-2.5 text-center">
-                        <button
-                          onClick={() => setActiveTab('dao_tao')}
-                          className="hover:underline cursor-pointer"
-                        >
-                          Xem bảng →
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* Row 2: Khảo thí */}
-                    <tr className="h-[38px] hover:bg-slate-50 transition-colors">
-                      <td className="px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIdsInActiveTab.includes('tong_quan-khao_thi')}
-                          onChange={() =>
-                            handleToggleSelectRow('tong_quan', {
-                              rowId: 'tong_quan-khao_thi',
-                              tt: 2,
-                              title: 'Coi thi, ra đề, chấm thi kết thúc HP',
-                              subtitle: 'TT Khảo thí',
-                              khoiLuong: `${summary.khaoThiQC.toFixed(1)} giờ`,
-                              amount: summary.khaoThiAmt,
-                            })
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn dòng 2 để phản hồi"
-                        />
-                      </td>
-                      <td className="px-2 text-center border-r border-slate-200">2</td>
-                      <td className="px-3 border-r border-slate-200">Coi thi, ra đề, chấm thi kết thúc HP</td>
-                      <td className="px-3 border-r border-slate-200">TT Khảo thí</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">{summary.khaoThiQC.toFixed(1)} giờ</td>
-                      <td className="px-3 text-right border-r border-slate-200">{summary.khaoThiAmt.toLocaleString('vi-VN')} đ</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">
-                        -{(summary.khaoThiAmt * 0.1).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right border-r border-slate-200">
-                        {(summary.khaoThiAmt * 0.9).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-center border-r border-slate-200">
-                        {getTabStatus('khao_thi').status === 'confirmed' ? 'Đã đồng ý' : 'Chưa đồng ý'}
-                      </td>
-                      <td className="px-2.5 text-center">
-                        <button
-                          onClick={() => setActiveTab('khao_thi')}
-                          className="hover:underline cursor-pointer"
-                        >
-                          Xem bảng →
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* Row 3: Tuyển sinh */}
-                    <tr className="h-[38px] hover:bg-slate-50 transition-colors">
-                      <td className="px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIdsInActiveTab.includes('tong_quan-tuyen_sinh')}
-                          onChange={() =>
-                            handleToggleSelectRow('tong_quan', {
-                              rowId: 'tong_quan-tuyen_sinh',
-                              tt: 3,
-                              title: 'Công tác tuyển sinh & Truyền thông',
-                              subtitle: 'P. Tuyển sinh & TT',
-                              khoiLuong: `${summary.tuyenSinhQC.toFixed(1)} tiết`,
-                              amount: summary.tuyenSinhAmt,
-                            })
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn dòng 3 để phản hồi"
-                        />
-                      </td>
-                      <td className="px-2 text-center border-r border-slate-200">3</td>
-                      <td className="px-3 border-r border-slate-200">Công tác tuyển sinh & Truyền thông</td>
-                      <td className="px-3 border-r border-slate-200">P. Tuyển sinh & TT</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">{summary.tuyenSinhQC.toFixed(1)} tiết</td>
-                      <td className="px-3 text-right border-r border-slate-200">{summary.tuyenSinhAmt.toLocaleString('vi-VN')} đ</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">
-                        -{(summary.tuyenSinhAmt * 0.1).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right border-r border-slate-200">
-                        {(summary.tuyenSinhAmt * 0.9).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-center border-r border-slate-200">
-                        {getTabStatus('tuyen_sinh').status === 'confirmed' ? 'Đã đồng ý' : 'Chưa đồng ý'}
-                      </td>
-                      <td className="px-2.5 text-center">
-                        <button
-                          onClick={() => setActiveTab('tuyen_sinh')}
-                          className="hover:underline cursor-pointer"
-                        >
-                          Xem bảng →
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* Row 4: NCKH */}
-                    <tr className="h-[38px] hover:bg-slate-50 transition-colors">
-                      <td className="px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIdsInActiveTab.includes('tong_quan-nckh')}
-                          onChange={() =>
-                            handleToggleSelectRow('tong_quan', {
-                              rowId: 'tong_quan-nckh',
-                              tt: 4,
-                              title: 'Nghiên cứu khoa học (Bài báo, đề tài, luận văn)',
-                              subtitle: 'Phòng NCKH & SĐH',
-                              khoiLuong: `${summary.nckhQC.toFixed(1)} giờ`,
-                              amount: summary.nckhAmt,
-                            })
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn dòng 4 để phản hồi"
-                        />
-                      </td>
-                      <td className="px-2 text-center border-r border-slate-200">4</td>
-                      <td className="px-3 border-r border-slate-200">Nghiên cứu khoa học (Bài báo, đề tài, luận văn)</td>
-                      <td className="px-3 border-r border-slate-200">Phòng NCKH & SĐH</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">{summary.nckhQC.toFixed(1)} giờ</td>
-                      <td className="px-3 text-right border-r border-slate-200">{summary.nckhAmt.toLocaleString('vi-VN')} đ</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">
-                        -{(summary.nckhAmt * 0.1).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right border-r border-slate-200">
-                        {(summary.nckhAmt * 0.9).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-center border-r border-slate-200">
-                        {getTabStatus('nckh').status === 'confirmed' ? 'Đã đồng ý' : 'Chưa đồng ý'}
-                      </td>
-                      <td className="px-2.5 text-center">
-                        <button
-                          onClick={() => setActiveTab('nckh')}
-                          className="hover:underline cursor-pointer"
-                        >
-                          Xem bảng →
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* Row 5: Cố vấn học tập */}
-                    <tr className="h-[38px] hover:bg-slate-50 transition-colors">
-                      <td className="px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIdsInActiveTab.includes('tong_quan-co_van_hoc_tap')}
-                          onChange={() =>
-                            handleToggleSelectRow('tong_quan', {
-                              rowId: 'tong_quan-co_van_hoc_tap',
-                              tt: 5,
-                              title: 'Cố vấn học tập (CVHT lớp sinh viên)',
-                              subtitle: 'P. CTSV & Đào tạo',
-                              khoiLuong: `${summary.coVanHocTapQC.toFixed(1)} tiết`,
-                              amount: summary.coVanHocTapAmt,
-                            })
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn dòng 5 để phản hồi"
-                        />
-                      </td>
-                      <td className="px-2 text-center border-r border-slate-200">5</td>
-                      <td className="px-3 border-r border-slate-200">Cố vấn học tập (CVHT lớp sinh viên)</td>
-                      <td className="px-3 border-r border-slate-200">P. CTSV & Đào tạo</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">{summary.coVanHocTapQC.toFixed(1)} tiết</td>
-                      <td className="px-3 text-right border-r border-slate-200">{summary.coVanHocTapAmt.toLocaleString('vi-VN')} đ</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">
-                        -{(summary.coVanHocTapAmt * 0.1).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right border-r border-slate-200">
-                        {(summary.coVanHocTapAmt * 0.9).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-center border-r border-slate-200">
-                        {getTabStatus('co_van_hoc_tap').status === 'confirmed' ? 'Đã đồng ý' : 'Chưa đồng ý'}
-                      </td>
-                      <td className="px-2.5 text-center">
-                        <button
-                          onClick={() => setActiveTab('co_van_hoc_tap')}
-                          className="hover:underline cursor-pointer"
-                        >
-                          Xem bảng →
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* Row 6: Công tác khác */}
-                    <tr className="h-[38px] hover:bg-slate-50 transition-colors">
-                      <td className="px-1 text-center border-r border-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={selectedRowIdsInActiveTab.includes('tong_quan-cong_tac_khac')}
-                          onChange={() =>
-                            handleToggleSelectRow('tong_quan', {
-                              rowId: 'tong_quan-cong_tac_khac',
-                              tt: 6,
-                              title: 'Công tác khác (HĐKH, Ban thanh tra thi)',
-                              subtitle: 'Ban Giám hiệu & Các đơn vị',
-                              khoiLuong: `${summary.congTacKhacQC.toFixed(1)} tiết`,
-                              amount: summary.congTacKhacAmt,
-                            })
-                          }
-                          className="cursor-pointer accent-[#005325] w-3.5 h-3.5"
-                          title="Chọn dòng 6 để phản hồi"
-                        />
-                      </td>
-                      <td className="px-2 text-center border-r border-slate-200">6</td>
-                      <td className="px-3 border-r border-slate-200">Công tác khác (HĐKH, Ban thanh tra thi)</td>
-                      <td className="px-3 border-r border-slate-200">Ban Giám hiệu & Các đơn vị</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">{summary.congTacKhacQC.toFixed(1)} tiết</td>
-                      <td className="px-3 text-right border-r border-slate-200">{summary.congTacKhacAmt.toLocaleString('vi-VN')} đ</td>
-                      <td className="px-2.5 text-right border-r border-slate-200">
-                        -{(summary.congTacKhacAmt * 0.1).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right border-r border-slate-200">
-                        {(summary.congTacKhacAmt * 0.9).toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-center border-r border-slate-200">
-                        {getTabStatus('cong_tac_khac').status === 'confirmed' ? 'Đã đồng ý' : 'Chưa đồng ý'}
-                      </td>
-                      <td className="px-2.5 text-center">
-                        <button
-                          onClick={() => setActiveTab('cong_tac_khac')}
-                          className="hover:underline cursor-pointer"
-                        >
-                          Xem bảng →
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-
-                  {/* Total footer */}
-                  <tfoot>
-                    <tr className="bg-slate-100 border-t border-slate-300 font-semibold h-[38px] text-slate-900">
-                      <td colSpan={4} className="px-3 text-right">
-                        Tổng cộng (6 nguồn hoạt động):
-                      </td>
-                      <td className="px-2.5 text-right">
-                        {summary.tongQC.toFixed(1)}
-                      </td>
-                      <td className="px-3 text-right">
-                        {summary.tongThuLao.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-2.5 text-right">
-                        -{summary.thueTNCN.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-3 text-right">
-                        {summary.thucNhan.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td colSpan={2} className="px-2.5 text-center text-[11.5px]">
-                        {getTabStatus('tong_quan').status === 'confirmed'
-                          ? 'Đã đồng ý toàn bộ'
-                          : `Đã đồng ý ${confirmedDetailCount}/6 mục`}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ===================================================================== */}
-        {/* TAB 2 -> TAB 7: CÁC TAB CHI TIẾT TRÌNH BÀY BẢNG ĐẦY ĐỦ                */}
-        {/* ===================================================================== */}
-        {activeTab !== 'tong_quan' && (
           <div className="flex-1 w-full max-w-full min-w-0 flex flex-col overflow-hidden">
             {/* Responsive scroll hint banner */}
             <div className="xl:hidden flex items-center justify-between px-3 py-1.5 bg-emerald-50/80 border-b border-emerald-200 text-[11px] text-emerald-900 font-medium">
@@ -2357,57 +1929,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                 </div>
               )}
 
-              {/* Tab 3: Khảo thí */}
-              {activeTab === 'khao_thi' && (
-                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
-                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
-                    <ExamScheduleReport
-                      maGV={selectedLecturer?.maGV}
-                      records={activeRecords}
-                      allLecturers={availableLecturers.map((l) => {
-                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
-                        return {
-                          maGV: l.maGV,
-                          hoTen: l.hoTen,
-                          khoaBoMon: l.khoaBoMon,
-                          hocHamHocVi: r?.hocHamHocVi || '',
-                        };
-                      })}
-                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
-                      selectedRowIds={selectedRowIdsInActiveTab}
-                      onToggleSelectRow={(row) => handleToggleSelectRow('khao_thi', row)}
-                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('khao_thi', rows, sel)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 4: Tuyển sinh */}
-              {activeTab === 'tuyen_sinh' && (
-                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
-                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
-                    <AdmissionScheduleReport
-                      maGV={selectedLecturer?.maGV}
-                      records={activeRecords}
-                      allLecturers={availableLecturers.map((l) => {
-                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
-                        return {
-                          maGV: l.maGV,
-                          hoTen: l.hoTen,
-                          khoaBoMon: l.khoaBoMon,
-                          hocHamHocVi: r?.hocHamHocVi || '',
-                        };
-                      })}
-                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
-                      selectedRowIds={selectedRowIdsInActiveTab}
-                      onToggleSelectRow={(row) => handleToggleSelectRow('tuyen_sinh', row)}
-                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('tuyen_sinh', rows, sel)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 5: NCKH (BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC - Theo mẫu hình ảnh chuẩn) */}
+              {/* Tab 2: NCKH (BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC - Theo mẫu hình ảnh chuẩn) */}
               {activeTab === 'nckh' && (
                 <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
@@ -2557,32 +2079,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                 </div>
               )}
 
-              {/* Tab 6: Cố vấn học tập */}
-              {activeTab === 'co_van_hoc_tap' && (
-                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
-                  <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
-                    <AdvisorScheduleReport
-                      maGV={selectedLecturer?.maGV}
-                      records={activeRecords}
-                      allLecturers={availableLecturers.map((l) => {
-                        const r = activeRecords.find((rec) => rec.maGV === l.maGV);
-                        return {
-                          maGV: l.maGV,
-                          hoTen: l.hoTen,
-                          khoaBoMon: l.khoaBoMon,
-                          hocHamHocVi: r?.hocHamHocVi || '',
-                        };
-                      })}
-                      onSelectLecturer={(newMa) => setSearchQuery(newMa)}
-                      selectedRowIds={selectedRowIdsInActiveTab}
-                      onToggleSelectRow={(row) => handleToggleSelectRow('co_van_hoc_tap', row)}
-                      onSelectAllRows={(rows, sel) => handleSelectAllRowsForTab('co_van_hoc_tap', rows, sel)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 7: Công tác khác */}
+              {/* Tab 3: Công tác khác */}
               {activeTab === 'cong_tac_khac' && (
                 <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
@@ -2660,7 +2157,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
               </div>
             </div>
           </div>
-        )}
       </div>
     </div>
   );

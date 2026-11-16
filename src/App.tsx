@@ -71,6 +71,9 @@ export default function App() {
   // Department Unit Selection ('all' | 'dao_tao' | 'khao_thi' | 'tuyen_sinh' | 'nckh' | 'cong_tac_khac')
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentUnit>('dao_tao');
 
+  // NCKH Sub-Tabs ('all' | 'bai_bao' | 'seminar' | 'de_tai')
+  const [nckhTab, setNckhTab] = useState<'all' | 'bai_bao' | 'seminar' | 'de_tai'>('all');
+
   // Top Filter state - Khoa, Năm học, Học kỳ, Tên giảng viên, Môn giảng dạy
   const [filters, setFilters] = useState<FilterState>({
     department: 'all',
@@ -243,12 +246,34 @@ export default function App() {
     });
   };
 
+  // Helper to match NCKH 3 sub-tabs: Bài báo, Seminar, Nghiên cứu khoa học
+  const matchesNckhCategory = (item: TeachingRecord, tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => {
+    if (tab === 'all') return true;
+    const text = `${item.tenHocPhan || ''} ${item.noiDungNCKH || ''} ${item.theLoaiNCKH || ''} ${item.loaiHoatDong || ''} ${item.maLopHocPhan || ''}`.toLowerCase();
+    if (tab === 'bai_bao') {
+      return text.includes('bài báo') || text.includes('scopus') || text.includes('isi') || text.includes('tạp chí') || text.includes('paper');
+    }
+    if (tab === 'seminar') {
+      return text.includes('seminar') || text.includes('hội thảo') || text.includes('tọa đàm') || text.includes('chuyên đề');
+    }
+    if (tab === 'de_tai') {
+      return text.includes('đề tài') || text.includes('luận văn') || text.includes('thạc sĩ') || text.includes('tiến sĩ') || text.includes('sáng kiến') || (!text.includes('bài báo') && !text.includes('seminar') && !text.includes('hội thảo'));
+    }
+    return true;
+  };
+
   // Filtered Teaching data
   const filteredTeaching = useMemo(() => {
     return teachingList.filter((item) => {
       // 1. Filter by department if a sub-menu in Sidebar is selected
       if (selectedDepartment !== 'all' && item.phongBanQuanLy !== selectedDepartment) {
         return false;
+      }
+      // NCKH 3 sub-tabs filter: Bài báo, Seminar, Nghiên cứu khoa học
+      if (selectedDepartment === 'nckh' && nckhTab !== 'all') {
+        if (!matchesNckhCategory(item, nckhTab)) {
+          return false;
+        }
       }
       // 2. Filter by department in FilterSection
       if (filters.department !== 'all' && item.phongBanQuanLy !== filters.department) {
@@ -619,6 +644,8 @@ export default function App() {
         selectedDepartment={selectedDepartment}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         currentAccount={currentAccount}
+        nckhTab={nckhTab}
+        onSelectNckhTab={setNckhTab}
       />
 
       {/* 2. Right Workspace Container: Top Header + Main Content */}
@@ -1056,6 +1083,8 @@ export default function App() {
                 <DataTable
                   appMode={appMode}
                   selectedDepartment={selectedDepartment}
+                  nckhTab={nckhTab}
+                  onSelectNckhTab={setNckhTab}
                   vbccData={INITIAL_VBCC_DATA}
                   teachingData={currentTeachingSlice}
                   columnFilters={columnFilters}

@@ -66,6 +66,8 @@ export interface LecturerSummaryRow {
 interface DataTableProps {
   appMode: AppMode;
   selectedDepartment?: DepartmentUnit;
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai';
+  onSelectNckhTab?: (tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => void;
   vbccData?: VbccRecord[];
   teachingData: TeachingRecord[];
   columnFilters: ColumnFilters;
@@ -90,6 +92,8 @@ interface DataTableProps {
 
 export const DataTable: React.FC<DataTableProps> = ({
   selectedDepartment = 'all',
+  nckhTab = 'all',
+  onSelectNckhTab,
   teachingData,
   selectedIds,
   onToggleSelectAll,
@@ -759,6 +763,75 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   return (
     <div className="w-full min-w-0 bg-white select-none flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+      {/* NCKH Sub-Tabs Bar: Bài báo, Seminar, Nghiên cứu khoa học */}
+      {isResearch && (
+        <div className="px-3.5 py-2 bg-[#f8fafc] border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-[12px] font-bold text-slate-700 mr-1 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+              Phân loại NCKH:
+            </span>
+
+            <button
+              onClick={() => onSelectNckhTab?.('all')}
+              className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                nckhTab === 'all'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <span>Tất cả</span>
+            </button>
+
+            <button
+              onClick={() => onSelectNckhTab?.('bai_bao')}
+              className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                nckhTab === 'bai_bao'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              <span>1. Bài báo</span>
+            </button>
+
+            <button
+              onClick={() => onSelectNckhTab?.('seminar')}
+              className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                nckhTab === 'seminar'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>2. Seminar</span>
+            </button>
+
+            <button
+              onClick={() => onSelectNckhTab?.('de_tai')}
+              className={`px-3 py-1 rounded-lg text-[12px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                nckhTab === 'de_tai'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+              <span>3. Nghiên cứu khoa học</span>
+            </button>
+          </div>
+
+          <div className="text-[11.5px] text-slate-500 font-medium">
+            Đang hiển thị:{' '}
+            <span className="font-bold text-slate-700">
+              {nckhTab === 'all' && 'Tất cả công trình NCKH'}
+              {nckhTab === 'bai_bao' && 'Bài báo khoa học (Scopus/ISI/Tạp chí)'}
+              {nckhTab === 'seminar' && 'Báo cáo Seminar & Hội thảo chuyên đề'}
+              {nckhTab === 'de_tai' && 'Đề tài NCKH & Luận văn Thạc sĩ'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Scrollable table container */}
       <div
         id="main-datatable-scroll-container"

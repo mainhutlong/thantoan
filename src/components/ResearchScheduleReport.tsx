@@ -84,6 +84,22 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const [internalViewMode, setInternalViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
+  const [activeNckhTab, setActiveNckhTab] = useState<'all' | 'bai_bao' | 'seminar' | 'de_tai'>('all');
+
+  const isRowMatchingCategory = (row: ResearchScheduleRow, tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => {
+    if (tab === 'all') return true;
+    const text = `${row.noiDung} ${row.theLoai}`.toLowerCase();
+    if (tab === 'bai_bao') {
+      return text.includes('bài báo') || text.includes('scopus') || text.includes('isi') || text.includes('tạp chí');
+    }
+    if (tab === 'seminar') {
+      return text.includes('seminar') || text.includes('hội thảo') || text.includes('tọa đàm') || text.includes('chuyên đề');
+    }
+    if (tab === 'de_tai') {
+      return text.includes('đề tài') || text.includes('luận văn') || text.includes('thạc sĩ') || (!text.includes('bài báo') && !text.includes('seminar'));
+    }
+    return true;
+  };
 
   const activeViewMode = viewMode || internalViewMode;
   const handleSetViewMode = (mode: 'excel_sheet' | 'compact_table') => {
@@ -573,6 +589,73 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
         </div>
       </div>
 
+      {/* NCKH Sub-Tabs Bar: Bài báo, Seminar, Nghiên cứu khoa học */}
+      <div className="print:hidden w-full max-w-full min-w-0 bg-slate-50 border border-slate-200 rounded-xl p-2 mb-3 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-bold text-slate-700 mr-1 flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+            Phân loại NCKH:
+          </span>
+          <button
+            type="button"
+            onClick={() => setActiveNckhTab('all')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+              activeNckhTab === 'all'
+                ? 'bg-slate-800 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            Tất cả ({nckhRows.filter((r) => r.noiDung.trim()).length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNckhTab('bai_bao')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+              activeNckhTab === 'bai_bao'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-blue-50 hover:text-blue-700'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+            1. Bài báo ({nckhRows.filter((r) => r.noiDung.trim() && isRowMatchingCategory(r, 'bai_bao')).length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNckhTab('seminar')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+              activeNckhTab === 'seminar'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            2. Seminar ({nckhRows.filter((r) => r.noiDung.trim() && isRowMatchingCategory(r, 'seminar')).length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNckhTab('de_tai')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+              activeNckhTab === 'de_tai'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-purple-50 hover:text-purple-700'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+            3. Nghiên cứu khoa học ({nckhRows.filter((r) => r.noiDung.trim() && isRowMatchingCategory(r, 'de_tai')).length})
+          </button>
+        </div>
+
+        <div className="text-[11.5px] text-slate-500 font-medium">
+          Chế độ lọc:{' '}
+          <span className="font-bold text-slate-700">
+            {activeNckhTab === 'all' && 'Tất cả công trình'}
+            {activeNckhTab === 'bai_bao' && '1. Bài báo khoa học'}
+            {activeNckhTab === 'seminar' && '2. Seminar & Hội thảo'}
+            {activeNckhTab === 'de_tai' && '3. Đề tài & Nghiên cứu khoa học'}
+          </span>
+        </div>
+      </div>
+
       {/* 2. THE EXACT SPREADSHEET SHEET OR COMPACT TABLE */}
       {activeViewMode === 'compact_table' && compactContent ? (
         <div className="w-full max-w-full min-w-0 overflow-x-auto bg-white border border-slate-200 rounded-md">
@@ -649,9 +732,17 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                     ? row.soGioQuyChuan
                     : parseFloat(String(row.soGioQuyChuan).replace(',', '.'));
                   const hasQC = !isNaN(val) && val > 0;
+                  const isMatch = isRowMatchingCategory(row, activeNckhTab);
+                  const isDimmed = activeNckhTab !== 'all' && Boolean(row.noiDung.trim()) && !isMatch;
+                  const isHighlighted = activeNckhTab !== 'all' && Boolean(row.noiDung.trim()) && isMatch;
 
                   return (
-                    <tr key={row.id} className="h-[26px]">
+                    <tr
+                      key={row.id}
+                      className={`h-[26px] transition-all ${
+                        isDimmed ? 'opacity-30' : ''
+                      } ${isHighlighted ? 'bg-blue-50/60 font-medium' : ''}`}
+                    >
                       {/* Checkbox trước TT */}
                       {Boolean(onToggleSelectRow) && (
                         <td className="px-0.5 py-0 text-center border border-black bg-white print:hidden">

@@ -26,6 +26,8 @@ interface SidebarProps {
   selectedDepartment: DepartmentUnit;
   onToggleSidebar?: () => void;
   currentAccount?: UserAccount;
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai';
+  onSelectNckhTab?: (tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -35,6 +37,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pendingFeedbackCount,
   selectedDepartment,
   onToggleSidebar,
+  nckhTab = 'all',
+  onSelectNckhTab,
 }) => {
   if (!isOpen) {
     return null;
@@ -177,55 +181,74 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Thanh toán giờ giảng</span>
                 </button>
 
-                {/* 2. Nghiên cứu Khoa học */}
-                <button
-                  onClick={() => handleItemClick('ke_khai_upload', 'nckh')}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
-                    isItemActive('ke_khai_upload', 'nckh')
-                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
-                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
-                  }`}
-                >
-                  <span className="truncate">Nghiên cứu Khoa học</span>
-                </button>
+                {/* 2. Nghiên cứu Khoa học (3 tab: Bài báo, Seminar, Nghiên cứu khoa học) */}
+                <div>
+                  <button
+                    onClick={() => handleItemClick('ke_khai_upload', 'nckh')}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center justify-between transition-all cursor-pointer text-[12.5px] ${
+                      isItemActive('ke_khai_upload', 'nckh')
+                        ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
+                        : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
+                    }`}
+                  >
+                    <span className="truncate">Nghiên cứu Khoa học</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                      isItemActive('ke_khai_upload', 'nckh')
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>3 tab</span>
+                  </button>
 
-                {/* 3. Công tác tuyển sinh */}
-                <button
-                  onClick={() => handleItemClick('ke_khai_upload', 'tuyen_sinh')}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
-                    isItemActive('ke_khai_upload', 'tuyen_sinh')
-                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
-                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
-                  }`}
-                >
-                  <span className="truncate">Công tác tuyển sinh</span>
-                </button>
+                  {/* 3 tab nhỏ của NCKH: Bài báo, Seminar, Nghiên cứu khoa học */}
+                  {isItemActive('ke_khai_upload', 'nckh') && (
+                    <div className="mt-1 pl-3 pr-1 py-1 space-y-0.5 border-l-2 border-[#93c5fd] ml-3 animate-fadeIn">
+                      <button
+                        onClick={() => {
+                          onSelectNckhTab?.('bai_bao');
+                          handleItemClick('ke_khai_upload', 'nckh');
+                        }}
+                        className={`w-full text-left px-2 py-1 rounded text-[11.5px] transition-colors flex items-center gap-1.5 cursor-pointer ${
+                          nckhTab === 'bai_bao'
+                            ? 'bg-blue-100/90 text-blue-900 font-bold'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-blue-700 font-medium'
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        <span className="truncate">1. Bài báo</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onSelectNckhTab?.('seminar');
+                          handleItemClick('ke_khai_upload', 'nckh');
+                        }}
+                        className={`w-full text-left px-2 py-1 rounded text-[11.5px] transition-colors flex items-center gap-1.5 cursor-pointer ${
+                          nckhTab === 'seminar'
+                            ? 'bg-emerald-100/90 text-emerald-900 font-bold'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-emerald-700 font-medium'
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="truncate">2. Seminar</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onSelectNckhTab?.('de_tai');
+                          handleItemClick('ke_khai_upload', 'nckh');
+                        }}
+                        className={`w-full text-left px-2 py-1 rounded text-[11.5px] transition-colors flex items-center gap-1.5 cursor-pointer ${
+                          nckhTab === 'de_tai'
+                            ? 'bg-purple-100/90 text-purple-900 font-bold'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-purple-700 font-medium'
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                        <span className="truncate">3. Nghiên cứu khoa học</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-                {/* 4. Coi thi, Chấm thi, Ra đề */}
-                <button
-                  onClick={() => handleItemClick('ke_khai_upload', 'khao_thi')}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
-                    isItemActive('ke_khai_upload', 'khao_thi')
-                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
-                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
-                  }`}
-                >
-                  <span className="truncate">Coi thi, Chấm thi, Ra đề</span>
-                </button>
-
-                {/* 5. Cố vấn học tập */}
-                <button
-                  onClick={() => handleItemClick('ke_khai_upload', 'co_van_hoc_tap')}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
-                    isItemActive('ke_khai_upload', 'co_van_hoc_tap')
-                      ? 'bg-[#1a73e8] text-white font-medium shadow-xs'
-                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-[#1a73e8]'
-                  }`}
-                >
-                  <span className="truncate">Cố vấn học tập</span>
-                </button>
-
-                {/* 6. Công tác khác */}
+                {/* 3. Công tác khác (Bao gồm Tuyển sinh, Coi thi, CVHT...) */}
                 <button
                   onClick={() => handleItemClick('ke_khai_upload', 'cong_tac_khac')}
                   className={`w-full text-left px-3 py-1.5 rounded-lg flex items-center transition-all cursor-pointer text-[12.5px] ${
