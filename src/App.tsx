@@ -169,16 +169,17 @@ export default function App() {
 
   const handleSsoLoginSuccess = (user: any) => {
     if (!user) return;
-    const mappedRole: UserRole =
-      user.vaiTroCode === 'admin'
-        ? 'admin'
-        : user.vaiTroCode === 'truong_khoa' || user.vaiTroCode === 'truong_phong'
-        ? 'approver'
-        : user.vaiTroCode === 'chuyen_vien'
-        ? 'accountant_specialist'
-        : user.vaiTroCode === 'tro_ly'
-        ? 'dean_faculty'
-        : 'lecturer';
+    const roles: string[] = Array.isArray(user.roles) ? user.roles : (user.vaiTroCode ? [user.vaiTroCode] : []);
+    let mappedRole: UserRole = 'lecturer';
+    if (roles.includes('SUPER_ADMIN') || user.vaiTroCode === 'admin') {
+      mappedRole = 'admin';
+    } else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA') || user.vaiTroCode === 'truong_khoa' || user.vaiTroCode === 'truong_phong') {
+      mappedRole = 'approver';
+    } else if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI') || user.vaiTroCode === 'chuyen_vien') {
+      mappedRole = 'accountant_specialist';
+    } else if (roles.includes('PHONG_QLKH') || user.vaiTroCode === 'tro_ly') {
+      mappedRole = 'dean_faculty';
+    }
 
     const matchedAccount: UserAccount = {
       id: String(user.id || 'sso-user'),

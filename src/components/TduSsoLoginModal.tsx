@@ -31,8 +31,10 @@ export const TduSsoLoginModal: React.FC<TduSsoLoginModalProps> = ({
       // @ts-ignore
       if (typeof window !== 'undefined' && window.google) {
         // @ts-ignore
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id.apps.googleusercontent.com';
+        // @ts-ignore
         window.google.accounts.id.initialize({
-          client_id: 'your-google-client-id.apps.googleusercontent.com',
+          client_id: clientId,
           callback: async (response: any) => {
             setIsLoading(true);
             setErrorMsg(null);
