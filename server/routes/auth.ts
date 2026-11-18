@@ -60,21 +60,37 @@ router.post('/google-sso', async (req: Request, res: Response) => {
       WHERE LOWER(u.email) = ?
       GROUP BY u.id
     `;
-    const [rows]: any = await pool.query(query, [email]);
+    let [rows]: any = await pool.query(query, [email]);
 
     if (!rows || rows.length === 0) {
-      // Ghi nhật ký thất bại
-      try {
-        await pool.query(
-          `INSERT INTO nhat_ky_sso (nguoi_dung_id, email, trang_thai, ly_do) VALUES (0, ?, 'THAT_BAI', 'Email chưa có trong CSDL')`,
-          [email]
-        );
-      } catch {}
+      // Tự động kích hoạt tài khoản cán bộ mới từ Google Workspace (@tdu.edu.vn)
+      const nameFromGoogle = payload.name || email.split('@')[0];
+      const newStaffCode = `TDU${Math.floor(10000 + Math.random() * 90000)}`;
 
-      return res.status(401).json({
-        success: false,
-        message: `Email "${email}" chưa được phân quyền trong CSDL hệ thống TDU. Vui lòng liên hệ Phòng Tổ chức - Hành chính để được cấp tài khoản!`,
-      });
+      try {
+        const [insertRes]: any = await pool.query(
+          `INSERT INTO nguoi_dung (
+            ma_nhan_su, ho_ten, email, chuc_vu, don_vi_id,
+            sso_provider, sso_uid, avatar_url, trang_thai, lan_dang_nhap_cuoi
+          ) VALUES (?, ?, ?, 'Giảng viên', 1, 'GOOGLE', ?, ?, 'HOAT_DONG', NOW())`,
+          [newStaffCode, nameFromGoogle, email, ssoUid, avatarUrl]
+        );
+
+        const newUserId = insertRes.insertId;
+        // Gán vai trò mặc định: GIANG_VIEN (vai_tro_id: 8)
+        await pool.query(
+          `INSERT INTO nguoi_dung_vai_tro (nguoi_dung_id, vai_tro_id) VALUES (?, 8)`,
+          [newUserId]
+        );
+
+        const [reQuery]: any = await pool.query(query, [email]);
+        rows = reQuery;
+      } catch (autoErr: any) {
+        return res.status(500).json({
+          success: false,
+          message: 'Không thể tự động kích hoạt tài khoản: ' + autoErr.message,
+        });
+      }
     }
 
     const user = rows[0];
@@ -164,13 +180,28 @@ router.post('/dev-login', async (req: Request, res: Response) => {
       WHERE LOWER(u.email) = ?
       GROUP BY u.id
     `;
-    const [rows]: any = await pool.query(query, [email.toLowerCase().trim()]);
+    let [rows]: any = await pool.query(query, [email.toLowerCase().trim()]);
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `Không tìm thấy cán bộ có email "${email}" trong CSDL!`,
-      });
+      const cleanEmail = email.toLowerCase().trim();
+      const defaultName = cleanEmail.split('@')[0];
+      const newStaffCode = `TDU${Math.floor(10000 + Math.random() * 90000)}`;
+
+      const [insertRes]: any = await pool.query(
+        `INSERT INTO nguoi_dung (
+          ma_nhan_su, ho_ten, email, chuc_vu, don_vi_id,
+          sso_provider, trang_thai, lan_dang_nhap_cuoi
+        ) VALUES (?, ?, ?, 'Giảng viên', 1, 'LOCAL', 'HOAT_DONG', NOW())`,
+        [newStaffCode, defaultName, cleanEmail]
+      );
+
+      await pool.query(
+        `INSERT INTO nguoi_dung_vai_tro (nguoi_dung_id, vai_tro_id) VALUES (?, 8)`,
+        [insertRes.insertId]
+      );
+
+      const [reQuery]: any = await pool.query(query, [cleanEmail]);
+      rows = reQuery;
     }
 
     const user = rows[0];
