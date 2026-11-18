@@ -140,6 +140,34 @@ export const SystemUsersPage: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedDept, selectedDegree, selectedGender, pageSize]);
 
+  // Checkbox selection state
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+
+  // Inline row addition state ("Thêm người dùng mới thì thêm hàng từng người")
+  const [isAddingRow, setIsAddingRow] = useState<boolean>(false);
+  const [newRowData, setNewRowData] = useState<Partial<SystemUserProfile>>({
+    hoTen: '',
+    maNhanSu: '',
+    chucVu: 'Giảng viên',
+    donVi: 'Khoa Công nghệ thông tin',
+    gioiTinh: 'Nam',
+    ngaySinh: '',
+    hocHam: '',
+    hocVi: 'Thạc sĩ',
+    chuyenMon: '',
+    namTuyenDung: new Date().getFullYear(),
+    ngayKyHDLD: '',
+    namTotNghiep: 2015,
+    namCongNhanPGS: '',
+    namCongNhanGS: '',
+    ccsp: 'Đã có',
+    anhVan: 'B2',
+    tinHoc: 'Ứng dụng CNTT Cơ bản',
+    kiemNhiem: '',
+    donViKiemNhiem: '',
+    trangThai: 'hoat_dong',
+  });
+
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SystemUserProfile | null>(null);
@@ -291,7 +319,98 @@ export const SystemUsersPage: React.FC = () => {
   const handleDeleteUser = (id: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa hồ sơ nhân sự này khỏi hệ thống?')) {
       setUsers((prev) => prev.filter((u) => u.id !== id));
+      setSelectedUserIds((prev) => prev.filter((uid) => uid !== id));
     }
+  };
+
+  // Toggle selection for all visible users on current page
+  const handleToggleSelectAll = () => {
+    const pageUserIds = paginatedUsers.map((u) => u.id);
+    const allSelected = pageUserIds.length > 0 && pageUserIds.every((id) => selectedUserIds.includes(id));
+    if (allSelected) {
+      setSelectedUserIds((prev) => prev.filter((id) => !pageUserIds.includes(id)));
+    } else {
+      setSelectedUserIds((prev) => Array.from(new Set([...prev, ...pageUserIds])));
+    }
+  };
+
+  // Toggle individual user selection
+  const handleToggleSelectUser = (id: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
+    );
+  };
+
+  // Delete batch of selected users
+  const handleDeleteBatch = () => {
+    if (selectedUserIds.length === 0) return;
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedUserIds.length} cán bộ đã chọn không?`)) {
+      setUsers((prev) => prev.filter((u) => !selectedUserIds.includes(u.id)));
+      setSelectedUserIds([]);
+    }
+  };
+
+  // Start adding new user row inline
+  const handleStartAddRow = () => {
+    setNewRowData({
+      hoTen: '',
+      maNhanSu: `TDU${Math.floor(100 + Math.random() * 899)}`,
+      chucVu: 'Giảng viên',
+      donVi: 'Khoa Công nghệ thông tin',
+      gioiTinh: 'Nam',
+      ngaySinh: '',
+      hocHam: '',
+      hocVi: 'Thạc sĩ',
+      chuyenMon: '',
+      namTuyenDung: new Date().getFullYear(),
+      ngayKyHDLD: '',
+      namTotNghiep: 2015,
+      namCongNhanPGS: '',
+      namCongNhanGS: '',
+      ccsp: 'Đã có',
+      anhVan: 'B2',
+      tinHoc: 'Ứng dụng CNTT Cơ bản',
+      kiemNhiem: '',
+      donViKiemNhiem: '',
+      trangThai: 'hoat_dong',
+    });
+    setIsAddingRow(true);
+  };
+
+  // Save inline new user row
+  const handleSaveNewRow = () => {
+    if (!newRowData.hoTen || !newRowData.hoTen.trim()) {
+      alert('Vui lòng nhập Họ và tên cán bộ!');
+      return;
+    }
+
+    const created: SystemUserProfile = {
+      id: `user_${Date.now()}`,
+      stt: users.length + 1,
+      hoTen: newRowData.hoTen.trim(),
+      maNhanSu: (newRowData.maNhanSu || `TDU${Math.floor(100 + Math.random() * 899)}`).trim(),
+      chucVu: newRowData.chucVu?.trim() || 'Giảng viên',
+      donVi: newRowData.donVi?.trim() || 'Khoa Công nghệ thông tin',
+      gioiTinh: (newRowData.gioiTinh as 'Nam' | 'Nữ') || 'Nam',
+      ngaySinh: newRowData.ngaySinh?.trim() || '',
+      hocHam: newRowData.hocHam || '',
+      hocVi: newRowData.hocVi?.trim() || 'Thạc sĩ',
+      chuyenMon: newRowData.chuyenMon?.trim() || '',
+      namTuyenDung: Number(newRowData.namTuyenDung) || new Date().getFullYear(),
+      ngayKyHDLD: newRowData.ngayKyHDLD?.trim() || '',
+      namTotNghiep: Number(newRowData.namTotNghiep) || 2015,
+      namCongNhanPGS: newRowData.namCongNhanPGS?.trim() || '',
+      namCongNhanGS: newRowData.namCongNhanGS?.trim() || '',
+      ccsp: newRowData.ccsp?.trim() || 'Đã có',
+      anhVan: newRowData.anhVan?.trim() || 'B2',
+      tinHoc: newRowData.tinHoc?.trim() || 'Ứng dụng CNTT Cơ bản',
+      kiemNhiem: newRowData.kiemNhiem?.trim() || '',
+      donViKiemNhiem: newRowData.donViKiemNhiem?.trim() || '',
+      trangThai: 'hoat_dong',
+    };
+
+    setUsers((prev) => [created, ...prev]);
+    setIsAddingRow(false);
   };
 
   // Save form
@@ -660,11 +779,12 @@ export const SystemUsersPage: React.FC = () => {
             )}
 
             <button
-              onClick={handleOpenAdd}
+              onClick={handleStartAddRow}
               className="h-[34px] px-4 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs transition-all"
+              title="Thêm hàng người dùng mới trực tiếp vào bảng"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Thêm người dùng mới</span>
+              <span>+ Thêm hàng (từng người)</span>
             </button>
           </div>
         </div>
@@ -736,6 +856,7 @@ export const SystemUsersPage: React.FC = () => {
               setSearchTerm('');
               setSelectedDept('all');
               setSelectedDegree('all');
+              setSelectedDegree('all');
               setSelectedGender('all');
             }}
             className="text-blue-600 hover:underline font-medium ml-auto"
@@ -745,13 +866,54 @@ export const SystemUsersPage: React.FC = () => {
         )}
       </div>
 
-      {/* 4. Full Data Table (20 Columns as in File) */}
+      {/* 4. Full Data Table (20 Columns as in File + Checkbox column) */}
       <div className="flex-1 overflow-x-auto p-4">
         <div className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
+          {/* Thanh tác vụ hàng loạt cho Checkbox đã chọn */}
+          {selectedUserIds.length > 0 && (
+            <div className="bg-blue-50/95 border-b border-blue-200 px-4 py-2 flex items-center justify-between gap-3 text-[12.5px] text-blue-900 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-blue-700">Đã chọn:</span>
+                <span className="bg-blue-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                  {selectedUserIds.length} cán bộ
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDeleteBatch}
+                  className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[12px] font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Xóa {selectedUserIds.length} cán bộ đã chọn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedUserIds([])}
+                  className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12px] cursor-pointer"
+                >
+                  Bỏ chọn
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto max-h-[calc(100vh-280px)]">
-            <table className="w-full border-collapse text-left text-[12px] min-w-[2100px]">
+            <table className="w-full border-collapse text-left text-[12px] min-w-[2180px]">
               <thead className="bg-[#f1f5f9] text-slate-800 font-semibold sticky top-0 z-10 border-b border-slate-300">
                 <tr className="h-[38px]">
+                  <th className="px-2 text-center border-r border-slate-300 w-[42px] sticky left-0 bg-[#f1f5f9] z-20">
+                    <input
+                      type="checkbox"
+                      checked={
+                        paginatedUsers.length > 0 &&
+                        paginatedUsers.every((u) => selectedUserIds.includes(u.id))
+                      }
+                      onChange={handleToggleSelectAll}
+                      className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                      title="Chọn tất cả trên trang này"
+                    />
+                  </th>
                   <th className="px-2.5 text-center border-r border-slate-300 w-[45px]">Stt</th>
                   <th className="px-3 border-r border-slate-300 min-w-[170px]">Họ tên</th>
                   <th className="px-2.5 border-r border-slate-300 w-[100px]">Mã nhân sự</th>
@@ -777,9 +939,244 @@ export const SystemUsersPage: React.FC = () => {
               </thead>
 
               <tbody className="divide-y divide-slate-200">
+                {/* Hàng nhập liệu inline khi bấm "Thêm hàng (từng người)" */}
+                {isAddingRow && (
+                  <tr className="bg-amber-50/70 border-b-2 border-amber-300 text-[12px] animate-fadeIn">
+                    <td className="px-2 text-center border-r border-amber-200 sticky left-0 bg-amber-50 z-10">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block animate-pulse" title="Đang nhập hàng mới" />
+                    </td>
+                    <td className="px-2.5 text-center border-r border-amber-200 font-bold text-amber-700">
+                      Mới
+                    </td>
+                    {/* Họ tên */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        autoFocus
+                        required
+                        placeholder="Họ và tên *"
+                        value={newRowData.hoTen || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, hoTen: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveNewRow();
+                          if (e.key === 'Escape') setIsAddingRow(false);
+                        }}
+                        className="w-full px-2 py-1 bg-white border border-blue-400 rounded focus:ring-1 focus:ring-blue-500 text-[12px] font-semibold text-slate-800"
+                      />
+                    </td>
+                    {/* Mã nhân sự */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Mã NV..."
+                        value={newRowData.maNhanSu || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, maNhanSu: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveNewRow();
+                          if (e.key === 'Escape') setIsAddingRow(false);
+                        }}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 font-mono text-[12px]"
+                      />
+                    </td>
+                    {/* Chức vụ */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Chức vụ..."
+                        value={newRowData.chucVu || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, chucVu: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Đơn vị */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Khoa/Phòng..."
+                        value={newRowData.donVi || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, donVi: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Giới tính */}
+                    <td className="px-1.5 border-r border-amber-200 text-center">
+                      <select
+                        value={newRowData.gioiTinh || 'Nam'}
+                        onChange={(e) => setNewRowData({ ...newRowData, gioiTinh: e.target.value as 'Nam' | 'Nữ' })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      >
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                      </select>
+                    </td>
+                    {/* Ngày sinh */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        value={newRowData.ngaySinh || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, ngaySinh: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Học hàm */}
+                    <td className="px-1.5 border-r border-amber-200">
+                      <select
+                        value={newRowData.hocHam || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, hocHam: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      >
+                        <option value="">(Trống)</option>
+                        <option value="Phó Giáo sư">PGS</option>
+                        <option value="Giáo sư">GS</option>
+                      </select>
+                    </td>
+                    {/* Học vị */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Tiến sĩ, ThS..."
+                        value={newRowData.hocVi || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, hocVi: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Chuyên môn */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Chuyên môn..."
+                        value={newRowData.chuyenMon || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, chuyenMon: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Năm TD */}
+                    <td className="px-2 border-r border-amber-200 text-center">
+                      <input
+                        type="number"
+                        placeholder="Năm"
+                        value={newRowData.namTuyenDung || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, namTuyenDung: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px] text-center"
+                      />
+                    </td>
+                    {/* Ký HĐLĐ */}
+                    <td className="px-2 border-r border-amber-200 text-center">
+                      <input
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        value={newRowData.ngayKyHDLD || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, ngayKyHDLD: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px] text-center"
+                      />
+                    </td>
+                    {/* Năm TN */}
+                    <td className="px-2 border-r border-amber-200 text-center">
+                      <input
+                        type="number"
+                        placeholder="Năm"
+                        value={newRowData.namTotNghiep || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, namTotNghiep: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px] text-center"
+                      />
+                    </td>
+                    {/* Năm PGS */}
+                    <td className="px-2 border-r border-amber-200 text-center">
+                      <input
+                        type="text"
+                        placeholder="Năm"
+                        value={newRowData.namCongNhanPGS || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, namCongNhanPGS: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px] text-center"
+                      />
+                    </td>
+                    {/* Năm GS */}
+                    <td className="px-2 border-r border-amber-200 text-center">
+                      <input
+                        type="text"
+                        placeholder="Năm"
+                        value={newRowData.namCongNhanGS || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, namCongNhanGS: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px] text-center"
+                      />
+                    </td>
+                    {/* CCSP */}
+                    <td className="px-2 border-r border-amber-200 text-center">
+                      <input
+                        type="text"
+                        value={newRowData.ccsp || 'Đã có'}
+                        onChange={(e) => setNewRowData({ ...newRowData, ccsp: e.target.value })}
+                        className="w-full px-1 py-1 bg-white border border-slate-300 rounded text-[12px] text-center"
+                      />
+                    </td>
+                    {/* Anh văn */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Anh văn..."
+                        value={newRowData.anhVan || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, anhVan: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Tin học */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Tin học..."
+                        value={newRowData.tinHoc || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, tinHoc: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Kiêm nhiệm */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Kiêm nhiệm..."
+                        value={newRowData.kiemNhiem || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, kiemNhiem: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Đơn vị kiêm nhiệm */}
+                    <td className="px-2 border-r border-amber-200">
+                      <input
+                        type="text"
+                        placeholder="Đơn vị..."
+                        value={newRowData.donViKiemNhiem || ''}
+                        onChange={(e) => setNewRowData({ ...newRowData, donViKiemNhiem: e.target.value })}
+                        className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-[12px]"
+                      />
+                    </td>
+                    {/* Thao tác */}
+                    <td className="px-2 text-center whitespace-nowrap sticky right-0 bg-amber-50 shadow-xs">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleSaveNewRow}
+                          className="h-7 px-2.5 rounded-lg bg-[#005325] hover:bg-[#00421e] text-white text-[11.5px] font-semibold flex items-center gap-1 cursor-pointer shadow-2xs transition-colors"
+                          title="Lưu hàng này (Enter)"
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>Lưu</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingRow(false)}
+                          className="h-7 px-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-600 text-[11.5px] flex items-center justify-center cursor-pointer transition-colors"
+                          title="Hủy thêm hàng (Esc)"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={21} className="py-16 text-center">
+                    <td colSpan={22} className="py-16 text-center">
                       <div className="flex flex-col items-center justify-center max-w-lg mx-auto px-4">
                         <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#005325] border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
                           <FileSpreadsheet className="w-8 h-8" />
@@ -788,7 +1185,7 @@ export const SystemUsersPage: React.FC = () => {
                           Chưa có dữ liệu cán bộ, giảng viên
                         </h3>
                         <p className="text-[12.5px] text-slate-500 leading-relaxed mb-5 text-center">
-                          Dữ liệu cũ đã được xóa sạch. Hãy tải lên file Excel (18 cột chuẩn Đại học Tây Đô) để nạp hồ sơ nhân sự tự động, hoặc tải file mẫu Excel nếu cần chuẩn bị dữ liệu.
+                          Dữ liệu cũ đã được xóa sạch. Hãy tải lên file Excel (18 cột chuẩn Đại học Tây Đô) để nạp hồ sơ nhân sự tự động, hoặc bấm "+ Thêm hàng" để nhập trực tiếp từng người.
                         </p>
                         <div className="flex items-center gap-2.5 flex-wrap justify-center">
                           <button
@@ -806,11 +1203,11 @@ export const SystemUsersPage: React.FC = () => {
                             <span>Tải file Excel mẫu</span>
                           </button>
                           <button
-                            onClick={handleOpenAdd}
+                            onClick={handleStartAddRow}
                             className="h-[36px] px-4 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-all"
                           >
                             <Plus className="w-4 h-4" />
-                            <span>+ Thêm thủ công</span>
+                            <span>+ Thêm hàng (từng người)</span>
                           </button>
                         </div>
                       </div>
@@ -818,15 +1215,35 @@ export const SystemUsersPage: React.FC = () => {
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={21} className="py-12 text-center text-slate-500">
+                    <td colSpan={22} className="py-12 text-center text-slate-500">
                       Không tìm thấy cán bộ, nhân sự nào phù hợp với bộ lọc hiện tại.
                     </td>
                   </tr>
                 ) : (
                   paginatedUsers.map((user, idx) => {
                     const globalIdx = (safeCurrentPage - 1) * pageSize + idx + 1;
+                    const isChecked = selectedUserIds.includes(user.id);
                     return (
-                    <tr key={user.id} className="h-[38px] hover:bg-blue-50/40 transition-colors font-normal text-slate-600">
+                    <tr
+                      key={user.id}
+                      className={`h-[38px] transition-colors font-normal text-slate-600 ${
+                        isChecked ? 'bg-blue-50/60' : 'hover:bg-blue-50/30'
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td
+                        className="px-2 text-center border-r border-slate-200 w-[42px] sticky left-0 bg-white z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleSelectUser(user.id)}
+                          className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+
+                      {/* STT */}
                       <td className="px-2.5 text-center border-r border-slate-200">
                         {globalIdx}
                       </td>
@@ -1572,25 +1989,25 @@ export const SystemUsersPage: React.FC = () => {
             onClick={handleCloseDrawer}
           />
 
-          {/* Slide-over Panel from right */}
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-[660px] bg-white shadow-2xl flex flex-col border-l border-slate-200">
-              {/* Drawer Header - Giao diện trắng chuẩn */}
-              <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xl shadow-2xs">
+          {/* Slide-over Panel from right - Độ rộng lớn hơn & bố cục rộng rãi dễ nhìn */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-8 sm:pl-16">
+            <div className="w-screen max-w-[940px] bg-white shadow-2xl flex flex-col border-l border-slate-200">
+              {/* Drawer Header - Giao diện trắng to & dễ nhìn */}
+              <div className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-2xl shadow-xs">
                     {(drawerFormData.hoTen || drawerUser.hoTen).slice(0, 1)}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-[16px] leading-tight text-slate-800">
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="font-bold text-[18px] leading-tight text-slate-800">
                         {drawerFormData.hoTen || drawerUser.hoTen}
                       </h3>
-                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-mono text-slate-600">
+                      <span className="bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded text-[12px] font-mono font-semibold text-slate-700">
                         {drawerFormData.maNhanSu || drawerUser.maNhanSu}
                       </span>
                     </div>
-                    <p className="text-[12px] text-slate-500 mt-0.5 font-normal">
+                    <p className="text-[13px] text-slate-500 mt-1 font-normal">
                       {drawerFormData.chucVu || drawerUser.chucVu} • {drawerFormData.donVi || drawerUser.donVi}
                     </p>
                   </div>
@@ -1598,22 +2015,22 @@ export const SystemUsersPage: React.FC = () => {
 
                 <button
                   onClick={handleCloseDrawer}
-                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg cursor-pointer transition-colors"
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-xl cursor-pointer transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Drawer Form Body */}
-              <form onSubmit={handleSaveDrawer} className="flex-1 overflow-y-auto p-6 space-y-5 text-[12.5px]">
+              {/* Drawer Form Body - Các box to hơn, bố cục chia lưới rộng rãi */}
+              <form onSubmit={handleSaveDrawer} className="flex-1 overflow-y-auto p-8 space-y-6 text-[13px]">
                 {/* Card 1: Thông tin cá nhân & Công tác */}
-                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-slate-600" /> 1. Thông tin cá nhân & Công tác
+                <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-4">
+                  <h4 className="font-bold text-slate-800 text-[14px] flex items-center gap-2.5 pb-2.5 border-b border-slate-200/70">
+                    <UserCheck className="w-4.5 h-4.5 text-slate-600" /> 1. Thông tin cá nhân & Công tác
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="sm:col-span-2">
-                      <label className="block text-slate-600 font-medium mb-1">
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">
                         Họ và tên <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -1621,12 +2038,12 @@ export const SystemUsersPage: React.FC = () => {
                         required
                         value={drawerFormData.hoTen || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, hoTen: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">
                         Mã nhân sự <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -1634,16 +2051,16 @@ export const SystemUsersPage: React.FC = () => {
                         required
                         value={drawerFormData.maNhanSu || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, maNhanSu: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Giới tính</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Giới tính</label>
                       <select
                         value={drawerFormData.gioiTinh || 'Nam'}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, gioiTinh: e.target.value as 'Nam' | 'Nữ' })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       >
                         <option value="Nam">Nam</option>
                         <option value="Nữ">Nữ</option>
@@ -1651,50 +2068,50 @@ export const SystemUsersPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Ngày, tháng năm sinh</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Ngày, tháng năm sinh</label>
                       <input
                         type="text"
                         placeholder="DD/MM/YYYY"
                         value={drawerFormData.ngaySinh || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, ngaySinh: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Chức vụ</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Chức vụ</label>
                       <input
                         type="text"
                         value={drawerFormData.chucVu || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, chucVu: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
-                    <div className="sm:col-span-2">
-                      <label className="block text-slate-600 font-medium mb-1">Đơn vị (Khoa/Phòng/TT)</label>
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Đơn vị (Khoa/Phòng/TT)</label>
                       <input
                         type="text"
                         value={drawerFormData.donVi || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, donVi: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Card 2: Học hàm, học vị & Chuyên môn */}
-                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
-                    <Award className="w-4 h-4 text-slate-600" /> 2. Trình độ học vấn & Chuyên môn
+                <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-4">
+                  <h4 className="font-bold text-slate-800 text-[14px] flex items-center gap-2.5 pb-2.5 border-b border-slate-200/70">
+                    <Award className="w-4.5 h-4.5 text-slate-600" /> 2. Trình độ học vấn & Chuyên môn
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Học hàm</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Học hàm</label>
                       <select
                         value={drawerFormData.hocHam || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, hocHam: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       >
                         <option value="">(Không có học hàm)</option>
                         <option value="Phó Giáo sư">Phó Giáo sư (PGS)</option>
@@ -1703,146 +2120,146 @@ export const SystemUsersPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Học vị</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Học vị</label>
                       <input
                         type="text"
                         placeholder="Tiến sĩ, Thạc sĩ, Cử nhân..."
                         value={drawerFormData.hocVi || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, hocVi: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
-                    <div className="sm:col-span-2">
-                      <label className="block text-slate-600 font-medium mb-1">Chuyên môn đào tạo</label>
+                    <div>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Chuyên môn đào tạo</label>
                       <input
                         type="text"
                         value={drawerFormData.chuyenMon || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, chuyenMon: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Năm tốt nghiệp ĐH</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Năm tốt nghiệp ĐH</label>
                       <input
                         type="number"
                         value={drawerFormData.namTotNghiep || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, namTotNghiep: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Năm công nhận PGS</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Năm công nhận PGS</label>
                       <input
                         type="text"
                         placeholder="Để trống nếu chưa có"
                         value={drawerFormData.namCongNhanPGS || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, namCongNhanPGS: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Năm công nhận Giáo sư</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Năm công nhận Giáo sư</label>
                       <input
                         type="text"
                         placeholder="Để trống nếu chưa có"
                         value={drawerFormData.namCongNhanGS || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, namCongNhanGS: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Card 3: Hợp đồng & Tiêu chuẩn */}
-                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-slate-600" /> 3. Hợp đồng & Tiêu chuẩn chức danh
+                <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-4">
+                  <h4 className="font-bold text-slate-800 text-[14px] flex items-center gap-2.5 pb-2.5 border-b border-slate-200/70">
+                    <BookOpen className="w-4.5 h-4.5 text-slate-600" /> 3. Hợp đồng & Tiêu chuẩn chức danh
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Năm tuyển dụng</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Năm tuyển dụng</label>
                       <input
                         type="number"
                         value={drawerFormData.namTuyenDung || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, namTuyenDung: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Ngày ký HĐLĐ chính thức</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Ngày ký HĐLĐ chính thức</label>
                       <input
                         type="text"
                         placeholder="DD/MM/YYYY"
                         value={drawerFormData.ngayKyHDLD || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, ngayKyHDLD: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Chứng chỉ sư phạm (CCSP)</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Chứng chỉ sư phạm (CCSP)</label>
                       <input
                         type="text"
                         value={drawerFormData.ccsp || 'Đã có'}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, ccsp: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Anh văn / Ngoại ngữ</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Anh văn / Ngoại ngữ</label>
                       <input
                         type="text"
                         placeholder="B2, IELTS, TOEIC..."
                         value={drawerFormData.anhVan || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, anhVan: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div className="sm:col-span-2">
-                      <label className="block text-slate-600 font-medium mb-1">Tin học</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Tin học</label>
                       <input
                         type="text"
                         placeholder="Ứng dụng CNTT Nâng cao, MOS..."
                         value={drawerFormData.tinHoc || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, tinHoc: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Card 4: Nhiệm vụ kiêm nhiệm */}
-                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-slate-600" /> 4. Nhiệm vụ kiêm nhiệm
+                <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200 space-y-4">
+                  <h4 className="font-bold text-slate-800 text-[14px] flex items-center gap-2.5 pb-2.5 border-b border-slate-200/70">
+                    <Briefcase className="w-4.5 h-4.5 text-slate-600" /> 4. Nhiệm vụ kiêm nhiệm
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Nhiệm vụ kiêm nhiệm</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Nhiệm vụ kiêm nhiệm</label>
                       <input
                         type="text"
                         placeholder="Trưởng BM, Cố vấn học tập, Thư ký..."
                         value={drawerFormData.kiemNhiem || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, kiemNhiem: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-600 font-medium mb-1">Đơn vị kiêm nhiệm</label>
+                      <label className="block text-slate-600 font-semibold mb-1 text-[12.5px]">Đơn vị kiêm nhiệm</label>
                       <input
                         type="text"
                         placeholder="Khoa Công nghệ thông tin..."
                         value={drawerFormData.donViKiemNhiem || ''}
                         onChange={(e) => setDrawerFormData({ ...drawerFormData, donViKiemNhiem: e.target.value })}
-                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                        className="w-full h-[38px] px-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-[13px]"
                       />
                     </div>
                   </div>
@@ -1850,7 +2267,7 @@ export const SystemUsersPage: React.FC = () => {
               </form>
 
               {/* Drawer Footer */}
-              <div className="bg-white border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
+              <div className="bg-white border-t border-slate-200 px-8 py-4.5 flex items-center justify-between shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -1859,24 +2276,24 @@ export const SystemUsersPage: React.FC = () => {
                       handleCloseDrawer();
                     }
                   }}
-                  className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[12px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[13px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                   <span>Xóa hồ sơ</span>
                 </button>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={handleCloseDrawer}
-                    className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[12.5px] font-medium cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[13px] font-medium cursor-pointer"
                   >
                     Đóng
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSaveDrawer()}
-                    className="px-5 py-2 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
+                    className="px-6 py-2.5 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[13px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
                   >
                     <Check className="w-4 h-4" />
                     <span>Lưu thay đổi</span>
