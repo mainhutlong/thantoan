@@ -800,6 +800,8 @@ export default function App() {
           {activeSidebarItem === 'trang_chu' ? (
             <HomePage
               onNavigate={(itemKey, dept) => handleSelectSidebarItem(itemKey, dept)}
+              currentAccount={currentAccount}
+              currentRole={currentRole}
             />
           ) : activeSidebarItem === 'nhap_lieu_phu_luc' ? (
             <StatisticsDashboard

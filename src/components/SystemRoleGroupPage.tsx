@@ -680,6 +680,8 @@ export const SystemRoleGroupPage: React.FC = () => {
   const [activeTopTab, setActiveTopTab] = useState<'thong_tin' | 'module' | 'quyen_han' | 'thanh_vien'>('quyen_han');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('thanh_toan_gio_giang');
   const [permissionSearch, setPermissionSearch] = useState<string>('');
+  const [moduleSearch, setModuleSearch] = useState<string>('');
+  const [roleMemberSearch, setRoleMemberSearch] = useState<string>('');
   const [savedToast, setSavedToast] = useState<boolean>(false);
   const [isAddRoleOpen, setIsAddRoleOpen] = useState<boolean>(false);
   const [newRoleName, setNewRoleName] = useState<string>('');
@@ -699,6 +701,26 @@ export const SystemRoleGroupPage: React.FC = () => {
     () => MODULE_CATALOG.find((m) => m.id === selectedModuleId) || MODULE_CATALOG[0],
     [selectedModuleId]
   );
+
+  // Danh sách thành viên trong vai trò được lọc theo ô tìm kiếm
+  const filteredRoleMembers = useMemo(() => {
+    if (!roleMemberSearch.trim()) return selectedRole.members;
+    const q = roleMemberSearch.toLowerCase().trim();
+    return selectedRole.members.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.code.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q) ||
+        (m.unit && m.unit.toLowerCase().includes(q))
+    );
+  }, [selectedRole.members, roleMemberSearch]);
+
+  // Danh sách module được lọc theo ô tìm kiếm
+  const filteredModuleCatalog = useMemo(() => {
+    if (!moduleSearch.trim()) return MODULE_CATALOG;
+    const q = moduleSearch.toLowerCase().trim();
+    return MODULE_CATALOG.filter((m) => m.name.toLowerCase().includes(q));
+  }, [moduleSearch]);
 
   // Check if a sub-permission is enabled for the selected role
   const isPermEnabled = (permId: string) => {
@@ -1147,8 +1169,17 @@ export const SystemRoleGroupPage: React.FC = () => {
                       value={permissionSearch}
                       onChange={(e) => setPermissionSearch(e.target.value)}
                       placeholder="Tìm kiếm quyền hạn..."
-                      className="w-full h-[34px] pl-9 pr-3 rounded-full border border-slate-200 text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 bg-white shadow-2xs"
+                      className="w-full h-[34px] pl-9 pr-8 rounded-full border border-slate-200 text-[12.5px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 bg-white shadow-2xs"
                     />
+                    {permissionSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setPermissionSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   <button
@@ -1299,45 +1330,72 @@ export const SystemRoleGroupPage: React.FC = () => {
               ============================================================ */}
           {activeTopTab === 'module' && (
             <div className="p-6 flex-1 overflow-y-auto">
-              <div className="max-w-[680px] bg-[#f8fafc] rounded-2xl p-4 border border-slate-100">
-                <div className="pb-3 px-1 flex items-center justify-between">
+              <div className="max-w-[720px] bg-[#f8fafc] rounded-2xl p-4 border border-slate-100">
+                <div className="pb-3 px-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <span className="text-[14px] font-medium text-slate-800">
                     Danh sách phân hệ (Module) được phép truy cập
                   </span>
-                  <button
-                    onClick={handleSave}
-                    className="h-[32px] px-3.5 rounded-full bg-[#7da2f8] hover:bg-[#5b89f7] text-white text-[12px] font-medium flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Lưu thay đổi</span>
-                  </button>
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-[220px]">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={moduleSearch}
+                        onChange={(e) => setModuleSearch(e.target.value)}
+                        placeholder="Tìm kiếm module..."
+                        className="w-full h-[32px] pl-8 pr-7 rounded-lg border border-slate-200 text-[12px] text-slate-700 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+                      />
+                      {moduleSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setModuleSearch('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleSave}
+                      className="h-[32px] px-3.5 rounded-full bg-[#7da2f8] hover:bg-[#5b89f7] text-white text-[12px] font-medium flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Lưu thay đổi</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100">
-                  {MODULE_CATALOG.map((mod) => {
-                    const allIds = mod.sections.flatMap((s) => s.items.map((i) => i.id));
-                    const enabled = allIds.some((id) => isPermEnabled(id));
-                    return (
-                      <div
-                        key={mod.id}
-                        className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/60"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-slate-500">{mod.icon}</span>
-                          <span className="text-[13px] font-medium text-slate-700">{mod.name}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleEntireModule(mod)}
-                          className={`w-[42px] h-[22px] rounded-full transition-colors p-0.5 cursor-pointer flex items-center ${
-                            enabled ? 'bg-[#2563eb] justify-end' : 'bg-slate-300 justify-start'
-                          }`}
+                  {filteredModuleCatalog.length === 0 ? (
+                    <div className="py-8 text-center text-[12.5px] text-slate-400">
+                      Không tìm thấy module nào khớp với từ khóa "{moduleSearch}".
+                    </div>
+                  ) : (
+                    filteredModuleCatalog.map((mod) => {
+                      const allIds = mod.sections.flatMap((s) => s.items.map((i) => i.id));
+                      const enabled = allIds.some((id) => isPermEnabled(id));
+                      return (
+                        <div
+                          key={mod.id}
+                          className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/60"
                         >
-                          <span className="w-[18px] h-[18px] rounded-full bg-white shadow-2xs block" />
-                        </button>
-                      </div>
-                    );
-                  })}
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-slate-500">{mod.icon}</span>
+                            <span className="text-[13px] font-medium text-slate-700">{mod.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleEntireModule(mod)}
+                            className={`w-[42px] h-[22px] rounded-full transition-colors p-0.5 cursor-pointer flex items-center ${
+                              enabled ? 'bg-[#2563eb] justify-end' : 'bg-slate-300 justify-start'
+                            }`}
+                          >
+                            <span className="w-[18px] h-[18px] rounded-full bg-white shadow-2xs block" />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -1349,20 +1407,41 @@ export const SystemRoleGroupPage: React.FC = () => {
           {activeTopTab === 'thanh_vien' && (
             <div className="p-6 flex-1 overflow-y-auto">
               <div className="max-w-[760px] space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <span className="text-[13.5px] font-semibold text-slate-700">
                     Thành viên thuộc vai trò {selectedRole.name} ({selectedRole.members.length})
                   </span>
-                  <button
-                    onClick={() => {
-                      setSelectedCandidateIds([]);
-                      setIsAddMemberModalOpen(true);
-                    }}
-                    className="h-[32px] px-3.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#2563eb] text-[12px] font-medium flex items-center gap-1.5 cursor-pointer border border-blue-200 transition-colors shadow-2xs"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>+ Thêm mới thành viên</span>
-                  </button>
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-[240px]">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={roleMemberSearch}
+                        onChange={(e) => setRoleMemberSearch(e.target.value)}
+                        placeholder="Tìm kiếm thành viên theo tên, email..."
+                        className="w-full h-[32px] pl-8 pr-7 rounded-lg border border-slate-200 text-[12px] text-slate-700 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+                      />
+                      {roleMemberSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setRoleMemberSearch('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedCandidateIds([]);
+                        setIsAddMemberModalOpen(true);
+                      }}
+                      className="h-[32px] px-3.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#2563eb] text-[12px] font-medium flex items-center gap-1.5 cursor-pointer border border-blue-200 transition-colors shadow-2xs shrink-0"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>+ Thêm mới thành viên</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
@@ -1370,8 +1449,12 @@ export const SystemRoleGroupPage: React.FC = () => {
                     <div className="py-8 text-center text-[12.5px] text-slate-400">
                       Chưa có thành viên nào trong vai trò này.
                     </div>
+                  ) : filteredRoleMembers.length === 0 ? (
+                    <div className="py-8 text-center text-[12.5px] text-slate-400">
+                      Không tìm thấy thành viên nào khớp với từ khóa "{roleMemberSearch}".
+                    </div>
                   ) : (
-                    selectedRole.members.map((mem) => (
+                    filteredRoleMembers.map((mem) => (
                       <div
                         key={mem.id}
                         className="px-4 py-3 flex items-center justify-between hover:bg-slate-50"
