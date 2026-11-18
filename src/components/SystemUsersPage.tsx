@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -16,209 +16,109 @@ import {
   BookOpen,
   Briefcase,
   FileSpreadsheet,
-  ArrowLeft
+  ArrowLeft,
+  AlertCircle,
+  FileUp,
+  RefreshCw
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SystemUserProfile } from '../types';
 
-// Mock initial university personnel data matching the 20 columns
-export const INITIAL_SYSTEM_USERS: SystemUserProfile[] = [
-  {
-    id: 'user-1',
-    stt: 1,
-    hoTen: 'Mai Như Long',
-    chucVu: 'Trưởng Bộ môn Hệ thống thông tin',
-    donVi: 'Khoa Công nghệ thông tin',
-    maNhanSu: 'TDU00128',
-    gioiTinh: 'Nam',
-    ngaySinh: '18/09/1982',
-    hocHam: '',
-    hocVi: 'Tiến sĩ',
-    chuyenMon: 'Khoa học máy tính & HTTT',
-    namTuyenDung: 2014,
-    ngayKyHDLD: '01/09/2015',
-    namTotNghiep: 2004,
-    namCongNhanPGS: '',
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'IELTS 6.5',
-    tinHoc: 'Ứng dụng CNTT Nâng cao',
-    kiemNhiem: 'Phụ trách Lab AI & IoT',
-    donViKiemNhiem: 'Khoa Công nghệ thông tin',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-2',
-    stt: 2,
-    hoTen: 'PGS.TS. Trần Quốc Hùng',
-    chucVu: 'Phó Trưởng Khoa',
-    donVi: 'Khoa Dược - Điều dưỡng',
-    maNhanSu: 'TDU00245',
-    gioiTinh: 'Nam',
-    ngaySinh: '14/05/1975',
-    hocHam: 'Phó Giáo sư',
-    hocVi: 'Tiến sĩ',
-    chuyenMon: 'Dược lý & Dược lâm sàng',
-    namTuyenDung: 2012,
-    ngayKyHDLD: '01/08/2013',
-    namTotNghiep: 1998,
-    namCongNhanPGS: 2019,
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'B2 Châu Âu',
-    tinHoc: 'Ứng dụng CNTT Cơ bản',
-    kiemNhiem: 'Chủ tịch HĐ Khoa học Khoa',
-    donViKiemNhiem: 'Hội đồng Khoa học Khoa Dược',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-3',
-    stt: 3,
-    hoTen: 'ThS. Nguyễn Văn Hải',
-    chucVu: 'Giảng viên cơ hữu',
-    donVi: 'Khoa Công nghệ thông tin',
-    maNhanSu: 'TDU00215',
-    gioiTinh: 'Nam',
-    ngaySinh: '12/10/1987',
-    hocHam: '',
-    hocVi: 'Thạc sĩ',
-    chuyenMon: 'Kỹ thuật phần mềm',
-    namTuyenDung: 2018,
-    ngayKyHDLD: '15/10/2019',
-    namTotNghiep: 2010,
-    namCongNhanPGS: '',
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'TOEIC 650',
-    tinHoc: 'Ứng dụng CNTT Nâng cao',
-    kiemNhiem: 'Cố vấn học tập K16 CNTT',
-    donViKiemNhiem: 'Khoa Công nghệ thông tin',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-4',
-    stt: 4,
-    hoTen: 'ThS. Lê Thị Bích',
-    chucVu: 'Phó Trưởng Bộ môn',
-    donVi: 'Khoa Kinh tế - QTKD',
-    maNhanSu: 'TDU00104',
-    gioiTinh: 'Nữ',
-    ngaySinh: '22/03/1989',
-    hocHam: '',
-    hocVi: 'Thạc sĩ',
-    chuyenMon: 'Tài chính - Ngân hàng',
-    namTuyenDung: 2016,
-    ngayKyHDLD: '01/11/2017',
-    namTotNghiep: 2011,
-    namCongNhanPGS: '',
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'B2',
-    tinHoc: 'MOS Excel Expert',
-    kiemNhiem: 'Thư ký khoa',
-    donViKiemNhiem: 'Khoa Kinh tế - QTKD',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-5',
-    stt: 5,
-    hoTen: 'GS.TS. Phạm Hoàng Long',
-    chucVu: 'Cố vấn Ban Giám hiệu',
-    donVi: 'Ban Giám hiệu',
-    maNhanSu: 'TDU00008',
-    gioiTinh: 'Nam',
-    ngaySinh: '05/01/1960',
-    hocHam: 'Giáo sư',
-    hocVi: 'Tiến sĩ',
-    chuyenMon: 'Quản lý giáo dục & Kinh tế',
-    namTuyenDung: 2010,
-    ngayKyHDLD: '01/01/2011',
-    namTotNghiep: 1983,
-    namCongNhanPGS: 2005,
-    namCongNhanGS: 2012,
-    ccsp: 'Đã có',
-    anhVan: 'C1 Cao cấp',
-    tinHoc: 'Ứng dụng CNTT Cơ bản',
-    kiemNhiem: 'Chủ tịch HĐ GS Cơ sở',
-    donViKiemNhiem: 'Trường Đại học Tây Đô',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-6',
-    stt: 6,
-    hoTen: 'TS. Huỳnh Thanh Toàn',
-    chucVu: 'Trưởng Khoa',
-    donVi: 'Khoa Luật',
-    maNhanSu: 'TDU00188',
-    gioiTinh: 'Nam',
-    ngaySinh: '30/11/1980',
-    hocHam: '',
-    hocVi: 'Tiến sĩ',
-    chuyenMon: 'Luật Kinh tế & Thương mại quốc tế',
-    namTuyenDung: 2015,
-    ngayKyHDLD: '01/09/2016',
-    namTotNghiep: 2002,
-    namCongNhanPGS: '',
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'IELTS 7.0',
-    tinHoc: 'Ứng dụng CNTT Nâng cao',
-    kiemNhiem: 'Ủy viên HĐ Trường',
-    donViKiemNhiem: 'Hội đồng Trường',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-7',
-    stt: 7,
-    hoTen: 'ThS. Trần Thị Kim Cúc',
-    chucVu: 'Giảng viên cơ hữu',
-    donVi: 'Khoa Ngoại ngữ',
-    maNhanSu: 'TDU00312',
-    gioiTinh: 'Nữ',
-    ngaySinh: '15/07/1992',
-    hocHam: '',
-    hocVi: 'Thạc sĩ',
-    chuyenMon: 'Ngôn ngữ Anh ứng dụng',
-    namTuyenDung: 2020,
-    ngayKyHDLD: '01/10/2021',
-    namTotNghiep: 2014,
-    namCongNhanPGS: '',
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'C2 / IELTS 8.0',
-    tinHoc: 'Ứng dụng CNTT Cơ bản',
-    kiemNhiem: 'Cố vấn CLB Tiếng Anh TDU',
-    donViKiemNhiem: 'Đoàn Thanh niên TDU',
-    trangThai: 'hoat_dong',
-  },
-  {
-    id: 'user-8',
-    stt: 8,
-    hoTen: 'Bác sĩ CKII. Võ Minh Trí',
-    chucVu: 'Phó Trưởng Bộ môn Điều dưỡng',
-    donVi: 'Khoa Dược - Điều dưỡng',
-    maNhanSu: 'TDU00267',
-    gioiTinh: 'Nam',
-    ngaySinh: '08/04/1978',
-    hocHam: '',
-    hocVi: 'Bác sĩ CKII',
-    chuyenMon: 'Hồi sức cấp cứu & Nội khoa',
-    namTuyenDung: 2017,
-    ngayKyHDLD: '01/12/2018',
-    namTotNghiep: 2002,
-    namCongNhanPGS: '',
-    namCongNhanGS: '',
-    ccsp: 'Đã có',
-    anhVan: 'B1',
-    tinHoc: 'Ứng dụng CNTT Cơ bản',
-    kiemNhiem: 'Phụ trách thực tập lâm sàng BV',
-    donViKiemNhiem: 'Khoa Dược - Điều dưỡng',
-    trangThai: 'hoat_dong',
+// Helper to normalize strings for header matching (strips accents, lowercases, removes non-alphanumeric)
+const normalizeHeader = (str: string): string => {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]/g, '');
+};
+
+// Helper to convert Excel date (serial or string) to DD/MM/YYYY
+const formatExcelDate = (val: any): string => {
+  if (val === undefined || val === null || val === '') return '';
+  if (typeof val === 'number') {
+    try {
+      // Excel base date offset Dec 30 1899
+      const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const y = date.getFullYear();
+      if (!isNaN(date.getTime()) && y > 1900 && y < 2100) {
+        return `${d}/${m}/${y}`;
+      }
+    } catch {
+      // fallback
+    }
   }
-];
+  const str = String(val).trim();
+  // Match ISO date YYYY-MM-DD or YYYY/MM/DD
+  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(str)) {
+    const parts = str.split(/[-/]/);
+    const y = parts[0];
+    const m = parts[1].padStart(2, '0');
+    const d = parts[2].substring(0, 2).padStart(2, '0');
+    return `${d}/${m}/${y}`;
+  }
+  return str;
+};
+
+// Helper to split combined "Học hàm, học vị" if user file provides them in a single column
+const parseAcademicTitle = (raw: string): { hocHam: string; hocVi: string } => {
+  if (!raw) return { hocHam: '', hocVi: '' };
+  const lower = raw.toLowerCase();
+  let hocHam = '';
+  let hocVi = '';
+
+  if (lower.includes('phó giáo sư') || lower.includes('pgs')) {
+    hocHam = 'Phó Giáo sư';
+  } else if (lower.includes('giáo sư') || /\bgs\b|\bgs\./i.test(lower)) {
+    hocHam = 'Giáo sư';
+  }
+
+  if (lower.includes('tiến sĩ') || /\bts\b|\bts\./i.test(lower)) {
+    hocVi = 'Tiến sĩ';
+  } else if (lower.includes('thạc sĩ') || /\bths\b|\bths\./i.test(lower)) {
+    hocVi = 'Thạc sĩ';
+  } else if (lower.includes('ckii') || lower.includes('ck2') || lower.includes('chuyên khoa 2') || lower.includes('chuyên khoa ii')) {
+    hocVi = 'Bác sĩ CKII';
+  } else if (lower.includes('cki') || lower.includes('ck1') || lower.includes('chuyên khoa 1') || lower.includes('chuyên khoa i')) {
+    hocVi = 'Bác sĩ CKI';
+  } else if (lower.includes('đại học') || lower.includes('cử nhân') || lower.includes('kỹ sư')) {
+    hocVi = 'Cử nhân';
+  } else if (!hocHam) {
+    hocVi = raw.trim();
+  }
+
+  return { hocHam, hocVi };
+};
+
+// Cleared old mock data as requested; starts empty or loads from user's imported storage
+export const INITIAL_SYSTEM_USERS: SystemUserProfile[] = [];
 
 export const SystemUsersPage: React.FC = () => {
-  const [users, setUsers] = useState<SystemUserProfile[]>(INITIAL_SYSTEM_USERS);
+  const [users, setUsers] = useState<SystemUserProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('tdu_system_users_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    return INITIAL_SYSTEM_USERS;
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('tdu_system_users_v2', JSON.stringify(users));
+    } catch (err) {
+      console.error('Failed to save system users', err);
+    }
+  }, [users]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
   const [selectedDegree, setSelectedDegree] = useState('all');
@@ -229,6 +129,14 @@ export const SystemUsersPage: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SystemUserProfile | null>(null);
   const [viewingUser, setViewingUser] = useState<SystemUserProfile | null>(null);
+
+  // Import Excel Modal states
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [parsedImportUsers, setParsedImportUsers] = useState<SystemUserProfile[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [overwriteExisting, setOverwriteExisting] = useState(true);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
 
   // Form state for 20 columns
   const [formData, setFormData] = useState<Partial<SystemUserProfile>>({
@@ -358,6 +266,10 @@ export const SystemUsersPage: React.FC = () => {
 
   // Export to Excel with all 20 columns
   const handleExportExcel = () => {
+    if (filteredUsers.length === 0) {
+      alert('Không có dữ liệu người dùng để xuất!');
+      return;
+    }
     const dataToExport = filteredUsers.map((u, idx) => ({
       Stt: idx + 1,
       'Họ tên': u.hoTen,
@@ -385,6 +297,248 @@ export const SystemUsersPage: React.FC = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Ho_so_Nhan_su_TDU');
     XLSX.writeFile(workbook, `TDU_Danh_Sach_Nhan_Su_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  // Download standard Excel template with 18-20 columns
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'STT': 1,
+        'Họ tên': 'Nguyễn Văn An',
+        'Chức vụ': 'Giảng viên cơ hữu',
+        'Đơn vị': 'Khoa Công nghệ thông tin',
+        'Mã nhân sự': 'TDU00123',
+        'Giới tính': 'Nam',
+        'Ngày tháng năm sinh': '15/08/1985',
+        'Học hàm': '',
+        'Học vị': 'Tiến sĩ',
+        'Chuyên môn': 'Khoa học máy tính & HTTT',
+        'Năm tuyển dụng': 2018,
+        'Ngày ký HĐLĐ chính thức': '01/09/2019',
+        'Năm tốt nghiệp': 2007,
+        'Năm công nhận học hàm PGS': '',
+        'Năm công nhận học hàm Giáo sư': '',
+        'CCSP': 'Đã có',
+        'Anh văn': 'IELTS 6.5',
+        'Tin học': 'Ứng dụng CNTT Nâng cao',
+        'Kiêm nhiệm': 'Cố vấn học tập K16 CNTT',
+        'Đơn vị kiêm nhiệm': 'Khoa Công nghệ thông tin',
+      },
+      {
+        'STT': 2,
+        'Họ tên': 'Trần Thị Mai',
+        'Chức vụ': 'Phó Trưởng Khoa',
+        'Đơn vị': 'Khoa Dược - Điều dưỡng',
+        'Mã nhân sự': 'TDU00245',
+        'Giới tính': 'Nữ',
+        'Ngày tháng năm sinh': '20/11/1980',
+        'Học hàm': 'Phó Giáo sư',
+        'Học vị': 'Tiến sĩ',
+        'Chuyên môn': 'Dược lý & Dược lâm sàng',
+        'Năm tuyển dụng': 2014,
+        'Ngày ký HĐLĐ chính thức': '01/10/2015',
+        'Năm tốt nghiệp': 2002,
+        'Năm công nhận học hàm PGS': 2021,
+        'Năm công nhận học hàm Giáo sư': '',
+        'CCSP': 'Đã có',
+        'Anh văn': 'B2 Châu Âu',
+        'Tin học': 'MOS Excel Expert',
+        'Kiêm nhiệm': 'Chủ tịch HĐ Khoa học Khoa',
+        'Đơn vị kiêm nhiệm': 'Khoa Dược - Điều dưỡng',
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Mau_Import_Nhan_Su');
+    XLSX.writeFile(workbook, 'TDU_Mau_Import_Nhan_Su_18_Cot.xlsx');
+  };
+
+  // Clear all users from state and storage
+  const handleClearAllUsers = () => {
+    if (users.length === 0) return;
+    if (window.confirm(`CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ ${users.length} cán bộ trong danh sách hiện tại không? Thao tác này sẽ làm sạch hoàn toàn dữ liệu nhân sự cũ.`)) {
+      setUsers([]);
+      try {
+        localStorage.removeItem('tdu_system_users_v2');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // Handle file select for Excel import
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFile(file);
+    setImportError(null);
+    setIsProcessingFile(true);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary', cellDates: false });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!json || json.length < 2) {
+          setImportError('File Excel không có dữ liệu hoặc chỉ có dòng tiêu đề.');
+          setIsProcessingFile(false);
+          return;
+        }
+
+        // Dynamically find header row in the first 10 rows
+        let headerRowIdx = 0;
+        for (let r = 0; r < Math.min(10, json.length); r++) {
+          const row = json[r];
+          if (!Array.isArray(row)) continue;
+          const joined = row.map((c) => String(c || '').toLowerCase()).join(' ');
+          if (
+            (joined.includes('họ tên') || joined.includes('ho ten') || joined.includes('họ và tên') || joined.includes('ten')) &&
+            (joined.includes('mã') || joined.includes('chức vụ') || joined.includes('đơn vị') || joined.includes('stt'))
+          ) {
+            headerRowIdx = r;
+            break;
+          }
+        }
+
+        const headers = json[headerRowIdx].map((h: any) => String(h || '').trim());
+        const normalizedHeaders = headers.map((h: string) => normalizeHeader(h));
+
+        // Map column indices flexibly to all 18 columns + variations
+        const colMap: { [key: string]: number } = {};
+        normalizedHeaders.forEach((nh: string, idx: number) => {
+          if (!nh) return;
+          if (nh === 'stt' || nh === 'sott' || nh === 'tt') colMap['stt'] = idx;
+          else if (nh.includes('hoten') || nh.includes('hovaten') || nh === 'ten' || nh.includes('tencanbo') || nh.includes('tengiangvien')) colMap['hoTen'] = idx;
+          else if (nh.includes('chucvu') || nh.includes('chucdanh') || nh.includes('vitri')) colMap['chucVu'] = idx;
+          else if (nh.includes('donvikiemnhiem') || nh.includes('donvicongtackiemnhiem')) colMap['donViKiemNhiem'] = idx;
+          else if (nh.includes('donvi') || nh.includes('khoa') || nh.includes('phongban') || nh.includes('bomon') || nh.includes('khoaphong')) colMap['donVi'] = idx;
+          else if (nh.includes('manhansu') || nh.includes('macanbo') || nh.includes('magiangvien') || nh.includes('macb') || nh.includes('magv') || nh.includes('mans')) colMap['maNhanSu'] = idx;
+          else if (nh.includes('gioitinh') || nh.includes('phai') || nh.includes('namnu')) colMap['gioiTinh'] = idx;
+          else if (nh.includes('ngaythangnamsinh') || nh.includes('ngaysinh') || nh.includes('ngaythangnam') || nh.includes('namsinh')) colMap['ngaySinh'] = idx;
+          else if (nh.includes('hochamhocvi') || nh.includes('hochamsovi') || nh.includes('hocvicham')) colMap['hocHamHocVi'] = idx;
+          else if (nh.includes('hocham')) colMap['hocHam'] = idx;
+          else if (nh.includes('hocvi') || nh.includes('trinhdo')) colMap['hocVi'] = idx;
+          else if (nh.includes('chuyenmon') || nh.includes('chuyennganh') || nh.includes('nganhdaotao')) colMap['chuyenMon'] = idx;
+          else if (nh.includes('namtuyendung') || nh.includes('namtd') || nh.includes('ngaytuyendung')) colMap['namTuyenDung'] = idx;
+          else if (nh.includes('ngaykyhdld') || nh.includes('ngaykyhopdong') || nh.includes('ngayhdld')) colMap['ngayKyHDLD'] = idx;
+          else if (nh.includes('namtotnghiep') || nh.includes('namtn')) colMap['namTotNghiep'] = idx;
+          else if (nh.includes('namcongnhanhochampgs') || nh.includes('namcongnhanpgs') || nh.includes('nampgs') || nh.includes('congnhanpgs')) colMap['namCongNhanPGS'] = idx;
+          else if (nh.includes('namcongnhanhochamgiaosu') || nh.includes('namcongnhanhochamgs') || nh.includes('namcongnhangs') || nh.includes('namgs') || nh.includes('congnhangs')) colMap['namCongNhanGS'] = idx;
+          else if (nh.includes('ccsp') || nh.includes('chungchisupham') || nh.includes('supham')) colMap['ccsp'] = idx;
+          else if (nh.includes('anhvan') || nh.includes('tienganh') || nh.includes('ngoainngu') || nh.includes('ngoaingu')) colMap['anhVan'] = idx;
+          else if (nh.includes('tinhoc') || nh.includes('chungchitinhoc') || nh.includes('cntt')) colMap['tinHoc'] = idx;
+          else if (nh.includes('kiemnhiem') || nh.includes('chucvukiemnhiem') || nh.includes('nhiemvukiemnhiem')) colMap['kiemNhiem'] = idx;
+        });
+
+        const parsed: SystemUserProfile[] = [];
+        for (let r = headerRowIdx + 1; r < json.length; r++) {
+          const row = json[r];
+          if (!Array.isArray(row) || row.length === 0) continue;
+
+          // Check Họ tên
+          const hoTenVal = colMap['hoTen'] !== undefined ? String(row[colMap['hoTen']] || '').trim() : '';
+          if (!hoTenVal && row.every((c) => !c)) continue; // skip entirely blank rows
+          if (!hoTenVal) continue;
+
+          const getVal = (key: string): string => {
+            if (colMap[key] === undefined) return '';
+            const v = row[colMap[key]];
+            return v !== undefined && v !== null ? String(v).trim() : '';
+          };
+
+          const getDateVal = (key: string): string => {
+            if (colMap[key] === undefined) return '';
+            return formatExcelDate(row[colMap[key]]);
+          };
+
+          let hocHam = getVal('hocHam');
+          let hocVi = getVal('hocVi');
+
+          // If file has combined "Học hàm, học vị" column
+          if (colMap['hocHamHocVi'] !== undefined) {
+            const combo = String(row[colMap['hocHamHocVi']] || '').trim();
+            if (combo) {
+              const split = parseAcademicTitle(combo);
+              if (!hocHam) hocHam = split.hocHam;
+              if (!hocVi) hocVi = split.hocVi;
+            }
+          }
+
+          const rawGender = getVal('gioiTinh').toLowerCase();
+          const gioiTinh: 'Nam' | 'Nữ' = rawGender.includes('nữ') || rawGender.includes('nu') ? 'Nữ' : 'Nam';
+
+          parsed.push({
+            id: `user-import-${Date.now()}-${r}`,
+            stt: parsed.length + 1,
+            hoTen: hoTenVal,
+            chucVu: getVal('chucVu') || 'Giảng viên',
+            donVi: getVal('donVi') || 'Trường Đại học Tây Đô',
+            maNhanSu: getVal('maNhanSu') || `TDU${String(100 + parsed.length + 1)}`,
+            gioiTinh,
+            ngaySinh: getDateVal('ngaySinh'),
+            hocHam,
+            hocVi: hocVi || 'Cử nhân',
+            chuyenMon: getVal('chuyenMon'),
+            namTuyenDung: getVal('namTuyenDung') || '',
+            ngayKyHDLD: getDateVal('ngayKyHDLD'),
+            namTotNghiep: getVal('namTotNghiep') || '',
+            namCongNhanPGS: getVal('namCongNhanPGS') || '',
+            namCongNhanGS: getVal('namCongNhanGS') || '',
+            ccsp: getVal('ccsp') || 'Đã có',
+            anhVan: getVal('anhVan'),
+            tinHoc: getVal('tinHoc'),
+            kiemNhiem: getVal('kiemNhiem'),
+            donViKiemNhiem: getVal('donViKiemNhiem'),
+            trangThai: 'hoat_dong',
+          });
+        }
+
+        if (parsed.length === 0) {
+          setImportError('Không tìm thấy dòng dữ liệu cán bộ hợp lệ trong file. Vui lòng kiểm tra lại cột Họ tên hoặc tải file mẫu.');
+        } else {
+          setParsedImportUsers(parsed);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setImportError('Có lỗi xảy ra khi đọc file Excel: ' + (err.message || 'Lỗi không xác định'));
+      } finally {
+        setIsProcessingFile(false);
+      }
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+  // Confirm and apply imported users
+  const handleConfirmImport = () => {
+    if (parsedImportUsers.length === 0) return;
+    if (overwriteExisting) {
+      setUsers(parsedImportUsers);
+    } else {
+      setUsers((prev) => {
+        const nextStt = prev.length;
+        const renumbered = parsedImportUsers.map((u, i) => ({ ...u, stt: nextStt + i + 1 }));
+        return [...prev, ...renumbered];
+      });
+    }
+    const count = parsedImportUsers.length;
+    handleCloseImportModal();
+    alert(`Import thành công! Đã nạp ${count} cán bộ vào hệ thống.`);
+  };
+
+  // Close import modal and reset state
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+    setImportFile(null);
+    setParsedImportUsers([]);
+    setImportError(null);
+    setIsProcessingFile(false);
   };
 
   return (
@@ -538,12 +692,46 @@ export const SystemUsersPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={handleExportExcel}
-              className="h-[34px] px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-2xs transition-all"
+              onClick={() => setIsImportModalOpen(true)}
+              className="h-[34px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs transition-all"
+              title="Import danh sách cán bộ từ file Excel (18 cột)"
             >
-              <Download className="w-4 h-4 text-emerald-600" />
+              <Upload className="w-4 h-4" />
+              <span>Import Excel</span>
+            </button>
+
+            <button
+              onClick={handleDownloadTemplate}
+              className="h-[34px] px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+              title="Tải file mẫu Excel 18 cột theo chuẩn Đại học Tây Đô"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <span>Tải mẫu</span>
+            </button>
+
+            <button
+              onClick={handleExportExcel}
+              disabled={users.length === 0}
+              className={`h-[34px] px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12.5px] font-medium flex items-center gap-2 shadow-2xs transition-all ${
+                users.length === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}
+              title="Xuất toàn bộ danh sách 20 cột ra file Excel"
+            >
+              <Download className="w-4 h-4 text-blue-600" />
               <span>Xuất Excel</span>
             </button>
+
+            {users.length > 0 && (
+              <button
+                onClick={handleClearAllUsers}
+                className="h-[34px] px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+                title="Xóa toàn bộ dữ liệu nhân sự cũ hiện tại"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Xóa tất cả ({users.length})</span>
+              </button>
+            )}
+
             <button
               onClick={handleOpenAdd}
               className="h-[34px] px-4 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs transition-all"
@@ -705,7 +893,46 @@ export const SystemUsersPage: React.FC = () => {
               </thead>
 
               <tbody className="divide-y divide-slate-200">
-                {filteredUsers.length === 0 ? (
+                {users.length === 0 ? (
+                  <tr>
+                    <td colSpan={21} className="py-16 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-lg mx-auto px-4">
+                        <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#005325] border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
+                          <FileSpreadsheet className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-[16px] font-bold text-slate-800 mb-1">
+                          Chưa có dữ liệu cán bộ, giảng viên
+                        </h3>
+                        <p className="text-[12.5px] text-slate-500 leading-relaxed mb-5 text-center">
+                          Dữ liệu cũ đã được xóa sạch. Hãy tải lên file Excel (18 cột chuẩn Đại học Tây Đô) để nạp hồ sơ nhân sự tự động, hoặc tải file mẫu Excel nếu cần chuẩn bị dữ liệu.
+                        </p>
+                        <div className="flex items-center gap-2.5 flex-wrap justify-center">
+                          <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="h-[36px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-all"
+                          >
+                            <Upload className="w-4 h-4" />
+                            <span>Import từ file Excel</span>
+                          </button>
+                          <button
+                            onClick={handleDownloadTemplate}
+                            className="h-[36px] px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-2xs transition-all"
+                          >
+                            <Download className="w-4 h-4 text-emerald-600" />
+                            <span>Tải file Excel mẫu</span>
+                          </button>
+                          <button
+                            onClick={handleOpenAdd}
+                            className="h-[36px] px-4 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-all"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>+ Thêm thủ công</span>
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td colSpan={21} className="py-12 text-center text-slate-500">
                       Không tìm thấy cán bộ, nhân sự nào phù hợp với bộ lọc hiện tại.
@@ -1143,6 +1370,228 @@ export const SystemUsersPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Modal: Import Users from Excel (18 Columns) */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[950px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+            {/* Header */}
+            <div className="bg-[#005325] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <FileSpreadsheet className="w-5 h-5 text-emerald-300" />
+                <div>
+                  <h3 className="font-bold text-[15px]">
+                    IMPORT HỒ SƠ NGƯỜI DÙNG TỪ FILE EXCEL
+                  </h3>
+                  <p className="text-[11.5px] text-emerald-100">
+                    Hỗ trợ file Excel 18 cột nhân sự theo định dạng chuẩn Đại học Tây Đô
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseImportModal}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-[12.5px]">
+              {/* Dropzone Upload Box */}
+              <div className="border-2 border-dashed border-emerald-300 rounded-2xl bg-emerald-50/40 p-6 text-center hover:bg-emerald-50/70 transition-colors">
+                <input
+                  type="file"
+                  id="excel-file-upload-input"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 text-[#005325] flex items-center justify-center mb-2.5 shadow-2xs">
+                    <FileUp className="w-6 h-6" />
+                  </div>
+                  <label
+                    htmlFor="excel-file-upload-input"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#005325] hover:bg-[#00421e] text-white font-medium rounded-xl cursor-pointer shadow-xs transition-all text-[13px]"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Chọn file Excel (.xlsx, .xls)</span>
+                  </label>
+                  <p className="text-slate-500 text-[12px] mt-2">
+                    Hệ thống sẽ tự động nhận diện và ghép đúng 18 cột thông tin nhân sự
+                  </p>
+
+                  <div className="mt-3 flex items-center gap-2 text-[12px]">
+                    <span className="text-slate-500">Chưa có file mẫu chuẩn?</span>
+                    <button
+                      type="button"
+                      onClick={handleDownloadTemplate}
+                      className="text-[#005325] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Tải file Excel mẫu 18 cột</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error Alert */}
+              {importError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-xl flex items-start gap-2.5">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Lỗi import file:</div>
+                    <div className="text-[12px] mt-0.5">{importError}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Processing Loader */}
+              {isProcessingFile && (
+                <div className="py-6 flex flex-col items-center justify-center text-slate-500 gap-2">
+                  <RefreshCw className="w-6 h-6 animate-spin text-emerald-600" />
+                  <span>Đang đọc và xử lý dữ liệu từ file Excel...</span>
+                </div>
+              )}
+
+              {/* Data Loaded Preview Card */}
+              {importFile && parsedImportUsers.length > 0 && !isProcessingFile && (
+                <div className="space-y-4">
+                  {/* Summary Bar */}
+                  <div className="bg-blue-50/90 border border-blue-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[14px]">
+                        {parsedImportUsers.length}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-blue-900 text-[13px]">
+                          Đã đọc thành công {parsedImportUsers.length} hồ sơ nhân sự
+                        </div>
+                        <div className="text-blue-700 text-[11.5px]">
+                          Tên file: <span className="font-medium">{importFile.name}</span> ({(importFile.size / 1024).toFixed(1)} KB)
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Overwrite Checkbox */}
+                    <label className="flex items-center gap-2 text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                      <input
+                        type="checkbox"
+                        checked={overwriteExisting}
+                        onChange={(e) => setOverwriteExisting(e.target.checked)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                      />
+                      <span className="font-medium text-[12px]">Xóa toàn bộ dữ liệu cũ và ghi đè</span>
+                    </label>
+                  </div>
+
+                  {/* Preview Table of first 5 rows */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-semibold text-slate-700 text-[12px]">
+                        Xem trước 5 hồ sơ đầu tiên (trong tổng số {parsedImportUsers.length} cán bộ):
+                      </span>
+                      <span className="text-slate-400 text-[11.5px]">
+                        Cuộn ngang để xem tất cả cột đã ghép
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl overflow-x-auto max-h-[220px]">
+                      <table className="w-full text-left text-[11.5px] border-collapse min-w-[1400px]">
+                        <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200">
+                          <tr>
+                            <th className="p-2 border-r border-slate-200 w-10 text-center">STT</th>
+                            <th className="p-2 border-r border-slate-200">Họ tên</th>
+                            <th className="p-2 border-r border-slate-200">Mã NS</th>
+                            <th className="p-2 border-r border-slate-200">Chức vụ</th>
+                            <th className="p-2 border-r border-slate-200">Đơn vị</th>
+                            <th className="p-2 border-r border-slate-200 text-center">Giới tính</th>
+                            <th className="p-2 border-r border-slate-200 text-center">Ngày sinh</th>
+                            <th className="p-2 border-r border-slate-200">Học hàm</th>
+                            <th className="p-2 border-r border-slate-200">Học vị</th>
+                            <th className="p-2 border-r border-slate-200">Chuyên môn</th>
+                            <th className="p-2 border-r border-slate-200 text-center">Năm TD</th>
+                            <th className="p-2 border-r border-slate-200 text-center">Ký HĐLĐ</th>
+                            <th className="p-2 border-r border-slate-200 text-center">CCSP</th>
+                            <th className="p-2 border-r border-slate-200">Anh văn</th>
+                            <th className="p-2 border-r border-slate-200">Tin học</th>
+                            <th className="p-2 border-r border-slate-200">Kiêm nhiệm</th>
+                            <th className="p-2">Đơn vị kiêm nhiệm</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {parsedImportUsers.slice(0, 5).map((u, i) => (
+                            <tr key={u.id} className="hover:bg-slate-50">
+                              <td className="p-2 text-center border-r border-slate-200 font-medium">{i + 1}</td>
+                              <td className="p-2 border-r border-slate-200 font-semibold text-slate-800">{u.hoTen}</td>
+                              <td className="p-2 border-r border-slate-200 font-mono">{u.maNhanSu}</td>
+                              <td className="p-2 border-r border-slate-200">{u.chucVu}</td>
+                              <td className="p-2 border-r border-slate-200">{u.donVi}</td>
+                              <td className="p-2 border-r border-slate-200 text-center">{u.gioiTinh}</td>
+                              <td className="p-2 border-r border-slate-200 text-center">{u.ngaySinh}</td>
+                              <td className="p-2 border-r border-slate-200">{u.hocHam || '—'}</td>
+                              <td className="p-2 border-r border-slate-200">{u.hocVi}</td>
+                              <td className="p-2 border-r border-slate-200">{u.chuyenMon}</td>
+                              <td className="p-2 border-r border-slate-200 text-center">{u.namTuyenDung}</td>
+                              <td className="p-2 border-r border-slate-200 text-center">{u.ngayKyHDLD}</td>
+                              <td className="p-2 border-r border-slate-200 text-center">{u.ccsp}</td>
+                              <td className="p-2 border-r border-slate-200">{u.anhVan}</td>
+                              <td className="p-2 border-r border-slate-200 truncate max-w-[120px]">{u.tinHoc}</td>
+                              <td className="p-2 border-r border-slate-200">{u.kiemNhiem || '—'}</td>
+                              <td className="p-2">{u.donViKiemNhiem || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Structure Reference Information */}
+              <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-slate-600 text-[11.5px] space-y-1">
+                <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Danh sách 18 cột nhân sự theo yêu cầu:</span>
+                </div>
+                <p className="leading-relaxed">
+                  1. STT, 2. Họ tên, 3. Chức vụ, 4. Đơn vị, 5. Mã nhân sự, 6. Giới tính, 7. Ngày tháng năm sinh, 8. Học hàm, học vị (tự động phân tách GS/PGS và TS/ThS nếu chung cột), 9. Chuyên môn, 10. Năm tuyển dụng, 11. Ngày ký HĐLĐ chính thức, 12. Năm tốt nghiệp, 13. Năm công nhận PGS, 14. Năm công nhận Giáo sư, 15. CCSP, 16. Anh văn, 17. Tin học, 18. Kiêm nhiệm, Đơn vị kiêm nhiệm.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 border-t border-slate-200 px-5 py-3 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={handleCloseImportModal}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+
+              <button
+                type="button"
+                disabled={parsedImportUsers.length === 0 || isProcessingFile}
+                onClick={handleConfirmImport}
+                className={`px-5 py-2 rounded-xl font-medium flex items-center gap-2 shadow-xs transition-all ${
+                  parsedImportUsers.length > 0 && !isProcessingFile
+                    ? 'bg-[#005325] hover:bg-[#00421e] text-white cursor-pointer'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  {parsedImportUsers.length > 0
+                    ? `Xác nhận nạp ${parsedImportUsers.length} cán bộ vào hệ thống`
+                    : 'Vui lòng chọn file Excel'}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}
