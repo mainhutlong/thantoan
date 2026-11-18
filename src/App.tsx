@@ -37,6 +37,7 @@ import { SystemConfigPage, DEFAULT_PERIODS } from './components/SystemConfigPage
 import { SystemAuditLogPage } from './components/SystemAuditLogPage';
 import { UserProfileView } from './components/UserProfileView';
 import { TduSsoLoginModal } from './components/TduSsoLoginModal';
+import { LoginPage } from './components/LoginPage';
 import { INITIAL_VBCC_DATA, INITIAL_TEACHING_DATA, INITIAL_ACCOUNTS } from './data/mockData';
 import {
   VbccRecord,
@@ -55,12 +56,64 @@ import {
 export default function App() {
   // App Mode & Persona Role
   const appMode: AppMode = 'teaching_payment';
-  const [currentRole, setCurrentRole] = useState<UserRole>('accountant_specialist');
+  // Authentication gate state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      const userStr = localStorage.getItem('tdu_auth_user');
+      const tokenStr = localStorage.getItem('tdu_token');
+      return !!(userStr && tokenStr);
+    } catch {
+      return false;
+    }
+  });
+
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    try {
+      const userStr = localStorage.getItem('tdu_auth_user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
+        if (roles.includes('SUPER_ADMIN') || u.vaiTroCode === 'admin') return 'admin';
+        if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) return 'approver';
+        if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) return 'accountant_specialist';
+        if (roles.includes('PHONG_QLKH')) return 'dean_faculty';
+      }
+    } catch {}
+    return 'admin';
+  });
+
   const [periodStatus, setPeriodStatus] = useState<PeriodStatus>('draft');
 
   // Accounts & Permission management
   const [accounts, setAccounts] = useState<UserAccount[]>(INITIAL_ACCOUNTS);
-  const [currentAccount, setCurrentAccount] = useState<UserAccount>(INITIAL_ACCOUNTS[0]);
+  const [currentAccount, setCurrentAccount] = useState<UserAccount>(() => {
+    try {
+      const userStr = localStorage.getItem('tdu_auth_user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
+        let mappedRole: UserRole = 'lecturer';
+        if (roles.includes('SUPER_ADMIN') || u.vaiTroCode === 'admin') mappedRole = 'admin';
+        else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) mappedRole = 'approver';
+        else if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) mappedRole = 'accountant_specialist';
+        else if (roles.includes('PHONG_QLKH')) mappedRole = 'dean_faculty';
+
+        return {
+          id: String(u.id || '1'),
+          username: (u.email || 'mnlong@tdu.edu.vn').split('@')[0],
+          fullName: u.hoTen || u.name || 'Mai Như Long',
+          email: u.email || 'mnlong@tdu.edu.vn',
+          role: mappedRole as any,
+          departmentName: u.donVi || 'Khoa Công nghệ thông tin',
+          assignedModule: u.chucVu || 'Phó Trưởng phòng CNTT',
+          maGV: u.maNhanSu || 'TDU00128',
+          status: 'active',
+          lastLogin: new Date().toLocaleString('vi-VN'),
+        };
+      }
+    } catch {}
+    return INITIAL_ACCOUNTS[0];
+  });
   const [selectedLecturerMa, setSelectedLecturerMa] = useState<string>('TDU00128');
 
   // Sidebar state - Default: Open on Desktop (>=1024px), Closed on Mobile (<1024px)
@@ -182,18 +235,31 @@ export default function App() {
     }
 
     const matchedAccount: UserAccount = {
-      id: String(user.id || 'sso-user'),
-      email: user.email || 'canbo@tdu.edu.vn',
-      fullName: user.hoTen || user.name || 'Cán bộ TDU',
-      role: mappedRole,
-      unit: user.donVi || 'Đại học Tây Đô',
-      phone: '',
-      gender: user.gioiTinh === 'Nữ' ? 'female' : 'male',
-      isActive: true,
-      lastLogin: new Date().toISOString(),
+      id: String(user.id || '1'),
+      username: (user.email || 'mnlong@tdu.edu.vn').split('@')[0],
+      fullName: user.hoTen || user.name || 'Mai Như Long',
+      email: user.email || 'mnlong@tdu.edu.vn',
+      role: mappedRole as any,
+      departmentName: user.donVi || 'Khoa Công nghệ thông tin',
+      assignedModule: user.chucVu || 'Phó Trưởng phòng CNTT',
+      maGV: user.maNhanSu || 'TDU00128',
+      status: 'active',
+      lastLogin: new Date().toLocaleString('vi-VN'),
     };
     setCurrentAccount(matchedAccount);
     setCurrentRole(mappedRole);
+    if (user.maNhanSu) {
+      setSelectedLecturerMa(user.maNhanSu);
+    }
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('tdu_auth_user');
+      localStorage.removeItem('tdu_token');
+    } catch {}
+    setIsAuthenticated(false);
   };
   const [isAppendMode, setIsAppendMode] = useState<boolean>(false);
   const [isMinutesOpen, setIsMinutesOpen] = useState<boolean>(false);
@@ -662,6 +728,11 @@ export default function App() {
     }
   };
 
+  // Bắt buộc đăng nhập bằng SSO: Nếu chưa đăng nhập thì hiển thị giao diện Đăng nhập
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={handleSsoLoginSuccess} />;
+  }
+
   return (
     <div className="h-screen h-[100dvh] bg-[#f1f5f9] flex flex-row font-sans text-slate-800 antialiased overflow-hidden min-w-0">
       {/* 1. Left Sidebar: With official TDU logo, title & "Danh mục thống kê" tab */}
@@ -693,6 +764,7 @@ export default function App() {
           onSendFeedback={() => setIsFeedbackModalOpen(true)}
           onOpenProfile={() => setIsProfileOpen(true)}
           onOpenSsoModal={() => setIsSsoModalOpen(true)}
+          onLogout={handleLogout}
         />
 
         {/* Main Center Content Zone */}

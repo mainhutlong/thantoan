@@ -26,6 +26,7 @@ interface HeaderProps {
   onSendFeedback: () => void;
   onOpenProfile?: () => void;
   onOpenSsoModal?: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -39,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSendFeedback,
   onOpenProfile,
   onOpenSsoModal,
+  onLogout,
 }) => {
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -379,9 +381,16 @@ export const Header: React.FC<HeaderProps> = ({
                       <div className="text-[14.5px] font-semibold text-[#1e3a5f] group-hover:underline truncate">
                         {userDisplayName}
                       </div>
-                      <div className="text-[12px] text-slate-500 truncate">
-                        {userEmail}
+                      <div className="text-[11.5px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
+                        <span className="font-mono text-slate-700 font-semibold">{currentAccount.maGV || 'TDU00128'}</span>
+                        <span>•</span>
+                        <span className="truncate">{userEmail}</span>
                       </div>
+                      {currentAccount.departmentName && (
+                        <div className="text-[11px] text-[#005325] font-medium truncate mt-0.5">
+                          {currentAccount.departmentName}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -462,10 +471,13 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* 3. Logout Button */}
                 <button
                   type="button"
-                  onClick={() => setShowUserMenu(false)}
-                  className="w-full text-left px-4 py-3 flex items-center gap-3 text-[13px] font-medium text-slate-800 hover:bg-slate-50 border-t border-slate-100 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    if (onLogout) onLogout();
+                  }}
+                  className="w-full text-left px-4 py-3 flex items-center gap-3 text-[13px] font-semibold text-rose-600 hover:bg-rose-50 border-t border-slate-100 cursor-pointer transition-colors"
                 >
-                  <LogOut className="w-4 h-4 text-slate-600" />
+                  <LogOut className="w-4 h-4 text-rose-600" />
                   <span>Đăng xuất</span>
                 </button>
               </div>
