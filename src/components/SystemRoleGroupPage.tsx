@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Info,
   LayoutGrid,
@@ -15,6 +15,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { RoleGroupPermission } from '../types';
+import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
 import {
   IconGiangDay,
   IconNghienCuuKH,
@@ -311,6 +312,78 @@ const MODULE_CATALOG: ModulePermissionCatalog[] = [
   },
 ];
 
+// Tự động phân bổ 245 cán bộ vào các nhóm vai trò chuẩn TDU
+const initialRoleMembers = (() => {
+  const super_admin: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const ban_giam_hieu: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const phong_dao_tao: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const phong_tai_chinh: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const trung_tam_khao_thi: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const phong_nckh: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const phong_tuyen_sinh_ctsv: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const phong_tchc: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const lanh_dao_khoa: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+  const giang_vien: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+
+  for (const p of FULL_PERSONNEL_245) {
+    const item = {
+      id: `u-${p.stt}`,
+      name: p.hoTen,
+      code: p.maNhanSu,
+      unit: p.donVi,
+      email: p.email || '',
+    };
+    const emailLower = (p.email || '').toLowerCase();
+    const hoTenLower = p.hoTen.toLowerCase();
+    const donViLower = p.donVi.toLowerCase();
+    const chucVuLower = (p.chucVu || '').toLowerCase();
+
+    if (emailLower === 'mnlong@tdu.edu.vn' || hoTenLower.includes('mai nhựt long')) {
+      super_admin.push(item);
+    } else if (
+      donViLower.includes('ban giám hiệu') ||
+      donViLower.includes('hội đồng trường') ||
+      chucVuLower.includes('hiệu trưởng') ||
+      chucVuLower.includes('chủ tịch')
+    ) {
+      ban_giam_hieu.push(item);
+    } else if (donViLower.includes('đào tạo')) {
+      phong_dao_tao.push(item);
+    } else if (donViLower.includes('tài chính') || donViLower.includes('kế hoạch')) {
+      phong_tai_chinh.push(item);
+    } else if (donViLower.includes('khảo thí') || donViLower.includes('đảm bảo chất lượng')) {
+      trung_tam_khao_thi.push(item);
+    } else if (donViLower.includes('quản lý khoa học')) {
+      phong_nckh.push(item);
+    } else if (donViLower.includes('tuyển sinh') || donViLower.includes('truyền thông')) {
+      phong_tuyen_sinh_ctsv.push(item);
+    } else if (donViLower.includes('tổ chức') || donViLower.includes('hành chính')) {
+      phong_tchc.push(item);
+    } else if (
+      chucVuLower.includes('trưởng khoa') ||
+      chucVuLower.includes('phó trưởng khoa') ||
+      chucVuLower.includes('trưởng bộ môn')
+    ) {
+      lanh_dao_khoa.push(item);
+    } else {
+      giang_vien.push(item);
+    }
+  }
+
+  return {
+    super_admin,
+    ban_giam_hieu,
+    phong_dao_tao,
+    phong_tai_chinh,
+    trung_tam_khao_thi,
+    phong_nckh,
+    phong_tuyen_sinh_ctsv,
+    phong_tchc,
+    lanh_dao_khoa,
+    giang_vien,
+  };
+})();
+
 // Danh sách Vai trò sát với cơ cấu vận hành thực tế tại Trường Đại học Tây Đô (TDU)
 const INITIAL_ROLES: RoleItem[] = [
   {
@@ -321,10 +394,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#f3e8ff',
     badgeText: '#9333ea',
     description: 'Toàn quyền quản trị hệ thống Thanh toán giờ giảng TDU, quản lý người dùng, phân quyền group, cấu hình đơn giá và nhật ký kiểm toán.',
-    members: [
-      { id: 'm1', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
-      { id: 'm2', name: 'Quản trị viên Hệ thống', code: 'ADMIN01', unit: 'Phòng CNTT', email: 'admin@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.super_admin,
     disabledPermissions: [],
   },
   {
@@ -335,10 +405,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#dcfce7',
     badgeText: '#15803d',
     description: 'Xem toàn bộ báo cáo thống kê tổng hợp, phê duyệt bảng tổng hợp thanh toán toàn trường, ký số biên bản nghiệm thu và khóa kỳ thanh toán.',
-    members: [
-      { id: 'm3', name: 'GS.TS. Phạm Hoàng Long', code: 'TDU00008', unit: 'Ban Giám hiệu', email: 'phlong@tdu.edu.vn' },
-      { id: 'm4', name: 'PGS.TS. Trần Quốc Hùng', code: 'TDU00245', unit: 'Ban Giám hiệu', email: 'tqhung@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.ban_giam_hieu,
     disabledPermissions: [
       'gg_xoa',
       'nckh_bb_xoa',
@@ -358,10 +425,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#e0f2fe',
     badgeText: '#0284c7',
     description: 'Phụ trách nhập liệu, kiểm tra, đối soát danh mục Thanh toán giờ giảng, Cố vấn học tập, phê duyệt phản hồi giờ giảng và lập biên bản nghiệm thu.',
-    members: [
-      { id: 'm5', name: 'TS. Nguyễn Văn Hòa', code: 'TDU00312', unit: 'Phòng Đào tạo', email: 'nvhoa@tdu.edu.vn' },
-      { id: 'm6', name: 'CN. Trương Minh Tuấn', code: 'TDU00511', unit: 'Phòng Đào tạo', email: 'tmtuan@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.phong_dao_tao,
     disabledPermissions: [
       'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
       'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
@@ -381,10 +445,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#dcfce7',
     badgeText: '#15803d',
     description: 'Quản lý bảng tổng hợp thanh toán toàn trường, kiểm soát khấu trừ thuế TNCN 10%, lập lệnh Ủy nhiệm chi (UNC) và xác nhận giải ngân tài chính.',
-    members: [
-      { id: 'm7', name: 'ThS. Lê Thị Kim Ngân', code: 'TDU00105', unit: 'Phòng Kế hoạch - Tài chính', email: 'ltkngan@tdu.edu.vn' },
-      { id: 'm8', name: 'CN. Phạm Văn Đạt', code: 'TDU00422', unit: 'Phòng Kế hoạch - Tài chính', email: 'pvdat@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.phong_tai_chinh,
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_xoa',
       'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_xoa',
@@ -405,9 +466,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#f3e8ff',
     badgeText: '#7e22ce',
     description: 'Chịu trách nhiệm nhập liệu, rà soát danh mục Coi thi, chấm thi, ra đề kết thúc học phần và giải trình phản hồi khảo thí của giảng viên.',
-    members: [
-      { id: 'm9', name: 'ThS. Lê Thị Mỹ Hạnh', code: 'TDU00409', unit: 'Trung tâm Khảo thí', email: 'ltmhanh@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.trung_tam_khao_thi,
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
       'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
@@ -427,9 +486,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#cffafe',
     badgeText: '#0e7490',
     description: 'Thẩm định và nhập liệu danh mục Nghiên cứu Khoa học (3 tab: Bài báo khoa học, Seminar học thuật, Đề tài NCKH), xét duyệt định mức hoàn thành NCKH.',
-    members: [
-      { id: 'm10', name: 'PGS.TS. Đinh Văn Khải', code: 'TDU00152', unit: 'Phòng QLKH & HTQT', email: 'dvkhai@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.phong_nckh,
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
       'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
@@ -447,9 +504,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#ffedd5',
     badgeText: '#c2410c',
     description: 'Quản lý kê khai giờ chuẩn Công tác tuyển sinh, Tư vấn hướng nghiệp và danh sách phân công Cố vấn học tập các lớp sinh viên.',
-    members: [
-      { id: 'm11', name: 'ThS. Huỳnh Quốc Bảo', code: 'TDU00377', unit: 'Phòng Tuyển sinh & Truyền thông', email: 'hqbao@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.phong_tuyen_sinh_ctsv,
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
       'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
@@ -469,9 +524,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#fce7f3',
     badgeText: '#db2777',
     description: 'Quản lý danh sách Người dùng & Hồ sơ cán bộ giảng viên (20 cột thông tin: học hàm, học vị, hợp đồng lao động, chứng chỉ, kiêm nhiệm).',
-    members: [
-      { id: 'm12', name: 'ThS. Phan Thanh Thảo', code: 'TDU00055', unit: 'Phòng Tổ chức - Hành chính', email: 'ptthao@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.phong_tchc,
     disabledPermissions: [
       'gg_xoa', 'gg_khoa_ky',
       'nckh_bb_xoa', 'nckh_sm_xoa', 'nckh_dt_xoa',
@@ -490,10 +543,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#fef3c7',
     badgeText: '#b45309',
     description: 'Trưởng/Phó Khoa và Trưởng Bộ môn rà soát bảng kê giờ giảng, NCKH, công tác khác của giảng viên thuộc Khoa mình quản lý trước khi trình Nhà trường.',
-    members: [
-      { id: 'm13', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
-      { id: 'm14', name: 'PGS.TS. Trần Quốc Hùng', code: 'TDU00245', unit: 'Khoa Dược - Điều dưỡng', email: 'tqhung@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.lanh_dao_khoa,
     disabledPermissions: [
       'gg_xoa', 'gg_khoa_ky',
       'nckh_bb_xoa', 'nckh_sm_xoa', 'nckh_dt_xoa',
@@ -513,10 +563,7 @@ const INITIAL_ROLES: RoleItem[] = [
     badgeBg: '#f1f5f9',
     badgeText: '#334155',
     description: 'Giảng viên tra cứu bảng thống kê thù lao 3 tab cá nhân (Giờ giảng, NCKH, Công tác khác), đối soát chi tiết, bấm xác nhận (3/3 mục) hoặc gửi phản hồi đính chính.',
-    members: [
-      { id: 'm15', name: 'TS. Đặng Minh Khôi', code: 'TDU00199', unit: 'Khoa Công nghệ thông tin', email: 'dmkhoi@tdu.edu.vn' },
-      { id: 'm16', name: 'ThS. Võ Hoàng Yến', code: 'TDU00288', unit: 'Khoa Kinh tế - Quản trị', email: 'vhyen@tdu.edu.vn' },
-    ],
+    members: initialRoleMembers.giang_vien,
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky', 'gg_duyet_dinh_chinh',
       'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
@@ -546,33 +593,47 @@ export interface StaffCandidate {
   chucVu?: string;
 }
 
-const DEFAULT_STAFF_CANDIDATES: StaffCandidate[] = [
-  { id: 'st1', name: 'TS. Nguyễn Văn Hòa', code: 'TDU00312', unit: 'Phòng Đào tạo', email: 'nvhoa@tdu.edu.vn', chucVu: 'Trưởng phòng' },
-  { id: 'st2', name: 'ThS. Võ Thị Thanh Thảo', code: 'TDU00088', unit: 'Phòng Đào tạo', email: 'vtthao@tdu.edu.vn', chucVu: 'Phó Trưởng phòng' },
-  { id: 'st3', name: 'CN. Trương Minh Tuấn', code: 'TDU00511', unit: 'Phòng Đào tạo', email: 'tmtuan@tdu.edu.vn', chucVu: 'Chuyên viên' },
-  { id: 'st4', name: 'ThS. Lê Thị Kim Ngân', code: 'TDU00105', unit: 'Phòng Kế hoạch - Tài chính', email: 'ltkngan@tdu.edu.vn', chucVu: 'Trưởng phòng' },
-  { id: 'st5', name: 'CN. Phạm Văn Đạt', code: 'TDU00422', unit: 'Phòng Kế hoạch - Tài chính', email: 'pvdat@tdu.edu.vn', chucVu: 'Kế toán viên' },
-  { id: 'st6', name: 'CN. Nguyễn Thu Hà', code: 'TDU00466', unit: 'Phòng Kế hoạch - Tài chính', email: 'ntha@tdu.edu.vn', chucVu: 'Kế toán thanh toán' },
-  { id: 'st7', name: 'ThS. Lê Thị Mỹ Hạnh', code: 'TDU00409', unit: 'Trung tâm Khảo thí', email: 'ltmhanh@tdu.edu.vn', chucVu: 'Giám đốc Trung tâm' },
-  { id: 'st8', name: 'CN. Đoàn Công Danh', code: 'TDU00508', unit: 'Trung tâm Khảo thí', email: 'dcdanh@tdu.edu.vn', chucVu: 'Chuyên viên khảo thí' },
-  { id: 'st9', name: 'PGS.TS. Đinh Văn Khải', code: 'TDU00152', unit: 'Phòng QLKH & HTQT', email: 'dvkhai@tdu.edu.vn', chucVu: 'Trưởng phòng' },
-  { id: 'st10', name: 'ThS. Hoàng Quốc Việt', code: 'TDU00267', unit: 'Phòng QLKH & HTQT', email: 'hqviet@tdu.edu.vn', chucVu: 'Chuyên viên NCKH' },
-  { id: 'st11', name: 'ThS. Huỳnh Quốc Bảo', code: 'TDU00377', unit: 'Phòng Tuyển sinh & Truyền thông', email: 'hqbao@tdu.edu.vn', chucVu: 'Phó Trưởng phòng' },
-  { id: 'st12', name: 'CN. Vũ Đức An', code: 'TDU00531', unit: 'Phòng Tuyển sinh & Truyền thông', email: 'vdan@tdu.edu.vn', chucVu: 'Chuyên viên' },
-  { id: 'st13', name: 'ThS. Phan Thanh Thảo', code: 'TDU00055', unit: 'Phòng Tổ chức - Hành chính', email: 'ptthao@tdu.edu.vn', chucVu: 'Trưởng phòng' },
-  { id: 'st14', name: 'CN. Bùi Thị Mỹ Duyên', code: 'TDU00389', unit: 'Phòng Tổ chức - Hành chính', email: 'btmduyen@tdu.edu.vn', chucVu: 'Chuyên viên' },
-  { id: 'st15', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn', chucVu: 'Giảng viên' },
-  { id: 'st16', name: 'TS. Đặng Minh Khôi', code: 'TDU00199', unit: 'Khoa Công nghệ thông tin', email: 'dmkhoi@tdu.edu.vn', chucVu: 'Phó Trưởng khoa' },
-  { id: 'st17', name: 'ThS. Nguyễn Hồng Phúc', code: 'TDU00344', unit: 'Khoa Công nghệ thông tin', email: 'nhphuc@tdu.edu.vn', chucVu: 'Giảng viên' },
-  { id: 'st18', name: 'PGS.TS. Trần Quốc Hùng', code: 'TDU00245', unit: 'Khoa Dược - Điều dưỡng', email: 'tqhung@tdu.edu.vn', chucVu: 'Trưởng khoa' },
-  { id: 'st19', name: 'TS.DS. Nguyễn Thị Bích Ngọc', code: 'TDU00276', unit: 'Khoa Dược - Điều dưỡng', email: 'ntbngoc@tdu.edu.vn', chucVu: 'Giảng viên' },
-  { id: 'st20', name: 'TS. Nguyễn Thanh Phong', code: 'TDU00188', unit: 'Khoa Kinh tế - Quản trị', email: 'ntphong@tdu.edu.vn', chucVu: 'Phó Trưởng khoa' },
-  { id: 'st21', name: 'ThS. Võ Hoàng Yến', code: 'TDU00288', unit: 'Khoa Kinh tế - Quản trị', email: 'vhyen@tdu.edu.vn', chucVu: 'Giảng viên' },
-  { id: 'st22', name: 'TS. Huỳnh Minh Trí', code: 'TDU00233', unit: 'Khoa Luật', email: 'hmtri@tdu.edu.vn', chucVu: 'Trưởng khoa' },
-];
+const DEFAULT_STAFF_CANDIDATES: StaffCandidate[] = FULL_PERSONNEL_245.map((p) => ({
+  id: `staff-${p.stt}`,
+  name: p.hoTen,
+  code: p.maNhanSu,
+  unit: p.donVi,
+  email: p.email || '',
+  chucVu: p.chucVu,
+}));
 
 export const SystemRoleGroupPage: React.FC = () => {
   const [roles, setRoles] = useState<RoleItem[]>(INITIAL_ROLES);
+
+  // Fetch danh sách vai trò và thành viên thực tế từ CSDL MySQL qua API
+  useEffect(() => {
+    fetch('/api/roles')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setRoles((prev) =>
+            prev.map((r) => {
+              const fromApi = data.data.find(
+                (d: any) =>
+                  d.code?.toLowerCase() === r.code?.toLowerCase() ||
+                  d.name?.toLowerCase() === r.name?.toLowerCase() ||
+                  d.id === r.id
+              );
+              if (fromApi && Array.isArray(fromApi.members) && fromApi.members.length > 0) {
+                return {
+                  ...r,
+                  members: fromApi.members,
+                };
+              }
+              return r;
+            })
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch /api/roles, using initialMembers', err);
+      });
+  }, []);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('super_admin');
   const [activeTopTab, setActiveTopTab] = useState<'thong_tin' | 'module' | 'quyen_han' | 'thanh_vien'>('quyen_han');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('thanh_toan_gio_giang');
