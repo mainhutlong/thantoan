@@ -138,17 +138,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f8fafc] px-4 py-8 select-none">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start pt-16 sm:pt-24 md:pt-28 pb-12 bg-[#f8fafc] px-4 select-none">
       <div className="w-full max-w-[380px] bg-white rounded-[28px] shadow-xl border border-slate-200/90 p-8 sm:p-9 flex flex-col items-center text-center animate-fadeIn">
         {/* Logo Trường Đại học Tây Đô */}
         <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center p-2 mb-4 overflow-hidden">
           <img src={logoTdu} alt="TDU Logo" className="w-full h-full object-contain" />
         </div>
 
-        {/* 1 dòng Đăng nhập duy nhất */}
-        <h1 className="text-[24px] font-bold text-slate-900 tracking-tight mb-6">
+        {/* Tiêu đề Đăng nhập */}
+        <h1 className="text-[24px] font-bold text-slate-900 tracking-tight">
           Đăng nhập
         </h1>
+        <p className="text-[13.5px] font-medium text-slate-500 mt-1 mb-6">
+          Hệ thống thanh toán giờ giảng TDU
+        </p>
 
         {/* Thông báo lỗi nếu có */}
         {errorMsg && (

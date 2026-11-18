@@ -28,10 +28,52 @@ export const HomePage: React.FC<HomePageProps> = ({
   const chucVu = (currentAccount?.chucVu || currentAccount?.assignedModule || '').toLowerCase().trim();
   const roleType = (currentAccount?.role || '').toLowerCase();
 
-  // 1. Quản trị hệ thống (Toàn quyền) - DUY NHẤT mnlong@tdu.edu.vn
+  // Kiểm tra nếu tài khoản hiện tại được thêm vào vai trò Quản trị viên hệ thống
+  let isCustomSuperAdmin = false;
+  try {
+    const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+    const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+    const myCode = (currentAccount?.maGV || '').toLowerCase().trim();
+    if (
+      adminMembers.some(
+        (m: any) =>
+          (m.email && m.email.toLowerCase().trim() === email) ||
+          (m.code && m.code.toLowerCase().trim() === myCode)
+      )
+    ) {
+      isCustomSuperAdmin = true;
+    }
+
+    // Kiểm tra thêm từ cache toàn bộ roles 'tdu_roles_state_v3'
+    const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+    const adminRoleObj = fullRolesCache.find(
+      (r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG'
+    );
+    if (adminRoleObj && Array.isArray(adminRoleObj.members)) {
+      if (
+        adminRoleObj.members.some(
+          (m: any) =>
+            (m.email && m.email.toLowerCase().trim() === email) ||
+            (m.code && m.code.toLowerCase().trim() === myCode)
+        )
+      ) {
+        isCustomSuperAdmin = true;
+      }
+    }
+  } catch {}
+
+  const userRoles: string[] = (currentAccount as any)?.roles || [];
+
+  // 1. Quản trị viên hệ thống (Toàn quyền) - Admin, mnlong, lvlinh hoặc người dùng được thêm vào vai trò Quản trị
   const isSuperAdmin =
     email === 'mnlong@tdu.edu.vn' ||
-    email.includes('mainhutlong');
+    email.includes('mainhutlong') ||
+    email === 'lvlinh@tdu.edu.vn' ||
+    email.includes('lvlinh') ||
+    currentRole === 'admin' ||
+    roleType === 'admin' ||
+    userRoles.includes('QUAN_TRI_VIEN_HE_THONG') ||
+    isCustomSuperAdmin;
 
   // 2. Phòng Quản lý Đào tạo
   const isDaoTao =

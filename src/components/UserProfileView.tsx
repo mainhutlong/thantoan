@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   User,
   Shield,
@@ -13,6 +13,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { UserAccount, UserRole } from '../types';
+import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
 
 interface UserProfileViewProps {
   currentAccount: UserAccount;
@@ -43,34 +44,75 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
+  // Tìm thông tin cán bộ thực tế trong FULL_PERSONNEL_245
+  const matchedStaff = useMemo(() => {
+    const accEmail = (currentAccount?.email || '').toLowerCase().trim();
+    const accMa = (currentAccount?.maGV || '').toLowerCase().trim();
+    const accName = (currentAccount?.fullName || '').toLowerCase().trim();
+    return FULL_PERSONNEL_245.find(
+      (p) =>
+        (p.email && p.email.toLowerCase().trim() === accEmail) ||
+        (p.maNhanSu && p.maNhanSu.toLowerCase().trim() === accMa) ||
+        p.hoTen.toLowerCase().trim() === accName
+    );
+  }, [currentAccount]);
+
+  const accEmail = (currentAccount?.email || '').toLowerCase().trim();
+  const isSystemAdmin =
+    accEmail === 'mnlong@tdu.edu.vn' ||
+    accEmail === 'lvlinh@tdu.edu.vn' ||
+    currentRole === 'admin' ||
+    currentAccount?.role === 'admin';
+
+  let displayTitle = matchedStaff?.chucVu || currentAccount?.chucVu || 'Giảng viên';
+  if (isSystemAdmin) {
+    displayTitle = 'Quản trị viên hệ thống' + (matchedStaff?.chucVu ? ` (Chức vụ: ${matchedStaff.chucVu})` : '');
+  } else if (currentRole === 'approver') {
+    displayTitle = 'Trưởng/phó đơn vị';
+  } else if (currentRole === 'accountant_specialist') {
+    displayTitle = 'Chuyên viên';
+  }
+
   // Editable personal & payment fields
   const [profileData, setProfileData] = useState({
-    fullName: currentAccount.fullName || 'Mai Nhựt Long',
-    staffCode: '01067016',
-    maGV: currentAccount.maGV || 'TDU00128',
-    email: currentAccount.email || 'mnlong@tdu.edu.vn',
-    cccd: '092082004272',
-    gender: 'Chưa cập nhật',
-    birthDate: '24/09/2001',
-    title:
-      currentRole === 'admin'
-        ? 'Super Admin'
-        : currentRole === 'approver'
-        ? 'Trưởng/phó đơn vị'
-        : currentRole === 'lecturer'
-        ? 'Giảng viên'
-        : 'Chuyên Viên',
-    department: 'Phòng Công nghệ thông tin',
-    permanentAddress: 'Chưa cập nhật',
-    currentAddress: 'Chưa cập nhật',
+    fullName: matchedStaff?.hoTen || currentAccount.fullName || 'Mai Nhựt Long',
+    staffCode: matchedStaff?.maNhanSu || currentAccount.maGV || '01067016',
+    maGV: matchedStaff?.maNhanSu || currentAccount.maGV || '01067016',
+    email: matchedStaff?.email || currentAccount.email || 'mnlong@tdu.edu.vn',
+    cccd: '09208200' + String(matchedStaff?.stt || '4272').padStart(4, '0'),
+    gender: matchedStaff?.gioiTinh || 'Nam',
+    birthDate: matchedStaff?.ngaySinh || 'Chưa cập nhật',
+    title: displayTitle,
+    department: matchedStaff?.donVi || currentAccount.departmentName || 'Phòng Công nghệ thông tin',
+    permanentAddress: 'Cần Thơ',
+    currentAddress: 'Cần Thơ',
     bankName: 'Vietcombank — Chi nhánh Cần Thơ',
-    bankAccount: '102874639912',
-    taxCode: '8401928374',
-    academicDegree: 'Tiến sĩ (TS)',
+    bankAccount: '102874' + String(matchedStaff?.stt || '159').padStart(6, '0'),
+    taxCode: '8401928' + String(matchedStaff?.stt || '159').padStart(3, '0'),
+    academicDegree: matchedStaff?.chucVu?.includes('TS') ? 'Tiến sĩ (TS)' : 'Thạc sĩ (ThS)',
     salaryCoefficient: '1.50 (Đơn giá chuẩn 180.000 đ/tiết)',
     teachingQuota: '270 tiết QC / năm học',
     nckhQuota: '150 giờ / năm học',
   });
+
+  useEffect(() => {
+    if (matchedStaff || currentAccount) {
+      setProfileData((prev) => ({
+        ...prev,
+        fullName: matchedStaff?.hoTen || currentAccount.fullName || prev.fullName,
+        staffCode: matchedStaff?.maNhanSu || currentAccount.maGV || prev.staffCode,
+        maGV: matchedStaff?.maNhanSu || currentAccount.maGV || prev.maGV,
+        email: matchedStaff?.email || currentAccount.email || prev.email,
+        cccd: '09208200' + String(matchedStaff?.stt || '4272').padStart(4, '0'),
+        gender: matchedStaff?.gioiTinh || prev.gender,
+        birthDate: matchedStaff?.ngaySinh || prev.birthDate,
+        title: displayTitle,
+        department: matchedStaff?.donVi || currentAccount.departmentName || prev.department,
+        bankAccount: '102874' + String(matchedStaff?.stt || '159').padStart(6, '0'),
+        taxCode: '8401928' + String(matchedStaff?.stt || '159').padStart(3, '0'),
+      }));
+    }
+  }, [matchedStaff, currentAccount, displayTitle]);
 
   // Update request form state
   const [updateRequestType, setUpdateRequestType] = useState('stk_ngan_hang');
@@ -614,7 +656,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             <div className="space-y-5 text-[12.5px]">
               <div className="space-y-3">
                 <h3 className="text-[13.5px] font-semibold text-slate-800">
-                  Thông Tin Đăng Nhập SSO TDU
+                  Thông Tin Tài Khoản & Bảo Mật
                 </h3>
                 <div className="grid grid-cols-12 items-center py-1">
                   <span className="col-span-5 text-slate-600">Tên đăng nhập</span>

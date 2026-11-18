@@ -178,13 +178,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside className="fixed inset-y-0 left-0 z-50 w-[285px] max-w-[85vw] bg-white flex flex-col select-none text-[13px] shadow-2xl lg:shadow-none lg:static lg:w-[265px] lg:shrink-0 lg:z-20 font-sans h-full border-r border-slate-200/90 transition-transform duration-200">
         {/* 1. TOP HEADER: Back Arrow, TDU Official Logo */}
-        <div className="h-[64px] px-3 border-b border-slate-200/90 flex items-center justify-center relative bg-white shrink-0">
+        <div className="h-[72px] px-3 border-b border-slate-200/90 flex items-center justify-center relative bg-white shrink-0">
           {/* Official TDU Logo - Centered & Prominent */}
           <div className="flex items-center justify-center">
             <img
               src={tduLogo}
               alt="Trường Đại học Tây Đô - Tay Do University"
-              className="h-[52px] max-h-[54px] w-auto object-contain drop-shadow-xs transition-transform hover:scale-105"
+              className="h-[56px] max-h-[58px] w-auto object-contain drop-shadow-xs transition-transform hover:scale-105"
             />
           </div>
 

@@ -530,17 +530,21 @@ export const buildInitialRoles = (): RoleItem[] => {
     membersMap[cfg.id] = [];
   }
 
-  // 1. Quản trị viên hệ thống: Thêm tài khoản mnlong
-  const mnLongStaff = FULL_PERSONNEL_245.find(
-    (p) => p.email?.toLowerCase().trim() === 'mnlong@tdu.edu.vn' || p.hoTen.toLowerCase().includes('mai nhựt long')
+  // 1. Quản trị viên hệ thống: Thêm tài khoản mnlong và lvlinh
+  const adminStaffs = FULL_PERSONNEL_245.filter(
+    (p) =>
+      p.email?.toLowerCase().trim() === 'mnlong@tdu.edu.vn' ||
+      p.hoTen.toLowerCase().includes('mai nhựt long') ||
+      p.email?.toLowerCase().trim() === 'lvlinh@tdu.edu.vn' ||
+      p.hoTen.toLowerCase().includes('lê vũ linh')
   );
-  if (mnLongStaff) {
+  for (const staff of adminStaffs) {
     membersMap['quan_tri_vien_he_thong'].push({
-      id: `u-${mnLongStaff.stt}`,
-      name: mnLongStaff.hoTen,
-      code: mnLongStaff.maNhanSu,
-      unit: mnLongStaff.donVi,
-      email: mnLongStaff.email || 'mnlong@tdu.edu.vn',
+      id: `u-${staff.stt}`,
+      name: staff.hoTen,
+      code: staff.maNhanSu,
+      unit: staff.donVi,
+      email: staff.email || '',
     });
   }
 
@@ -585,6 +589,21 @@ export const buildInitialRoles = (): RoleItem[] => {
       membersMap['khoa_co_ban']?.push(item);
     }
   }
+
+  // 4. Bổ sung các thành viên được thêm tùy biến lưu trong localStorage
+  try {
+    const customRoleMembers = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+    for (const [rId, list] of Object.entries(customRoleMembers)) {
+      if (Array.isArray(list) && membersMap[rId]) {
+        const existingCodes = new Set(membersMap[rId].map((m) => m.code?.toLowerCase()));
+        for (const item of list as any[]) {
+          if (item && item.code && !existingCodes.has(item.code.toLowerCase())) {
+            membersMap[rId].push(item);
+          }
+        }
+      }
+    }
+  } catch {}
 
   return SYSTEM_ROLES_CONFIG.map((cfg) => {
     let disabled: string[] = [];
@@ -644,7 +663,18 @@ const DEFAULT_STAFF_CANDIDATES: StaffCandidate[] = FULL_PERSONNEL_245.map((p) =>
 }));
 
 export const SystemRoleGroupPage: React.FC = () => {
-  const [roles, setRoles] = useState<RoleItem[]>(INITIAL_ROLES);
+  const [roles, setRoles] = useState<RoleItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('tdu_roles_state_v3');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return INITIAL_ROLES;
+  });
 
   // Fetch danh sách vai trò và thành viên thực tế từ CSDL MySQL qua API
   useEffect(() => {
@@ -652,8 +682,8 @@ export const SystemRoleGroupPage: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setRoles((prev) =>
-            prev.map((r) => {
+          setRoles((prev) => {
+            const merged = prev.map((r) => {
               const fromApi = data.data.find(
                 (d: any) =>
                   d.code?.toLowerCase() === r.code?.toLowerCase() ||
@@ -661,18 +691,25 @@ export const SystemRoleGroupPage: React.FC = () => {
                   d.id === r.id
               );
               if (fromApi && Array.isArray(fromApi.members) && fromApi.members.length > 0) {
+                // Hợp nhất thành viên từ API với thành viên hiện tại (tránh ghi đè mất thành viên)
+                const apiCodes = new Set(fromApi.members.map((m: any) => m.code?.toLowerCase()));
+                const localExtra = r.members.filter((m) => !apiCodes.has(m.code?.toLowerCase()));
                 return {
                   ...r,
-                  members: fromApi.members,
+                  members: [...fromApi.members, ...localExtra],
                 };
               }
               return r;
-            })
-          );
+            });
+            try {
+              localStorage.setItem('tdu_roles_state_v3', JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
         }
       })
       .catch((err) => {
-        console.warn('Could not fetch /api/roles, using initialMembers', err);
+        console.warn('Could not fetch /api/roles, using local roles state', err);
       });
   }, []);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('quan_tri_vien_he_thong');
@@ -890,35 +927,140 @@ export const SystemRoleGroupPage: React.FC = () => {
     }
   };
 
-  const handleConfirmAddMembers = () => {
+  const handleConfirmAddMembers = async () => {
     const toAdd = allCandidates.filter((c) => selectedCandidateIds.includes(c.id));
     if (toAdd.length === 0) return;
 
-    setRoles((prev) =>
-      prev.map((role) => {
+    const existingCodes = new Set(selectedRole.members.map((m) => m.code.toLowerCase()));
+    const newMembers = toAdd
+      .filter((c) => !existingCodes.has(c.code.toLowerCase()))
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        unit: c.unit,
+        email: c.email,
+      }));
+
+    if (newMembers.length === 0) {
+      setIsAddMemberModalOpen(false);
+      setSelectedCandidateIds([]);
+      return;
+    }
+
+    // 1. Cập nhật state & lưu cache toàn bộ roles
+    setRoles((prev) => {
+      const nextRoles = prev.map((role) => {
         if (role.id !== selectedRole.id) return role;
-        const existingCodes = new Set(role.members.map((m) => m.code.toLowerCase()));
-        const newMembers = toAdd
-          .filter((c) => !existingCodes.has(c.code.toLowerCase()))
-          .map((c) => ({
-            id: c.id,
-            name: c.name,
-            code: c.code,
-            unit: c.unit,
-            email: c.email,
-          }));
         return {
           ...role,
           members: [...role.members, ...newMembers],
         };
-      })
-    );
+      });
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(nextRoles));
+      } catch {}
+      return nextRoles;
+    });
+
+    // 2. Gửi API backend MySQL POST /api/roles/:roleId/members
+    try {
+      fetch(`/api/roles/${selectedRole.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: newMembers.map((m) => m.code || m.email || m.id),
+        }),
+      }).catch((e) => console.warn('Could not post to /api/roles/.../members:', e));
+    } catch {}
+
+    // 3. Lưu vào localStorage cache
+    try {
+      const cache = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+      const cur = cache[selectedRole.id] || [];
+      const curCodes = new Set(cur.map((x: any) => x.code?.toLowerCase()));
+      const toCache = [...cur, ...newMembers.filter((m) => !curCodes.has(m.code?.toLowerCase()))];
+      cache[selectedRole.id] = toCache;
+      localStorage.setItem('tdu_custom_role_members', JSON.stringify(cache));
+
+      // Nếu thêm vào Quản trị viên hệ thống (quan_tri_vien_he_thong)
+      const authUserStr = localStorage.getItem('tdu_auth_user');
+      if (authUserStr && selectedRole.id === 'quan_tri_vien_he_thong') {
+        const authUser = JSON.parse(authUserStr);
+        const isSelf = newMembers.some(
+          (m) =>
+            m.email.toLowerCase() === (authUser.email || '').toLowerCase() ||
+            m.code.toLowerCase() === (authUser.maNhanSu || '').toLowerCase()
+        );
+        if (isSelf) {
+          const roles = Array.isArray(authUser.roles) ? authUser.roles : [];
+          if (!roles.includes('QUAN_TRI_VIEN_HE_THONG')) {
+            roles.push('QUAN_TRI_VIEN_HE_THONG');
+            authUser.roles = roles;
+            localStorage.setItem('tdu_auth_user', JSON.stringify(authUser));
+          }
+        }
+      }
+    } catch {}
 
     setIsAddMemberModalOpen(false);
     setSelectedCandidateIds([]);
     setActiveTopTab('thanh_vien');
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2500);
+  };
+
+  const handleRemoveMember = (mem: { id: string; name: string; code: string; unit: string; email: string }) => {
+    // 1. Cập nhật state & lưu cache toàn bộ roles
+    setRoles((prev) => {
+      const nextRoles = prev.map((r) =>
+        r.id === selectedRole.id
+          ? {
+              ...r,
+              members: r.members.filter((m) => m.id !== mem.id && m.code !== mem.code),
+            }
+          : r
+      );
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(nextRoles));
+      } catch {}
+      return nextRoles;
+    });
+
+    // 2. Gửi API DELETE /api/roles/:roleId/members/:userId
+    try {
+      fetch(`/api/roles/${selectedRole.id}/members/${mem.code || mem.id}`, {
+        method: 'DELETE',
+      }).catch((e) => console.warn('Could not delete from /api/roles/.../members:', e));
+    } catch {}
+
+    // 3. Cập nhật localStorage
+    try {
+      const cache = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+      if (cache[selectedRole.id]) {
+        cache[selectedRole.id] = cache[selectedRole.id].filter(
+          (m: any) => m.id !== mem.id && m.code !== mem.code
+        );
+        localStorage.setItem('tdu_custom_role_members', JSON.stringify(cache));
+      }
+
+      const authUserStr = localStorage.getItem('tdu_auth_user');
+      if (authUserStr && selectedRole.id === 'quan_tri_vien_he_thong') {
+        const authUser = JSON.parse(authUserStr);
+        if (
+          mem.email.toLowerCase() === (authUser.email || '').toLowerCase() ||
+          mem.code.toLowerCase() === (authUser.maNhanSu || '').toLowerCase()
+        ) {
+          if (Array.isArray(authUser.roles)) {
+            authUser.roles = authUser.roles.filter((x: string) => x !== 'QUAN_TRI_VIEN_HE_THONG');
+            localStorage.setItem('tdu_auth_user', JSON.stringify(authUser));
+          }
+        }
+      }
+    } catch {}
+
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2000);
   };
 
   return (
@@ -1469,18 +1611,7 @@ export const SystemRoleGroupPage: React.FC = () => {
                           </div>
                         </div>
                         <button
-                          onClick={() =>
-                            setRoles((prev) =>
-                              prev.map((r) =>
-                                r.id === selectedRole.id
-                                ? {
-                                    ...r,
-                                    members: r.members.filter((m) => m.id !== mem.id),
-                                  }
-                                : r
-                              )
-                            )
-                          }
+                          onClick={() => handleRemoveMember(mem)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer"
                           title="Xóa khỏi vai trò"
                         >

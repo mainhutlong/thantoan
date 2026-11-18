@@ -95,9 +95,32 @@ export default function App() {
         const u = JSON.parse(userStr);
         const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
         const uEmail = (u.email || '').toLowerCase().trim();
+        let isCustomAdmin = false;
+        try {
+          const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+          const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+          if (
+            adminMembers.some(
+              (m: any) =>
+                m.email?.toLowerCase().trim() === uEmail ||
+                m.code?.toLowerCase().trim() === (u.maNhanSu || '').toLowerCase().trim()
+            )
+          ) {
+            isCustomAdmin = true;
+          }
+        } catch {}
+
         let mappedRole: UserRole = 'lecturer';
-        if (uEmail === 'mnlong@tdu.edu.vn' || roles.includes('QUAN_TRI_VIEN_HE_THONG') || roles.includes('SUPER_ADMIN')) mappedRole = 'admin';
-        else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) mappedRole = 'approver';
+        if (
+          uEmail === 'mnlong@tdu.edu.vn' ||
+          uEmail === 'lvlinh@tdu.edu.vn' ||
+          uEmail.includes('lvlinh') ||
+          roles.includes('QUAN_TRI_VIEN_HE_THONG') ||
+          roles.includes('SUPER_ADMIN') ||
+          isCustomAdmin
+        ) {
+          mappedRole = 'admin';
+        } else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) mappedRole = 'approver';
         else if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) mappedRole = 'accountant_specialist';
         else if (roles.includes('PHONG_QLKH')) mappedRole = 'dean_faculty';
         else mappedRole = 'lecturer';

@@ -58,20 +58,68 @@ router.get('/', async (_req: Request, res: Response) => {
 router.post('/:roleId/members', async (req: Request, res: Response) => {
   try {
     const { roleId } = req.params;
-    const { userIds } = req.body; // Mảng id người dùng
+    const { userIds, members } = req.body;
 
-    if (!Array.isArray(userIds) || userIds.length === 0) {
+    const rawList = Array.isArray(userIds) ? userIds : (Array.isArray(members) ? members : []);
+    if (rawList.length === 0) {
       return res.status(400).json({ success: false, message: 'Danh sách cán bộ không hợp lệ!' });
     }
 
-    for (const uid of userIds) {
-      await pool.query(
-        `INSERT IGNORE INTO nguoi_dung_vai_tro (nguoi_dung_id, vai_tro_id) VALUES (?, ?)`,
-        [uid, roleId]
+    // Tìm vai_tro_id dù roleId là ID số hay ma_vai_tro
+    let targetRoleId: number | null = null;
+    if (/^\d+$/.test(roleId)) {
+      targetRoleId = parseInt(roleId, 10);
+    } else {
+      const [r]: any = await pool.query(
+        'SELECT id FROM vai_tro WHERE ma_vai_tro = ? OR LOWER(ma_vai_tro) = LOWER(?) LIMIT 1',
+        [roleId, roleId]
       );
+      if (r.length > 0) {
+        targetRoleId = r[0].id;
+      } else {
+        const [allRoles]: any = await pool.query('SELECT id, ma_vai_tro FROM vai_tro');
+        const found = allRoles.find((ar: any) =>
+          ar.ma_vai_tro?.toLowerCase() === roleId.toLowerCase() ||
+          ar.ma_vai_tro?.toLowerCase().replace(/_/g, '') === roleId.toLowerCase().replace(/_/g, '')
+        );
+        if (found) targetRoleId = found.id;
+      }
     }
 
-    return res.json({ success: true, message: `Đã thêm ${userIds.length} cán bộ vào vai trò thành công!` });
+    if (!targetRoleId) {
+      return res.status(404).json({ success: false, message: `Không tìm thấy vai trò ${roleId}` });
+    }
+
+    let countAdded = 0;
+    for (const item of rawList) {
+      let resolvedUserId: number | null = null;
+      const val = typeof item === 'object' ? (item.code || item.email || item.id) : String(item);
+
+      if (/^\d+$/.test(val)) {
+        resolvedUserId = parseInt(val, 10);
+      } else {
+        const cleanVal = val.replace(/^(u-|staff-)/, '');
+        const [u]: any = await pool.query(
+          'SELECT id FROM nguoi_dung WHERE ma_nhan_su = ? OR email = ? OR id = ? LIMIT 1',
+          [val, val, cleanVal]
+        );
+        if (u.length > 0) resolvedUserId = u[0].id;
+      }
+
+      if (resolvedUserId) {
+        await pool.query(
+          `INSERT IGNORE INTO nguoi_dung_vai_tro (nguoi_dung_id, vai_tro_id) VALUES (?, ?)`,
+          [resolvedUserId, targetRoleId]
+        );
+        countAdded++;
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Đã thêm ${countAdded} cán bộ vào vai trò thành công!`,
+      addedCount: countAdded,
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Lỗi gán vai trò', error: error.message });
   }
@@ -81,10 +129,46 @@ router.post('/:roleId/members', async (req: Request, res: Response) => {
 router.delete('/:roleId/members/:userId', async (req: Request, res: Response) => {
   try {
     const { roleId, userId } = req.params;
-    await pool.query(
-      `DELETE FROM nguoi_dung_vai_tro WHERE vai_tro_id = ? AND nguoi_dung_id = ?`,
-      [roleId, userId]
-    );
+
+    let targetRoleId: number | null = null;
+    if (/^\d+$/.test(roleId)) {
+      targetRoleId = parseInt(roleId, 10);
+    } else {
+      const [r]: any = await pool.query(
+        'SELECT id FROM vai_tro WHERE ma_vai_tro = ? OR LOWER(ma_vai_tro) = LOWER(?) LIMIT 1',
+        [roleId, roleId]
+      );
+      if (r.length > 0) {
+        targetRoleId = r[0].id;
+      } else {
+        const [allRoles]: any = await pool.query('SELECT id, ma_vai_tro FROM vai_tro');
+        const found = allRoles.find((ar: any) =>
+          ar.ma_vai_tro?.toLowerCase() === roleId.toLowerCase() ||
+          ar.ma_vai_tro?.toLowerCase().replace(/_/g, '') === roleId.toLowerCase().replace(/_/g, '')
+        );
+        if (found) targetRoleId = found.id;
+      }
+    }
+
+    let resolvedUserId: number | null = null;
+    if (/^\d+$/.test(userId)) {
+      resolvedUserId = parseInt(userId, 10);
+    } else {
+      const cleanVal = userId.replace(/^(u-|staff-)/, '');
+      const [u]: any = await pool.query(
+        'SELECT id FROM nguoi_dung WHERE ma_nhan_su = ? OR email = ? OR id = ? LIMIT 1',
+        [userId, userId, cleanVal]
+      );
+      if (u.length > 0) resolvedUserId = u[0].id;
+    }
+
+    if (targetRoleId && resolvedUserId) {
+      await pool.query(
+        `DELETE FROM nguoi_dung_vai_tro WHERE vai_tro_id = ? AND nguoi_dung_id = ?`,
+        [targetRoleId, resolvedUserId]
+      );
+    }
+
     return res.json({ success: true, message: 'Đã xóa cán bộ khỏi vai trò!' });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Lỗi xóa khỏi vai trò', error: error.message });
