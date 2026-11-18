@@ -51,18 +51,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const chucVu = (currentAccount?.chucVu || currentAccount?.assignedModule || '').toLowerCase().trim();
   const roleType = (currentAccount?.role || '').toLowerCase();
 
-  // 1. Quản trị hệ thống (Toàn quyền)
+  // 1. Quản trị hệ thống (Toàn quyền) - DUY NHẤT Mai Nhựt Long (mnlong@tdu.edu.vn)
   const isSuperAdmin =
     email === 'mnlong@tdu.edu.vn' ||
-    email.includes('mainhutlong') ||
-    dept.includes('công nghệ thông tin') ||
-    dept.includes('cntt') ||
-    roleType === 'admin';
+    email.includes('mainhutlong');
 
   // 2. Phòng Quản lý Đào tạo: Thấy Thanh toán giờ giảng (toàn quyền) & Phản hồi của giảng viên
   const isDaoTao =
     !isSuperAdmin &&
-    (dept.includes('đào tạo') || dept.includes('dao tao') || roleType === 'accountant_specialist');
+    (dept.includes('đào tạo') || dept.includes('dao tao'));
 
   // 3. Phòng Quản lý khoa học và Hợp tác quốc tế: Thấy Nghiên cứu khoa học (toàn quyền) & Phản hồi của giảng viên
   const isQLKH =
@@ -75,16 +72,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     (dept.includes('tài chính') || dept.includes('kế hoạch') || dept.includes('tai chinh'));
 
   // 5. Cán bộ có chức vụ Giảng viên: Thấy menu tra cứu và phản hồi (toàn quyền) xem cái của mình
+  // lvlinh, cán bộ có chức vụ Giảng viên, giảng viên các khoa hoặc role lecturer
   const isGiangVien =
     !isSuperAdmin &&
     !isDaoTao &&
     !isQLKH &&
     !isTaiChinh &&
-    (chucVu.includes('giảng viên') ||
+    (email.includes('lvlinh') ||
+      chucVu.includes('giảng viên') ||
       chucVu.includes('giang vien') ||
       chucVu.includes('gv') ||
       dept.toLowerCase().startsWith('khoa') ||
-      currentAccount?.maGV !== undefined);
+      roleType === 'lecturer');
 
   // Điều kiện hiển thị từng phân hệ:
   const canViewDanhMucGroup = isSuperAdmin || isTaiChinh || isDaoTao || isQLKH;

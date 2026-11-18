@@ -3930,7 +3930,7 @@ export const FULL_PERSONNEL_245: SystemUserProfile[] = [
     "id": "user-159",
     "stt": 159,
     "hoTen": "Lê Vũ Linh",
-    "chucVu": "Chuyên viên",
+    "chucVu": "Giảng viên",
     "donVi": "Phòng Công nghệ thông tin",
     "maNhanSu": "01060054",
     "email": "lvlinh@tdu.edu.vn",

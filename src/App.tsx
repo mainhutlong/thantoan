@@ -73,13 +73,15 @@ export default function App() {
       if (userStr) {
         const u = JSON.parse(userStr);
         const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
-        if (roles.includes('SUPER_ADMIN') || u.vaiTroCode === 'admin') return 'admin';
+        const uEmail = (u.email || '').toLowerCase().trim();
+        if (uEmail === 'mnlong@tdu.edu.vn' || roles.includes('QUAN_TRI_VIEN_HE_THONG') || roles.includes('SUPER_ADMIN')) return 'admin';
         if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) return 'approver';
         if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) return 'accountant_specialist';
         if (roles.includes('PHONG_QLKH')) return 'dean_faculty';
+        return 'lecturer';
       }
     } catch {}
-    return 'admin';
+    return 'lecturer';
   });
 
   const [periodStatus, setPeriodStatus] = useState<PeriodStatus>('draft');
@@ -92,21 +94,23 @@ export default function App() {
       if (userStr) {
         const u = JSON.parse(userStr);
         const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
+        const uEmail = (u.email || '').toLowerCase().trim();
         let mappedRole: UserRole = 'lecturer';
-        if (roles.includes('SUPER_ADMIN') || u.vaiTroCode === 'admin') mappedRole = 'admin';
+        if (uEmail === 'mnlong@tdu.edu.vn' || roles.includes('QUAN_TRI_VIEN_HE_THONG') || roles.includes('SUPER_ADMIN')) mappedRole = 'admin';
         else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) mappedRole = 'approver';
         else if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) mappedRole = 'accountant_specialist';
         else if (roles.includes('PHONG_QLKH')) mappedRole = 'dean_faculty';
+        else mappedRole = 'lecturer';
 
         return {
           id: String(u.id || '1'),
           username: (u.email || 'mnlong@tdu.edu.vn').split('@')[0],
-          fullName: u.hoTen || u.name || 'Mai Nhựt Long',
-          email: u.email || 'mnlong@tdu.edu.vn',
+          fullName: u.hoTen || u.name || 'Người dùng TDU',
+          email: u.email || 'canbo@tdu.edu.vn',
           role: mappedRole as any,
-          departmentName: u.donVi || 'Phòng Công nghệ thông tin',
-          chucVu: u.chucVu || 'Phó Trưởng phòng',
-          assignedModule: u.chucVu || 'Toàn quyền hệ thống',
+          departmentName: u.donVi || 'Trường Đại học Tây Đô',
+          chucVu: u.chucVu || 'Giảng viên',
+          assignedModule: u.chucVu || 'Giảng viên',
           maGV: u.maNhanSu || 'TDU00128',
           status: 'active',
           lastLogin: new Date().toLocaleString('vi-VN'),
@@ -224,8 +228,9 @@ export default function App() {
   const handleSsoLoginSuccess = (user: any) => {
     if (!user) return;
     const roles: string[] = Array.isArray(user.roles) ? user.roles : (user.vaiTroCode ? [user.vaiTroCode] : []);
+    const emailLower = (user.email || '').toLowerCase().trim();
     let mappedRole: UserRole = 'lecturer';
-    if (roles.includes('SUPER_ADMIN') || user.vaiTroCode === 'admin') {
+    if (emailLower === 'mnlong@tdu.edu.vn' || roles.includes('QUAN_TRI_VIEN_HE_THONG') || roles.includes('SUPER_ADMIN')) {
       mappedRole = 'admin';
     } else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA') || user.vaiTroCode === 'truong_khoa' || user.vaiTroCode === 'truong_phong') {
       mappedRole = 'approver';
@@ -233,17 +238,19 @@ export default function App() {
       mappedRole = 'accountant_specialist';
     } else if (roles.includes('PHONG_QLKH') || user.vaiTroCode === 'tro_ly') {
       mappedRole = 'dean_faculty';
+    } else {
+      mappedRole = 'lecturer';
     }
 
     const matchedAccount: UserAccount = {
       id: String(user.id || '1'),
-      username: (user.email || 'mnlong@tdu.edu.vn').split('@')[0],
-      fullName: user.hoTen || user.name || 'Mai Nhựt Long',
-      email: user.email || 'mnlong@tdu.edu.vn',
+      username: (user.email || 'canbo@tdu.edu.vn').split('@')[0],
+      fullName: user.hoTen || user.name || 'Người dùng TDU',
+      email: user.email || 'canbo@tdu.edu.vn',
       role: mappedRole as any,
-      departmentName: user.donVi || 'Phòng Công nghệ thông tin',
-      chucVu: user.chucVu || 'Cán bộ',
-      assignedModule: user.chucVu || 'Toàn quyền hệ thống',
+      departmentName: user.donVi || 'Trường Đại học Tây Đô',
+      chucVu: user.chucVu || 'Giảng viên',
+      assignedModule: user.chucVu || 'Giảng viên',
       maGV: user.maNhanSu || 'TDU00128',
       status: 'active',
       lastLogin: new Date().toLocaleString('vi-VN'),
@@ -256,9 +263,8 @@ export default function App() {
     setIsAuthenticated(true);
 
     // Tự động định tuyến ban đầu thông minh theo phân quyền đơn vị
-    const emailLower = (user.email || '').toLowerCase().trim();
     const deptLower = (user.donVi || '').toLowerCase().trim();
-    const isSuper = emailLower === 'mnlong@tdu.edu.vn' || deptLower.includes('công nghệ thông tin') || mappedRole === 'admin';
+    const isSuper = emailLower === 'mnlong@tdu.edu.vn';
     const isDaoTao = !isSuper && deptLower.includes('đào tạo');
     const isQLKH = !isSuper && (deptLower.includes('khoa học') || deptLower.includes('qlkh'));
     const isTaiChinh = !isSuper && (deptLower.includes('tài chính') || deptLower.includes('kế hoạch'));
