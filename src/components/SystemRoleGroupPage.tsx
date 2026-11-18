@@ -316,42 +316,249 @@ const ALL_PERMISSION_IDS = MODULE_CATALOG.flatMap((m) =>
   m.sections.flatMap((s) => s.items.map((i) => i.id))
 );
 
-// 26 vai trò theo 26 đơn vị chính thức của Trường Đại học Tây Đô
-export const UNIT_ROLES_26_CONFIG = [
-  { id: 'hoi_dong_co_van', name: 'Hội đồng cố vấn', code: 'HOI_DONG_CO_VAN', color: '#64748b' },
-  { id: 'hoi_dong_truong', name: 'Hội đồng trường', code: 'HOI_DONG_TRUONG', color: '#6366f1' },
-  { id: 'ban_giam_hieu', name: 'Ban Giám hiệu', code: 'BAN_GIAM_HIEU', color: '#9333ea' },
-  { id: 'khoa_co_ban', name: 'Khoa cơ bản', code: 'KHOA_CO_BAN', color: '#0284c7' },
-  { id: 'khoa_luat', name: 'Khoa Luật', code: 'KHOA_LUAT', color: '#0284c7' },
-  { id: 'ban_phap_che_kiem_tra', name: 'Ban Pháp chế - Kiểm tra', code: 'BAN_PHAP_CHE_KIEM_TRA', color: '#64748b' },
-  { id: 'tap_chi_nckh_ptkt', name: 'Tạp chí NCKH&PTKT', code: 'TAP_CHI_NCKH_PTKT', color: '#0d9488' },
-  { id: 'khoa_duoc_dieu_duong', name: 'Khoa Dược - Điều dưỡng', code: 'KHOA_DUOC_DIEU_DUONG', color: '#0284c7' },
-  { id: 'khoa_ke_toan_tai_chinh_ngan_hang', name: 'Khoa Kế toán - Tài chính - Ngân hàng', code: 'KHOA_KT_TC_NH', color: '#0284c7' },
-  { id: 'khoa_quan_tri_kinh_doanh_du_lich', name: 'Khoa Quản trị kinh doanh - Du lịch', code: 'KHOA_QTKD_DU_LICH', color: '#0284c7' },
-  { id: 'khoa_ky_thuat_cong_nghe', name: 'Khoa Kỹ thuật - Công nghệ', code: 'KHOA_KY_THUAT_CONG_NGHE', color: '#0284c7' },
-  { id: 'khoa_ngoai_ngu_xhnv_tt', name: 'Khoa Ngoại ngữ - Xã hội nhân văn và Truyền thông', code: 'KHOA_NN_XHNV_TT', color: '#0284c7' },
-  { id: 'khoa_sinh_hoc_ung_dung', name: 'Khoa Sinh học ứng dụng', code: 'KHOA_SINH_HOC_UNG_DUNG', color: '#0284c7' },
-  { id: 'phong_to_chuc_hanh_chinh', name: 'Phòng Tổ chức - Hành chính', code: 'PHONG_TO_CHUC_HANH_CHINH', color: '#ec4899' },
-  { id: 'phong_cong_nghe_thong_tin', name: 'Phòng Công nghệ thông tin', code: 'PHONG_CONG_NGHE_THONG_TIN', color: '#dc2626' },
-  { id: 'phong_quan_tri_thiet_bi', name: 'Phòng Quản trị thiết bị', code: 'PHONG_QUAN_TRI_THIET_BI', color: '#64748b' },
-  { id: 'phong_quan_ly_dao_tao', name: 'Phòng Quản lý Đào tạo', code: 'PHONG_QUAN_LY_DAO_TAO', color: '#2563eb' },
-  { id: 'phong_ctct_qlsv', name: 'Phòng Công tác chính trị - Quản lý sinh viên', code: 'PHONG_CTCT_QLSV', color: '#f97316' },
-  { id: 'phong_tai_chinh_ke_hoach', name: 'Phòng Tài chính - Kế hoạch', code: 'PHONG_TAI_CHINH_KE_HOACH', color: '#16a34a' },
-  { id: 'phong_tuyen_sinh_truyen_thong', name: 'Phòng Tuyển sinh và Truyền thông', code: 'PHONG_TUYEN_SINH_TRUYEN_THONG', color: '#ea580c' },
-  { id: 'phong_qlkh_htqt', name: 'Phòng Quản lý khoa học và Hợp tác quốc tế', code: 'PHONG_QLKH_HTQT', color: '#0891b2' },
-  { id: 'tt_kiem_tra_dbclgd', name: 'Trung tâm Kiểm tra và Đảm bảo chất lượng giáo dục', code: 'TT_KT_DBCLGD', color: '#7c3aed' },
-  { id: 'tt_ngoai_ngu_tin_hoc', name: 'Trung tâm Ngoại ngữ - Tin học', code: 'TT_NGOAI_NGU_TIN_HOC', color: '#0284c7' },
-  { id: 'tt_khoi_nghiep_doi_moi_sang_tao', name: 'Trung tâm Khởi nghiệp Đổi mới sáng tạo Hỗ trợ sinh viên và Hợp tác doanh nghiệp', code: 'TT_KHOI_NGHIEP_DOANH_NGHIEP', color: '#d97706' },
-  { id: 'thu_vien', name: 'Thư viện', code: 'THU_VIEN', color: '#64748b' },
-  { id: 'van_phong_dang', name: 'Văn phòng Đảng', code: 'VAN_PHONG_DANG', color: '#dc2626' },
+// Danh sách cấu hình các vai trò chuẩn hệ thống TDU:
+// 1. Quản trị viên hệ thống (nằm ở trên cùng, chứa mnlong)
+// 2. Hội đồng cố vấn
+// 3. Hội đồng trường
+// 4. Ban Giám hiệu
+// 5. Phòng Quản lý Đào tạo (nằm ngay dưới Ban Giám hiệu)
+// 6. Phòng Quản lý khoa học và Hợp tác quốc tế
+// 7. Giảng viên (chứa chung toàn bộ cán bộ có chức vụ Giảng viên)
+// 8. Phòng Tài chính - Kế hoạch và các Khoa, Phòng ban, Trung tâm tiếp theo
+export const SYSTEM_ROLES_CONFIG = [
+  {
+    id: 'quan_tri_vien_he_thong',
+    name: 'Quản trị viên hệ thống',
+    code: 'QUAN_TRI_VIEN_HE_THONG',
+    color: '#dc2626',
+    desc: 'Quản trị viên hệ thống (Toàn quyền): Toàn quyền truy cập, cấu hình và quản trị mọi phân hệ trên hệ thống.',
+  },
+  {
+    id: 'hoi_dong_co_van',
+    name: 'Hội đồng cố vấn',
+    code: 'HOI_DONG_CO_VAN',
+    color: '#64748b',
+    desc: 'Hội đồng Cố vấn cấp cao của Trường Đại học Tây Đô.',
+  },
+  {
+    id: 'hoi_dong_truong',
+    name: 'Hội đồng trường',
+    code: 'HOI_DONG_TRUONG',
+    color: '#6366f1',
+    desc: 'Hội đồng Trường Đại học Tây Đô.',
+  },
+  {
+    id: 'ban_giam_hieu',
+    name: 'Ban Giám hiệu',
+    code: 'BAN_GIAM_HIEU',
+    color: '#9333ea',
+    desc: 'Ban Giám hiệu Trường Đại học Tây Đô - Phê duyệt tổng hợp và chỉ đạo vận hành.',
+  },
+  {
+    id: 'phong_quan_ly_dao_tao',
+    name: 'Phòng Quản lý Đào tạo',
+    code: 'PHONG_QUAN_LY_DAO_TAO',
+    color: '#2563eb',
+    desc: 'Phòng Quản lý Đào tạo: Thấy được menu Thanh toán giờ giảng (toàn quyền) và Phản hồi của giảng viên.',
+  },
+  {
+    id: 'phong_qlkh_htqt',
+    name: 'Phòng Quản lý khoa học và Hợp tác quốc tế',
+    code: 'PHONG_QLKH_HTQT',
+    color: '#0891b2',
+    desc: 'Phòng Quản lý khoa học và Hợp tác quốc tế: Thấy được menu Nghiên cứu khoa học (toàn quyền) và Phản hồi của giảng viên.',
+  },
+  {
+    id: 'giang_vien',
+    name: 'Giảng viên',
+    code: 'GIANG_VIEN',
+    color: '#0284c7',
+    desc: 'Giảng viên: Tra cứu giờ giảng dạy, nghiên cứu khoa học, xem chi tiết thù lao cá nhân và gửi phản hồi xác nhận.',
+  },
+  {
+    id: 'phong_tai_chinh_ke_hoach',
+    name: 'Phòng Tài chính - Kế hoạch',
+    code: 'PHONG_TAI_CHINH_KE_HOACH',
+    color: '#16a34a',
+    desc: 'Phòng Tài chính - Kế hoạch: Xem được toàn bộ số liệu thống kê, tổng hợp thanh toán và chi trả tài chính UNC (ngoại trừ menu Hệ thống).',
+  },
+  {
+    id: 'khoa_co_ban',
+    name: 'Khoa cơ bản',
+    code: 'KHOA_CO_BAN',
+    color: '#0284c7',
+    desc: 'Khoa Cơ bản - Giảng viên tra cứu thù lao giảng dạy, NCKH cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'khoa_luat',
+    name: 'Khoa Luật',
+    code: 'KHOA_LUAT',
+    color: '#0284c7',
+    desc: 'Khoa Luật - Giảng viên tra cứu thù lao giảng dạy, NCKH cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'ban_phap_che_kiem_tra',
+    name: 'Ban Pháp chế - Kiểm tra',
+    code: 'BAN_PHAP_CHE_KIEM_TRA',
+    color: '#64748b',
+    desc: 'Ban Pháp chế - Kiểm tra.',
+  },
+  {
+    id: 'tap_chi_nckh_ptkt',
+    name: 'Tạp chí NCKH&PTKT',
+    code: 'TAP_CHI_NCKH_PTKT',
+    color: '#0d9488',
+    desc: 'Tạp chí Nghiên cứu Khoa học & Phát triển Kinh tế.',
+  },
+  {
+    id: 'khoa_duoc_dieu_duong',
+    name: 'Khoa Dược - Điều dưỡng',
+    code: 'KHOA_DUOC_DIEU_DUONG',
+    color: '#0284c7',
+    desc: 'Khoa Dược - Điều dưỡng - Giảng viên tra cứu thù lao giảng dạy, NCKH cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'khoa_ke_toan_tai_chinh_ngan_hang',
+    name: 'Khoa Kế toán - Tài chính - Ngân hàng',
+    code: 'KHOA_KT_TC_NH',
+    color: '#0284c7',
+    desc: 'Khoa Kế toán - Tài chính - Ngân hàng - Giảng viên tra cứu thù lao cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'khoa_quan_tri_kinh_doanh_du_lich',
+    name: 'Khoa Quản trị kinh doanh - Du lịch',
+    code: 'KHOA_QTKD_DU_LICH',
+    color: '#0284c7',
+    desc: 'Khoa Quản trị kinh doanh - Du lịch - Giảng viên tra cứu thù lao cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'khoa_ky_thuat_cong_nghe',
+    name: 'Khoa Kỹ thuật - Công nghệ',
+    code: 'KHOA_KY_THUAT_CONG_NGHE',
+    color: '#0284c7',
+    desc: 'Khoa Kỹ thuật - Công nghệ - Giảng viên tra cứu thù lao cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'khoa_ngoai_ngu_xhnv_tt',
+    name: 'Khoa Ngoại ngữ - Xã hội nhân văn và Truyền thông',
+    code: 'KHOA_NN_XHNV_TT',
+    color: '#0284c7',
+    desc: 'Khoa Ngoại ngữ - Xã hội nhân văn và Truyền thông - Giảng viên tra cứu thù lao cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'khoa_sinh_hoc_ung_dung',
+    name: 'Khoa Sinh học ứng dụng',
+    code: 'KHOA_SINH_HOC_UNG_DUNG',
+    color: '#0284c7',
+    desc: 'Khoa Sinh học ứng dụng - Giảng viên tra cứu thù lao cá nhân và gửi phản hồi.',
+  },
+  {
+    id: 'phong_to_chuc_hanh_chinh',
+    name: 'Phòng Tổ chức - Hành chính',
+    code: 'PHONG_TO_CHUC_HANH_CHINH',
+    color: '#ec4899',
+    desc: 'Phòng Tổ chức - Hành chính - Quản lý nhân sự, hồ sơ cán bộ giảng viên.',
+  },
+  {
+    id: 'phong_cong_nghe_thong_tin',
+    name: 'Phòng Công nghệ thông tin',
+    code: 'PHONG_CONG_NGHE_THONG_TIN',
+    color: '#dc2626',
+    desc: 'Phòng Công nghệ thông tin - Quản trị kỹ thuật hạ tầng hệ thống.',
+  },
+  {
+    id: 'phong_quan_tri_thiet_bi',
+    name: 'Phòng Quản trị thiết bị',
+    code: 'PHONG_QUAN_TRI_THIET_BI',
+    color: '#64748b',
+    desc: 'Phòng Quản trị thiết bị.',
+  },
+  {
+    id: 'phong_ctct_qlsv',
+    name: 'Phòng Công tác chính trị - Quản lý sinh viên',
+    code: 'PHONG_CTCT_QLSV',
+    color: '#f97316',
+    desc: 'Phòng Công tác chính trị - Quản lý sinh viên.',
+  },
+  {
+    id: 'phong_tuyen_sinh_truyen_thong',
+    name: 'Phòng Tuyển sinh và Truyền thông',
+    code: 'PHONG_TUYEN_SINH_TRUYEN_THONG',
+    color: '#ea580c',
+    desc: 'Phòng Tuyển sinh và Truyền thông.',
+  },
+  {
+    id: 'tt_kiem_tra_dbclgd',
+    name: 'Trung tâm Kiểm tra và Đảm bảo chất lượng giáo dục',
+    code: 'TT_KT_DBCLGD',
+    color: '#7c3aed',
+    desc: 'Trung tâm Kiểm tra và Đảm bảo chất lượng giáo dục.',
+  },
+  {
+    id: 'tt_ngoai_ngu_tin_hoc',
+    name: 'Trung tâm Ngoại ngữ - Tin học',
+    code: 'TT_NGOAI_NGU_TIN_HOC',
+    color: '#0284c7',
+    desc: 'Trung tâm Ngoại ngữ - Tin học.',
+  },
+  {
+    id: 'tt_khoi_nghiep_doi_moi_sang_tao',
+    name: 'Trung tâm Khởi nghiệp Đổi mới sáng tạo Hỗ trợ sinh viên và Hợp tác doanh nghiệp',
+    code: 'TT_KHOI_NGHIEP_DOANH_NGHIEP',
+    color: '#d97706',
+    desc: 'Trung tâm Khởi nghiệp Đổi mới sáng tạo Hỗ trợ sinh viên và Hợp tác doanh nghiệp.',
+  },
+  {
+    id: 'thu_vien',
+    name: 'Thư viện',
+    code: 'THU_VIEN',
+    color: '#64748b',
+    desc: 'Thư viện Trường Đại học Tây Đô.',
+  },
+  {
+    id: 'van_phong_dang',
+    name: 'Văn phòng Đảng',
+    code: 'VAN_PHONG_DANG',
+    color: '#dc2626',
+    desc: 'Văn phòng Đảng ủy Trường Đại học Tây Đô.',
+  },
 ];
 
-export const buildInitialRoles26 = (): RoleItem[] => {
+export const buildInitialRoles = (): RoleItem[] => {
   const membersMap: Record<string, { id: string; name: string; code: string; unit: string; email: string }[]> = {};
-  for (const cfg of UNIT_ROLES_26_CONFIG) {
-    membersMap[cfg.name] = [];
+  for (const cfg of SYSTEM_ROLES_CONFIG) {
+    membersMap[cfg.id] = [];
   }
 
+  // 1. Quản trị viên hệ thống: Thêm tài khoản mnlong
+  const mnLongStaff = FULL_PERSONNEL_245.find(
+    (p) => p.email?.toLowerCase().trim() === 'mnlong@tdu.edu.vn' || p.hoTen.toLowerCase().includes('mai nhựt long')
+  );
+  if (mnLongStaff) {
+    membersMap['quan_tri_vien_he_thong'].push({
+      id: `u-${mnLongStaff.stt}`,
+      name: mnLongStaff.hoTen,
+      code: mnLongStaff.maNhanSu,
+      unit: mnLongStaff.donVi,
+      email: mnLongStaff.email || 'mnlong@tdu.edu.vn',
+    });
+  }
+
+  // 2. Giảng viên: Cho toàn bộ người dùng có chức vụ là Giảng viên vào chung 1 vai trò
+  for (const p of FULL_PERSONNEL_245) {
+    const cv = (p.chucVu || '').toLowerCase().trim();
+    if (cv.includes('giảng viên')) {
+      membersMap['giang_vien'].push({
+        id: `u-${p.stt}`,
+        name: p.hoTen,
+        code: p.maNhanSu,
+        unit: p.donVi,
+        email: p.email || '',
+      });
+    }
+  }
+
+  // 3. Phân bổ cán bộ vào từng vai trò đơn vị
   for (const p of FULL_PERSONNEL_245) {
     const rawDonVi = (p.donVi || '').replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
     const item = {
@@ -363,10 +570,11 @@ export const buildInitialRoles26 = (): RoleItem[] => {
     };
 
     let matchedKey: string | null = null;
-    for (const cfg of UNIT_ROLES_26_CONFIG) {
+    for (const cfg of SYSTEM_ROLES_CONFIG) {
+      if (cfg.id === 'quan_tri_vien_he_thong' || cfg.id === 'giang_vien') continue;
       const cfgName = cfg.name.replace(/\s+/g, ' ').toLowerCase();
       if (rawDonVi === cfgName || rawDonVi.includes(cfgName) || cfgName.includes(rawDonVi)) {
-        matchedKey = cfg.name;
+        matchedKey = cfg.id;
         break;
       }
     }
@@ -374,35 +582,30 @@ export const buildInitialRoles26 = (): RoleItem[] => {
     if (matchedKey && membersMap[matchedKey]) {
       membersMap[matchedKey].push(item);
     } else {
-      membersMap['Khoa cơ bản']?.push(item);
+      membersMap['khoa_co_ban']?.push(item);
     }
   }
 
-  return UNIT_ROLES_26_CONFIG.map((cfg) => {
-    let desc = '';
+  return SYSTEM_ROLES_CONFIG.map((cfg) => {
     let disabled: string[] = [];
 
-    if (cfg.id === 'phong_cong_nghe_thong_tin') {
-      desc = 'Quản trị hệ thống (Toàn quyền): Toàn quyền truy cập, quản lý và cấu hình mọi phân hệ giờ giảng, NCKH, thù lao, thanh toán, báo cáo và hệ thống người dùng.';
+    if (cfg.id === 'quan_tri_vien_he_thong' || cfg.id === 'phong_cong_nghe_thong_tin') {
       disabled = [];
     } else if (cfg.id === 'phong_quan_ly_dao_tao') {
-      desc = 'Phòng Quản lý Đào tạo: Thấy được menu Thanh toán giờ giảng (toàn quyền) và Phản hồi của giảng viên.';
       disabled = ALL_PERMISSION_IDS.filter(
         (id) => !id.startsWith('gg_') && id !== 'ph_xem_ds' && id !== 'ph_xu_ly_dinh_chinh' && id !== 'ph_tu_choi'
       );
     } else if (cfg.id === 'phong_qlkh_htqt') {
-      desc = 'Phòng Quản lý khoa học và Hợp tác quốc tế: Thấy được menu Nghiên cứu khoa học (toàn quyền) và Phản hồi của giảng viên.';
       disabled = ALL_PERMISSION_IDS.filter(
         (id) => !id.startsWith('nckh_') && id !== 'ph_xem_ds' && id !== 'ph_xu_ly_dinh_chinh' && id !== 'ph_tu_choi'
       );
+    } else if (cfg.id === 'giang_vien') {
+      disabled = ALL_PERMISSION_IDS.filter((id) => !id.startsWith('tc_gv_') && id !== 'ph_gui_moi');
     } else if (cfg.id === 'phong_tai_chinh_ke_hoach') {
-      desc = 'Phòng Tài chính - Kế hoạch: Xem được toàn bộ số liệu thống kê, tổng hợp thanh toán và chi trả tài chính UNC (ngoại trừ menu Hệ thống).';
       disabled = ALL_PERMISSION_IDS.filter((id) => id.startsWith('nd_') || id.startsWith('ht_'));
     } else if (cfg.name.toLowerCase().startsWith('khoa')) {
-      desc = 'Khoa chuyên môn: Người dùng có chức vụ Giảng viên thấy được menu tra cứu và phản hồi (toàn quyền) xem cái của mình.';
       disabled = ALL_PERMISSION_IDS.filter((id) => !id.startsWith('tc_gv_') && id !== 'ph_gui_moi');
     } else {
-      desc = 'Đơn vị chức năng: Không có quyền quản lý trực tiếp các phân hệ chuyên môn giờ giảng và NCKH.';
       disabled = [...ALL_PERMISSION_IDS];
     }
 
@@ -413,14 +616,14 @@ export const buildInitialRoles26 = (): RoleItem[] => {
       dotColor: cfg.color,
       badgeBg: '#eff6ff',
       badgeText: cfg.color,
-      description: desc,
-      members: membersMap[cfg.name] || [],
+      description: cfg.desc,
+      members: membersMap[cfg.id] || [],
       disabledPermissions: disabled,
     };
   });
 };
 
-const INITIAL_ROLES: RoleItem[] = buildInitialRoles26();
+const INITIAL_ROLES: RoleItem[] = buildInitialRoles();
 
 export interface StaffCandidate {
   id: string;
@@ -472,7 +675,7 @@ export const SystemRoleGroupPage: React.FC = () => {
         console.warn('Could not fetch /api/roles, using initialMembers', err);
       });
   }, []);
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('phong_cong_nghe_thong_tin');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('quan_tri_vien_he_thong');
   const [roleSearchQuery, setRoleSearchQuery] = useState<string>('');
   const [activeTopTab, setActiveTopTab] = useState<'thong_tin' | 'module' | 'quyen_han' | 'thanh_vien'>('quyen_han');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('thanh_toan_gio_giang');
@@ -722,7 +925,7 @@ export const SystemRoleGroupPage: React.FC = () => {
         <div className="w-[285px] border-r border-slate-200 flex flex-col shrink-0 bg-white">
           <div className="px-3.5 pt-3.5 pb-2 flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              DANH SÁCH 26 VAI TRÒ
+              DANH SÁCH VAI TRÒ ({roles.length})
             </span>
             <button
               onClick={() => setIsAddRoleOpen(true)}
