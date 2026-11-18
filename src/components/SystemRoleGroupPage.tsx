@@ -11,6 +11,8 @@ import {
   Check,
   Trash2,
   UserPlus,
+  X,
+  Building2,
 } from 'lucide-react';
 import { RoleGroupPermission } from '../types';
 import {
@@ -535,6 +537,40 @@ const INITIAL_ROLES: RoleItem[] = [
   },
 ];
 
+export interface StaffCandidate {
+  id: string;
+  name: string;
+  code: string;
+  unit: string;
+  email: string;
+  chucVu?: string;
+}
+
+const DEFAULT_STAFF_CANDIDATES: StaffCandidate[] = [
+  { id: 'st1', name: 'TS. Nguyễn Văn Hòa', code: 'TDU00312', unit: 'Phòng Đào tạo', email: 'nvhoa@tdu.edu.vn', chucVu: 'Trưởng phòng' },
+  { id: 'st2', name: 'ThS. Võ Thị Thanh Thảo', code: 'TDU00088', unit: 'Phòng Đào tạo', email: 'vtthao@tdu.edu.vn', chucVu: 'Phó Trưởng phòng' },
+  { id: 'st3', name: 'CN. Trương Minh Tuấn', code: 'TDU00511', unit: 'Phòng Đào tạo', email: 'tmtuan@tdu.edu.vn', chucVu: 'Chuyên viên' },
+  { id: 'st4', name: 'ThS. Lê Thị Kim Ngân', code: 'TDU00105', unit: 'Phòng Kế hoạch - Tài chính', email: 'ltkngan@tdu.edu.vn', chucVu: 'Trưởng phòng' },
+  { id: 'st5', name: 'CN. Phạm Văn Đạt', code: 'TDU00422', unit: 'Phòng Kế hoạch - Tài chính', email: 'pvdat@tdu.edu.vn', chucVu: 'Kế toán viên' },
+  { id: 'st6', name: 'CN. Nguyễn Thu Hà', code: 'TDU00466', unit: 'Phòng Kế hoạch - Tài chính', email: 'ntha@tdu.edu.vn', chucVu: 'Kế toán thanh toán' },
+  { id: 'st7', name: 'ThS. Lê Thị Mỹ Hạnh', code: 'TDU00409', unit: 'Trung tâm Khảo thí', email: 'ltmhanh@tdu.edu.vn', chucVu: 'Giám đốc Trung tâm' },
+  { id: 'st8', name: 'CN. Đoàn Công Danh', code: 'TDU00508', unit: 'Trung tâm Khảo thí', email: 'dcdanh@tdu.edu.vn', chucVu: 'Chuyên viên khảo thí' },
+  { id: 'st9', name: 'PGS.TS. Đinh Văn Khải', code: 'TDU00152', unit: 'Phòng QLKH & HTQT', email: 'dvkhai@tdu.edu.vn', chucVu: 'Trưởng phòng' },
+  { id: 'st10', name: 'ThS. Hoàng Quốc Việt', code: 'TDU00267', unit: 'Phòng QLKH & HTQT', email: 'hqviet@tdu.edu.vn', chucVu: 'Chuyên viên NCKH' },
+  { id: 'st11', name: 'ThS. Huỳnh Quốc Bảo', code: 'TDU00377', unit: 'Phòng Tuyển sinh & Truyền thông', email: 'hqbao@tdu.edu.vn', chucVu: 'Phó Trưởng phòng' },
+  { id: 'st12', name: 'CN. Vũ Đức An', code: 'TDU00531', unit: 'Phòng Tuyển sinh & Truyền thông', email: 'vdan@tdu.edu.vn', chucVu: 'Chuyên viên' },
+  { id: 'st13', name: 'ThS. Phan Thanh Thảo', code: 'TDU00055', unit: 'Phòng Tổ chức - Hành chính', email: 'ptthao@tdu.edu.vn', chucVu: 'Trưởng phòng' },
+  { id: 'st14', name: 'CN. Bùi Thị Mỹ Duyên', code: 'TDU00389', unit: 'Phòng Tổ chức - Hành chính', email: 'btmduyen@tdu.edu.vn', chucVu: 'Chuyên viên' },
+  { id: 'st15', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn', chucVu: 'Giảng viên' },
+  { id: 'st16', name: 'TS. Đặng Minh Khôi', code: 'TDU00199', unit: 'Khoa Công nghệ thông tin', email: 'dmkhoi@tdu.edu.vn', chucVu: 'Phó Trưởng khoa' },
+  { id: 'st17', name: 'ThS. Nguyễn Hồng Phúc', code: 'TDU00344', unit: 'Khoa Công nghệ thông tin', email: 'nhphuc@tdu.edu.vn', chucVu: 'Giảng viên' },
+  { id: 'st18', name: 'PGS.TS. Trần Quốc Hùng', code: 'TDU00245', unit: 'Khoa Dược - Điều dưỡng', email: 'tqhung@tdu.edu.vn', chucVu: 'Trưởng khoa' },
+  { id: 'st19', name: 'TS.DS. Nguyễn Thị Bích Ngọc', code: 'TDU00276', unit: 'Khoa Dược - Điều dưỡng', email: 'ntbngoc@tdu.edu.vn', chucVu: 'Giảng viên' },
+  { id: 'st20', name: 'TS. Nguyễn Thanh Phong', code: 'TDU00188', unit: 'Khoa Kinh tế - Quản trị', email: 'ntphong@tdu.edu.vn', chucVu: 'Phó Trưởng khoa' },
+  { id: 'st21', name: 'ThS. Võ Hoàng Yến', code: 'TDU00288', unit: 'Khoa Kinh tế - Quản trị', email: 'vhyen@tdu.edu.vn', chucVu: 'Giảng viên' },
+  { id: 'st22', name: 'TS. Huỳnh Minh Trí', code: 'TDU00233', unit: 'Khoa Luật', email: 'hmtri@tdu.edu.vn', chucVu: 'Trưởng khoa' },
+];
+
 export const SystemRoleGroupPage: React.FC = () => {
   const [roles, setRoles] = useState<RoleItem[]>(INITIAL_ROLES);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('super_admin');
@@ -544,6 +580,12 @@ export const SystemRoleGroupPage: React.FC = () => {
   const [savedToast, setSavedToast] = useState<boolean>(false);
   const [isAddRoleOpen, setIsAddRoleOpen] = useState<boolean>(false);
   const [newRoleName, setNewRoleName] = useState<string>('');
+
+  // State cho Popup Modal thêm thành viên vào vai trò
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState<boolean>(false);
+  const [memberUnitFilter, setMemberUnitFilter] = useState<string>('ALL');
+  const [memberSearchQuery, setMemberSearchQuery] = useState<string>('');
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
 
   const selectedRole = useMemo(
     () => roles.find((r) => r.id === selectedRoleId) || roles[0],
@@ -646,6 +688,114 @@ export const SystemRoleGroupPage: React.FC = () => {
     setIsAddRoleOpen(false);
   };
 
+  // Aggregate available staff (from localStorage + defaults)
+  const allCandidates = useMemo<StaffCandidate[]>(() => {
+    let importedCandidates: StaffCandidate[] = [];
+    try {
+      const raw = localStorage.getItem('tdu_system_users_v2');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          importedCandidates = parsed.map((u: any, idx: number) => ({
+            id: u.id || `imp_${idx}`,
+            name: u.hoTen,
+            code: u.maNhanSu || `TDU${String(idx + 1).padStart(5, '0')}`,
+            unit: u.donVi || 'Trường Đại học Tây Đô',
+            email: u.email || `${(u.maNhanSu || 'canbo').toLowerCase()}@tdu.edu.vn`,
+            chucVu: u.chucVu || 'Cán bộ',
+          }));
+        }
+      }
+    } catch {
+      // fallback
+    }
+
+    const map = new Map<string, StaffCandidate>();
+    DEFAULT_STAFF_CANDIDATES.forEach((c) => map.set(c.code.toLowerCase(), c));
+    importedCandidates.forEach((c) => map.set(c.code.toLowerCase(), c));
+    return Array.from(map.values());
+  }, []);
+
+  // Unique units for dropdown
+  const availableUnits = useMemo(() => {
+    const set = new Set<string>();
+    allCandidates.forEach((c) => {
+      if (c.unit) set.add(c.unit.trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [allCandidates]);
+
+  // Filtered candidates according to unit filter & search
+  const filteredCandidates = useMemo(() => {
+    return allCandidates.filter((c) => {
+      if (memberUnitFilter !== 'ALL' && c.unit !== memberUnitFilter) {
+        return false;
+      }
+      if (memberSearchQuery.trim()) {
+        const q = memberSearchQuery.toLowerCase().trim();
+        const matchName = c.name.toLowerCase().includes(q);
+        const matchEmail = c.email.toLowerCase().includes(q);
+        const matchCode = c.code.toLowerCase().includes(q);
+        if (!matchName && !matchEmail && !matchCode) return false;
+      }
+      return true;
+    });
+  }, [allCandidates, memberUnitFilter, memberSearchQuery]);
+
+  // Selectable candidates (not yet in current role)
+  const selectableCandidates = useMemo(() => {
+    return filteredCandidates.filter(
+      (c) => !selectedRole.members.some((m) => m.id === c.id || m.code.toLowerCase() === c.code.toLowerCase())
+    );
+  }, [filteredCandidates, selectedRole.members]);
+
+  const handleToggleSelectCandidate = (candidateId: string) => {
+    setSelectedCandidateIds((prev) =>
+      prev.includes(candidateId) ? prev.filter((id) => id !== candidateId) : [...prev, candidateId]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    const selectableIds = selectableCandidates.map((c) => c.id);
+    const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedCandidateIds.includes(id));
+    if (allSelected) {
+      setSelectedCandidateIds((prev) => prev.filter((id) => !selectableIds.includes(id)));
+    } else {
+      setSelectedCandidateIds((prev) => Array.from(new Set([...prev, ...selectableIds])));
+    }
+  };
+
+  const handleConfirmAddMembers = () => {
+    const toAdd = allCandidates.filter((c) => selectedCandidateIds.includes(c.id));
+    if (toAdd.length === 0) return;
+
+    setRoles((prev) =>
+      prev.map((role) => {
+        if (role.id !== selectedRole.id) return role;
+        const existingCodes = new Set(role.members.map((m) => m.code.toLowerCase()));
+        const newMembers = toAdd
+          .filter((c) => !existingCodes.has(c.code.toLowerCase()))
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            code: c.code,
+            unit: c.unit,
+            email: c.email,
+          }));
+        return {
+          ...role,
+          members: [...role.members, ...newMembers],
+        };
+      })
+    );
+
+    setIsAddMemberModalOpen(false);
+    setSelectedCandidateIds([]);
+    setActiveTopTab('thanh_vien');
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2500);
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-white overflow-hidden select-none font-sans">
       {/* Top Title Bar: "Vai trò" */}
@@ -725,22 +875,44 @@ export const SystemRoleGroupPage: React.FC = () => {
           {/* Role Header & 4 Horizontal Tabs */}
           <div className="px-6 pt-4 border-b border-slate-200 shrink-0 bg-white">
             {/* Role Badge Header */}
-            <div className="flex items-center gap-2.5 mb-3">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: selectedRole.badgeBg }}
-              >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: selectedRole.badgeBg }}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: selectedRole.badgeText }}
+                  />
+                </div>
                 <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: selectedRole.badgeText }}
-                />
+                  className="text-[12.5px] font-bold uppercase tracking-wide"
+                  style={{ color: selectedRole.badgeText }}
+                >
+                  {selectedRole.code}
+                </span>
+                <span className="text-slate-300">•</span>
+                <span className="text-[13px] font-semibold text-slate-800">
+                  {selectedRole.name}
+                </span>
+                <span className="text-[11.5px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full border border-slate-200">
+                  {selectedRole.members.length} thành viên
+                </span>
               </div>
-              <span
-                className="text-[12.5px] font-bold uppercase tracking-wide"
-                style={{ color: selectedRole.badgeText }}
+
+              {/* Action Button: Thêm mới thành viên vào vai trò đang chọn */}
+              <button
+                onClick={() => {
+                  setSelectedCandidateIds([]);
+                  setIsAddMemberModalOpen(true);
+                }}
+                className="h-[32px] px-3.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563eb] text-[12px] font-medium flex items-center gap-1.5 cursor-pointer border border-blue-200/80 transition-colors shadow-2xs"
+                title={`Thêm mới thành viên vào vai trò ${selectedRole.name}`}
               >
-                {selectedRole.code}
-              </span>
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>+ Thêm mới</span>
+              </button>
             </div>
 
             {/* 4 Tabs: Thông tin | Module | Quyền hạn (Dev) | Thành viên */}
@@ -1042,32 +1214,13 @@ export const SystemRoleGroupPage: React.FC = () => {
                   </span>
                   <button
                     onClick={() => {
-                      const name = prompt('Nhập họ tên cán bộ / giảng viên cần thêm vào vai trò:');
-                      if (!name || !name.trim()) return;
-                      setRoles((prev) =>
-                        prev.map((r) =>
-                          r.id === selectedRole.id
-                            ? {
-                                ...r,
-                                members: [
-                                  ...r.members,
-                                  {
-                                    id: `m_${Date.now()}`,
-                                    name: name.trim(),
-                                    code: `TDU${Math.floor(100 + Math.random() * 899)}`,
-                                    unit: 'Trường Đại học Tây Đô',
-                                    email: 'cb@tdu.edu.vn',
-                                  },
-                                ],
-                              }
-                            : r
-                        )
-                      );
+                      setSelectedCandidateIds([]);
+                      setIsAddMemberModalOpen(true);
                     }}
-                    className="h-[32px] px-3.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#2563eb] text-[12px] font-medium flex items-center gap-1.5 cursor-pointer"
+                    className="h-[32px] px-3.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#2563eb] text-[12px] font-medium flex items-center gap-1.5 cursor-pointer border border-blue-200 transition-colors shadow-2xs"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
-                    <span>Thêm thành viên</span>
+                    <span>+ Thêm mới thành viên</span>
                   </button>
                 </div>
 
@@ -1096,11 +1249,11 @@ export const SystemRoleGroupPage: React.FC = () => {
                             setRoles((prev) =>
                               prev.map((r) =>
                                 r.id === selectedRole.id
-                                  ? {
-                                      ...r,
-                                      members: r.members.filter((m) => m.id !== mem.id),
-                                    }
-                                  : r
+                                ? {
+                                    ...r,
+                                    members: r.members.filter((m) => m.id !== mem.id),
+                                  }
+                                : r
                               )
                             )
                           }
@@ -1118,6 +1271,260 @@ export const SystemRoleGroupPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* ============================================================
+          POPUP MODAL GIỮA: THÊM MỚI THÀNH VIÊN VÀO VAI TRÒ
+          - Giao diện trắng (White clean interface)
+          - Bộ lọc theo đơn vị
+          - Tìm kiếm theo tên, email, mã nhân sự
+          - Dưới có bảng thông tin: Tên, Email, Đơn vị
+          - Bấm chọn và thêm mới
+          ============================================================ */}
+      {isAddMemberModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[840px] max-h-[88vh] flex flex-col border border-slate-200 overflow-hidden">
+            {/* 1. Modal Header - Giao diện trắng sạch sẽ */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/80 flex items-center justify-center shadow-2xs">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[16px] text-slate-800 leading-tight">
+                    Thêm thành viên vào vai trò: {selectedRole.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span
+                      className="text-[11px] font-semibold px-2 py-0.2 rounded font-mono"
+                      style={{ backgroundColor: selectedRole.badgeBg, color: selectedRole.badgeText }}
+                    >
+                      {selectedRole.code}
+                    </span>
+                    <span className="text-[12px] text-slate-500">
+                      Chọn cán bộ, giảng viên theo đơn vị để cấp vai trò phân quyền
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsAddMemberModalOpen(false);
+                  setSelectedCandidateIds([]);
+                }}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 2. Filter Toolbar - Bộ lọc theo đơn vị & Ô tìm kiếm tên, email */}
+            <div className="px-6 py-3.5 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row items-center gap-3 shrink-0">
+              {/* Bộ lọc theo đơn vị */}
+              <div className="w-full sm:w-[280px]">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Bộ lọc theo đơn vị
+                </label>
+                <div className="relative">
+                  <select
+                    value={memberUnitFilter}
+                    onChange={(e) => setMemberUnitFilter(e.target.value)}
+                    className="w-full h-[36px] pl-3 pr-8 bg-white border border-slate-300 rounded-xl text-[12.5px] text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
+                  >
+                    <option value="ALL">Tất cả đơn vị ({allCandidates.length})</option>
+                    {availableUnits.map((u) => {
+                      const count = allCandidates.filter((c) => c.unit === u).length;
+                      return (
+                        <option key={u} value={u}>
+                          {u} ({count})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              {/* Tìm kiếm theo tên, email, mã nhân sự */}
+              <div className="w-full sm:flex-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Tìm kiếm theo tên, email...
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={memberSearchQuery}
+                    onChange={(e) => setMemberSearchQuery(e.target.value)}
+                    placeholder="Nhập họ tên, email hoặc mã nhân sự..."
+                    className="w-full h-[36px] pl-9 pr-3 bg-white border border-slate-300 rounded-xl text-[12.5px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 shadow-2xs"
+                  />
+                  {memberSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setMemberSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Bảng thông tin: Tên, Email, Đơn vị */}
+            <div className="flex-1 overflow-y-auto px-6 py-2">
+              <table className="w-full border-collapse text-left text-[12.5px]">
+                <thead className="bg-slate-50 text-slate-700 font-semibold sticky top-0 z-10 border-b border-slate-200">
+                  <tr className="h-[38px]">
+                    <th className="px-3 text-center w-[50px]">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectableCandidates.length > 0 &&
+                          selectableCandidates.every((c) => selectedCandidateIds.includes(c.id))
+                        }
+                        onChange={handleToggleSelectAll}
+                        disabled={selectableCandidates.length === 0}
+                        className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        title="Chọn tất cả danh sách đang hiển thị"
+                      />
+                    </th>
+                    <th className="px-3.5 py-2">Tên</th>
+                    <th className="px-3.5 py-2">Email</th>
+                    <th className="px-3.5 py-2">Đơn vị</th>
+                    <th className="px-3 py-2 text-center w-[120px]">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredCandidates.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        <div className="flex flex-col items-center justify-center">
+                          <Users className="w-8 h-8 text-slate-300 mb-2" />
+                          <p className="font-medium text-[13px]">Không tìm thấy cán bộ nào phù hợp</p>
+                          <p className="text-[12px] text-slate-400 mt-0.5">
+                            Thử thay đổi từ khóa tìm kiếm hoặc chọn "Tất cả đơn vị"
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCandidates.map((staff) => {
+                      const isAlreadyMember = selectedRole.members.some(
+                        (m) => m.id === staff.id || m.code.toLowerCase() === staff.code.toLowerCase()
+                      );
+                      const isSelected = selectedCandidateIds.includes(staff.id);
+
+                      return (
+                        <tr
+                          key={staff.id}
+                          onClick={() => {
+                            if (!isAlreadyMember) handleToggleSelectCandidate(staff.id);
+                          }}
+                          className={`h-[44px] transition-colors ${
+                            isAlreadyMember
+                              ? 'bg-slate-50/60 opacity-60 cursor-not-allowed'
+                              : isSelected
+                              ? 'bg-blue-50/60 cursor-pointer'
+                              : 'hover:bg-slate-50 cursor-pointer'
+                          }`}
+                        >
+                          {/* Checkbox */}
+                          <td className="px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isAlreadyMember || isSelected}
+                              disabled={isAlreadyMember}
+                              onChange={() => handleToggleSelectCandidate(staff.id)}
+                              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                            />
+                          </td>
+
+                          {/* Tên */}
+                          <td className="px-3.5 py-2">
+                            <div className="font-semibold text-slate-800 flex items-center gap-2">
+                              <span>{staff.name}</span>
+                              <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                {staff.code}
+                              </span>
+                            </div>
+                            {staff.chucVu && (
+                              <div className="text-[11.5px] text-slate-500 font-normal">
+                                {staff.chucVu}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Email */}
+                          <td className="px-3.5 py-2 font-mono text-slate-600 text-[12px]">
+                            {staff.email}
+                          </td>
+
+                          {/* Đơn vị */}
+                          <td className="px-3.5 py-2">
+                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11.5px] font-medium border border-slate-200">
+                              {staff.unit}
+                            </span>
+                          </td>
+
+                          {/* Trạng thái */}
+                          <td className="px-3 py-2 text-center whitespace-nowrap">
+                            {isAlreadyMember ? (
+                              <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Đã trong vai trò
+                              </span>
+                            ) : isSelected ? (
+                              <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                Đã chọn
+                              </span>
+                            ) : (
+                              <span className="text-[11.5px] text-slate-400">Chưa chọn</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 4. Modal Footer - Nút Hủy và Nút "Bấm chọn và thêm mới" */}
+            <div className="bg-white border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
+              <div className="text-[12.5px] text-slate-600">
+                Đã chọn:{' '}
+                <span className="font-bold text-blue-700 text-[13.5px]">
+                  {selectedCandidateIds.length}
+                </span>{' '}
+                thành viên
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddMemberModalOpen(false);
+                    setSelectedCandidateIds([]);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 cursor-pointer text-[12.5px] transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedCandidateIds.length === 0}
+                  onClick={handleConfirmAddMembers}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium flex items-center gap-2 cursor-pointer shadow-xs text-[12.5px] transition-colors"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>
+                    Bấm chọn và thêm mới {selectedCandidateIds.length > 0 ? `(${selectedCandidateIds.length})` : ''}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Role Inline Modal */}
       {isAddRoleOpen && (

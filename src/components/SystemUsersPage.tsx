@@ -979,16 +979,15 @@ export const SystemUsersPage: React.FC = () => {
                         {user.donViKiemNhiem || '—'}
                       </td>
 
-                      {/* Thao tác (Gộp nút xem chi tiết và chỉnh sửa làm một) */}
+                      {/* Thao tác (Chỉ lấy icon, bỏ chữ) */}
                       <td className="px-3 text-center whitespace-nowrap sticky right-0 bg-white shadow-xs">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => handleOpenDrawer(user)}
-                            className="h-7 px-2.5 rounded-lg flex items-center gap-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 cursor-pointer text-[11.5px] font-medium transition-colors"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 cursor-pointer transition-colors"
                             title="Xem chi tiết & Chỉnh sửa hồ sơ nhân sự"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
-                            <span>Chi tiết & Sửa</span>
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
@@ -1087,19 +1086,26 @@ export const SystemUsersPage: React.FC = () => {
 
       {/* 5. Modal: Add / Edit User (Covering all 20 columns) */}
       {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[800px] max-h-[86vh] flex flex-col overflow-hidden border border-slate-200">
-            {/* Header */}
-            <div className="bg-[#005325] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+            {/* Header - Giao diện trắng */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-emerald-300" />
-                <h3 className="font-bold text-[15px]">
-                  {editingUser ? 'CHỈNH SỬA HỒ SƠ NHÂN SỰ' : 'THÊM MỚI HỒ SƠ NHÂN SỰ'}
-                </h3>
+                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shadow-2xs">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[16px] text-slate-800 leading-tight">
+                    {editingUser ? 'CHỈNH SỬA HỒ SƠ NHÂN SỰ' : 'THÊM MỚI HỒ SƠ NHÂN SỰ'}
+                  </h3>
+                  <p className="text-[12px] text-slate-500">
+                    Nhập thông tin hồ sơ cán bộ, giảng viên theo chuẩn 18 cột Đại học Tây Đô
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setIsFormModalOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1109,8 +1115,8 @@ export const SystemUsersPage: React.FC = () => {
             <form onSubmit={handleSaveForm} className="flex-1 overflow-y-auto p-5 space-y-4 text-[12.5px]">
               {/* Group 1: Thông tin định danh & Công tác */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                  <UserCheck className="w-4 h-4" /> 1. Thông tin định danh & Công tác
+                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-slate-600" /> 1. Thông tin định danh & Công tác
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -1186,8 +1192,8 @@ export const SystemUsersPage: React.FC = () => {
 
               {/* Group 2: Học hàm, Học vị & Chuyên môn */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                  <Award className="w-4 h-4" /> 2. Học hàm, Học vị & Chuyên môn
+                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                  <Award className="w-4 h-4 text-slate-600" /> 2. Học hàm, Học vị & Chuyên môn
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -1265,8 +1271,8 @@ export const SystemUsersPage: React.FC = () => {
 
               {/* Group 3: Tuyển dụng, Hợp đồng & Chứng chỉ */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                  <BookOpen className="w-4 h-4" /> 3. Tuyển dụng, Hợp đồng & Ngoại ngữ / Tin học
+                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-slate-600" /> 3. Tuyển dụng, Hợp đồng & Ngoại ngữ / Tin học
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -1326,8 +1332,8 @@ export const SystemUsersPage: React.FC = () => {
 
               {/* Group 4: Kiêm nhiệm */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                  <Briefcase className="w-4 h-4" /> 4. Nhiệm vụ kiêm nhiệm
+                <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-slate-600" /> 4. Nhiệm vụ kiêm nhiệm
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1615,22 +1621,22 @@ export const SystemUsersPage: React.FC = () => {
           {/* Slide-over Panel from right */}
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
             <div className="w-screen max-w-[660px] bg-white shadow-2xl flex flex-col border-l border-slate-200">
-              {/* Drawer Header */}
-              <div className="bg-gradient-to-r from-[#005325] to-emerald-800 text-white px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+              {/* Drawer Header - Giao diện trắng chuẩn */}
+              <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl text-white border border-white/30 shadow-2xs">
+                  <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xl shadow-2xs">
                     {(drawerFormData.hoTen || drawerUser.hoTen).slice(0, 1)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-[17px] leading-tight text-white">
+                      <h3 className="font-bold text-[16px] leading-tight text-slate-800">
                         {drawerFormData.hoTen || drawerUser.hoTen}
                       </h3>
-                      <span className="bg-white/20 px-2 py-0.5 rounded text-[11px] font-medium text-emerald-100">
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-mono text-slate-600">
                         {drawerFormData.maNhanSu || drawerUser.maNhanSu}
                       </span>
                     </div>
-                    <p className="text-[12px] text-emerald-100 mt-0.5 font-medium">
+                    <p className="text-[12px] text-slate-500 mt-0.5 font-normal">
                       {drawerFormData.chucVu || drawerUser.chucVu} • {drawerFormData.donVi || drawerUser.donVi}
                     </p>
                   </div>
@@ -1638,7 +1644,7 @@ export const SystemUsersPage: React.FC = () => {
 
                 <button
                   onClick={handleCloseDrawer}
-                  className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg cursor-pointer transition-colors"
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg cursor-pointer transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1648,8 +1654,8 @@ export const SystemUsersPage: React.FC = () => {
               <form onSubmit={handleSaveDrawer} className="flex-1 overflow-y-auto p-6 space-y-5 text-[12.5px]">
                 {/* Card 1: Thông tin cá nhân & Công tác */}
                 <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                    <UserCheck className="w-4 h-4" /> 1. Thông tin cá nhân & Công tác
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-slate-600" /> 1. Thông tin cá nhân & Công tác
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2">
@@ -1725,8 +1731,8 @@ export const SystemUsersPage: React.FC = () => {
 
                 {/* Card 2: Học hàm, học vị & Chuyên môn */}
                 <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                    <Award className="w-4 h-4" /> 2. Trình độ học vấn & Chuyên môn
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                    <Award className="w-4 h-4 text-slate-600" /> 2. Trình độ học vấn & Chuyên môn
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1799,8 +1805,8 @@ export const SystemUsersPage: React.FC = () => {
 
                 {/* Card 3: Hợp đồng & Tiêu chuẩn */}
                 <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                    <BookOpen className="w-4 h-4" /> 3. Hợp đồng & Tiêu chuẩn chức danh
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-slate-600" /> 3. Hợp đồng & Tiêu chuẩn chức danh
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1860,8 +1866,8 @@ export const SystemUsersPage: React.FC = () => {
 
                 {/* Card 4: Nhiệm vụ kiêm nhiệm */}
                 <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
-                    <Briefcase className="w-4 h-4" /> 4. Nhiệm vụ kiêm nhiệm
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-slate-600" /> 4. Nhiệm vụ kiêm nhiệm
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1890,7 +1896,7 @@ export const SystemUsersPage: React.FC = () => {
               </form>
 
               {/* Drawer Footer */}
-              <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
+              <div className="bg-white border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
                 <button
                   type="button"
                   onClick={() => {
