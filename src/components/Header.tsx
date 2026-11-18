@@ -8,6 +8,7 @@ import {
   X,
   Pencil,
   LogOut,
+  LogIn,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -24,6 +25,7 @@ interface HeaderProps {
   onOpenFeedbacks: () => void;
   onSendFeedback: () => void;
   onOpenProfile?: () => void;
+  onOpenSsoModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenFeedbacks,
   onSendFeedback,
   onOpenProfile,
+  onOpenSsoModal,
 }) => {
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -439,6 +442,21 @@ export const Header: React.FC<HeaderProps> = ({
                       );
                     })}
                   </div>
+                )}
+
+                {/* 2.5 SSO Email Login Button */}
+                {onOpenSsoModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      onOpenSsoModal();
+                    }}
+                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 text-[13px] font-semibold text-[#005325] hover:bg-emerald-50 border-t border-slate-100 cursor-pointer transition-colors"
+                  >
+                    <LogIn className="w-4 h-4 text-[#005325]" />
+                    <span>Đăng nhập SSO Email TDU</span>
+                  </button>
                 )}
 
                 {/* 3. Logout Button */}

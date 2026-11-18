@@ -692,7 +692,7 @@ export const SystemUsersPage: React.FC = () => {
   };
 
   // Confirm and apply imported users
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     if (parsedImportUsers.length === 0) return;
     if (overwriteExisting) {
       setUsers(parsedImportUsers);
@@ -703,6 +703,21 @@ export const SystemUsersPage: React.FC = () => {
         return [...prev, ...renumbered];
       });
     }
+
+    // Persist to MySQL backend if active
+    try {
+      await fetch('/api/users/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          users: parsedImportUsers,
+          overwrite: overwriteExisting,
+        }),
+      });
+    } catch {
+      // Backend offline fallback handled gracefully by setUsers & localStorage
+    }
+
     const count = parsedImportUsers.length;
     handleCloseImportModal();
     alert(`Import thành công! Đã nạp ${count} cán bộ vào hệ thống.`);
@@ -1752,58 +1767,65 @@ export const SystemUsersPage: React.FC = () => {
         </div>
       )}
 
-      {/* 6. Modal: Import Users from Excel (Thiết kế chuẩn theo mẫu) */}
+      {/* 6. Modal: Import Users from Excel (Thiết kế chuẩn theo mẫu tham chiếu) */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
-            {/* Header theo thiết kế mẫu */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+          <div
+            className={`bg-white rounded-[24px] shadow-2xl w-full flex flex-col overflow-hidden border border-slate-200 transition-all ${
+              parsedImportUsers.length > 0 ? 'max-w-4xl max-h-[92vh]' : 'max-w-2xl'
+            }`}
+          >
+            {/* Header theo thiết kế ảnh tham chiếu */}
+            <div className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shadow-2xs">
-                  <UploadCloud className="w-5 h-5" />
+                <div className="w-11 h-11 rounded-full bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-700 shadow-2xs shrink-0">
+                  <UploadCloud className="w-5 h-5 stroke-[1.8]" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-[16px] text-slate-900 leading-tight">
-                      Import dữ liệu hồ sơ nhân sự
+                <div className="min-w-0 pr-4">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="font-bold text-[17px] text-slate-900 leading-tight">
+                      Import dữ liệu người dùng & hồ sơ nhân sự
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-[11.5px] bg-slate-100 text-slate-600 font-medium border border-slate-200/80">
-                      Hồ sơ 18 cột TDU
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      Hồ sơ chuẩn 18 cột
                     </span>
                   </div>
-                  <p className="text-[12px] text-slate-500 mt-0.5">
-                    Kéo thả file ở trên để đối soát và nạp mã nhân sự vào hệ thống
+                  <p className="text-[12px] text-slate-500 mt-1">
+                    Kéo thả file ở trên và chọn chế độ import bên dưới để đối soát mã nhân sự
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleCloseImportModal}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                title="Đóng popup"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 text-[12.5px]">
-              {/* Section 1 Header */}
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5 font-bold text-slate-800 text-[13px]">
-                  <UploadCloud className="w-4 h-4 text-slate-700" />
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 text-[12.5px]">
+              {/* 1. Header Chọn hoặc kéo thả tập tin */}
+              <div className="flex items-center justify-between text-[12.5px]">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                  <UploadCloud className="w-4 h-4 text-slate-600" />
                   <span>1. Chọn hoặc kéo thả tập tin Excel (.xlsx, .xls)</span>
-                  <span className="text-rose-500 font-bold">*</span>
+                  <span className="text-red-500 font-bold">*</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleDownloadTemplate}
-                  className="text-[#1a73e8] hover:underline font-medium text-[12.5px] inline-flex items-center gap-1.5 cursor-pointer"
+                  className="text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1 font-semibold text-[11.5px] cursor-pointer"
+                  title="Tải biểu mẫu Excel chuẩn 18 cột Đại học Tây Đô"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Tải file mẫu chuẩn</span>
                 </button>
               </div>
 
-              {/* Dashed Dropzone Upload Box */}
+              {/* Khung kéo thả: Viền nét đứt trung tính (Chuẩn theo hình) */}
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -1811,7 +1833,7 @@ export const SystemUsersPage: React.FC = () => {
                   const file = e.dataTransfer.files?.[0];
                   if (file) handleProcessExcelFile(file);
                 }}
-                className="border-2 border-dashed border-slate-300 rounded-2xl bg-white p-7 text-center hover:border-blue-400 hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center"
+                className="border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50/40 p-6 sm:p-7 text-center hover:border-slate-400 hover:bg-slate-50/70 transition-all flex flex-col items-center justify-center"
               >
                 <input
                   type="file"
@@ -1820,31 +1842,28 @@ export const SystemUsersPage: React.FC = () => {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 mb-2.5 shadow-2xs">
-                  <UploadCloud className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-slate-600 mx-auto mb-2">
+                  <UploadCloud className="w-5 h-5 stroke-[1.8]" />
                 </div>
-                <div className="font-semibold text-slate-800 text-[13.5px]">
+                <div className="font-bold text-slate-800 text-[13.5px]">
                   Kéo thả file Excel vào đây hoặc bấm nút để chọn file
                 </div>
-                <div className="text-slate-400 text-[12px] mt-1 mb-3.5">
+                <div className="text-slate-400 text-[11px] mt-1 mb-3.5">
                   Định dạng hỗ trợ: XLS, XLSX — Tối đa 20MB
                 </div>
                 <label
                   htmlFor="excel-file-upload-input"
-                  className="px-5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12.5px] font-medium shadow-2xs cursor-pointer transition-all inline-flex items-center gap-2"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11.5px] shadow-2xs cursor-pointer transition-colors"
                 >
-                  <span>Chọn file từ máy</span>
+                  Chọn file từ máy
                 </label>
               </div>
 
               {/* Error Alert */}
               {importError && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-xl flex items-start gap-2.5">
-                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
-                  <div>
-                    <div className="font-semibold">Lỗi import file:</div>
-                    <div className="text-[12px] mt-0.5">{importError}</div>
-                  </div>
+                <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2 text-[12px]">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{importError}</span>
                 </div>
               )}
 
@@ -1852,26 +1871,45 @@ export const SystemUsersPage: React.FC = () => {
               {isProcessingFile && (
                 <div className="py-6 flex flex-col items-center justify-center text-slate-500 gap-2">
                   <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-                  <span>Đang đọc và phân tích cấu trúc file Excel...</span>
+                  <span>Đang đọc và phân tích cấu trúc 18 cột file Excel...</span>
                 </div>
               )}
 
-              {/* Preview data when file is parsed */}
+              {/* Thông tin file và xem trước dữ liệu khi đã chọn */}
               {importFile && parsedImportUsers.length > 0 && !isProcessingFile && (
-                <div className="space-y-3 mt-3">
-                  <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-3 flex items-center justify-between text-[12.5px]">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                        {parsedImportUsers.length}
+                <div className="space-y-3 mt-3 animate-fadeIn">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-blue-600 flex items-center justify-center shrink-0">
+                        <FileSpreadsheet className="w-4 h-4" />
                       </div>
-                      <div>
-                        <span className="font-semibold text-blue-950">Đã đọc thành công {parsedImportUsers.length} hồ sơ nhân sự</span>
-                        <span className="text-blue-700 block text-[11.5px]">Tệp: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)</span>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 text-[12.5px] truncate" title={importFile.name}>
+                          {importFile.name}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {(importFile.size / 1024).toFixed(1)} KB · Đã đọc <strong>{parsedImportUsers.length}</strong> hồ sơ nhân sự
+                        </div>
                       </div>
                     </div>
-                    <span className="text-emerald-700 font-semibold bg-emerald-100/70 px-2.5 py-1 rounded-md text-[11.5px] flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Hợp lệ 18 cột
-                    </span>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-md font-semibold text-[11px] flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Hợp lệ 18 cột
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImportFile(null);
+                          setParsedImportUsers([]);
+                          setImportError(null);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-200/60 rounded-md transition-colors cursor-pointer"
+                        title="Gỡ bỏ file"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Preview Table of first 5 rows */}
@@ -1897,7 +1935,7 @@ export const SystemUsersPage: React.FC = () => {
                           <th className="p-2">Kiêm nhiệm</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200">
+                      <tbody className="divide-y divide-slate-200 bg-white">
                         {parsedImportUsers.slice(0, 5).map((u, i) => (
                           <tr key={u.id} className="hover:bg-slate-50">
                             <td className="p-2 text-center border-r border-slate-200 font-medium">{i + 1}</td>
@@ -1924,17 +1962,17 @@ export const SystemUsersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Chế độ import: Toggle Button Group giống thiết kế ảnh */}
-              <div className="border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between bg-white mt-4">
-                <span className="text-slate-700 font-semibold text-[13px]">Chế độ import:</span>
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+              {/* Chế độ import: Box bo góc viền chuẩn giống ảnh thiết kế */}
+              <div className="flex items-center justify-between gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-[11.5px] mt-3">
+                <span className="text-slate-600 font-medium text-[12px]">Chế độ import:</span>
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setOverwriteExisting(true)}
-                    className={`px-4 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer text-[12px] font-semibold ${
                       overwriteExisting
                         ? 'bg-[#0f172a] text-white shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                        : 'bg-white text-slate-700 hover:bg-slate-200/60 border border-slate-200'
                     }`}
                   >
                     Tạo mới (Ghi đè)
@@ -1942,10 +1980,10 @@ export const SystemUsersPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setOverwriteExisting(false)}
-                    className={`px-4 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer text-[12px] font-semibold ${
                       !overwriteExisting
                         ? 'bg-[#0f172a] text-white shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                        : 'bg-white text-slate-700 hover:bg-slate-200/60 border border-slate-200'
                     }`}
                   >
                     Cập nhật bổ sung
@@ -1955,11 +1993,11 @@ export const SystemUsersPage: React.FC = () => {
             </div>
 
             {/* Modal Footer giống thiết kế ảnh */}
-            <div className="border-t border-slate-200 px-6 py-3.5 flex items-center justify-end gap-3 bg-slate-50/60 shrink-0">
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
               <button
                 type="button"
                 onClick={handleCloseImportModal}
-                className="px-5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium text-[13px] cursor-pointer shadow-2xs"
+                className="h-[38px] px-5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium text-[12.5px] cursor-pointer shadow-2xs transition-colors"
               >
                 Hủy
               </button>
@@ -1967,10 +2005,10 @@ export const SystemUsersPage: React.FC = () => {
                 type="button"
                 disabled={parsedImportUsers.length === 0 || isProcessingFile}
                 onClick={handleConfirmImport}
-                className={`px-5 py-2 rounded-xl font-medium text-[13px] transition-all shadow-xs ${
+                className={`h-[38px] px-5 rounded-xl font-bold text-[12.5px] transition-all shadow-sm flex items-center gap-2 ${
                   parsedImportUsers.length > 0 && !isProcessingFile
-                    ? 'bg-[#1e40af] hover:bg-blue-800 text-white cursor-pointer'
-                    : 'bg-[#e2e8f0] text-slate-400 cursor-not-allowed'
+                    ? 'bg-[#005325] hover:bg-[#00421e] text-white cursor-pointer active:scale-[0.99] border border-[#005325]'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200'
                 }`}
               >
                 Import dữ liệu ({parsedImportUsers.length} dòng)

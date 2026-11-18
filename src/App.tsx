@@ -36,6 +36,7 @@ import { SystemRoleGroupPage } from './components/SystemRoleGroupPage';
 import { SystemConfigPage, DEFAULT_PERIODS } from './components/SystemConfigPage';
 import { SystemAuditLogPage } from './components/SystemAuditLogPage';
 import { UserProfileView } from './components/UserProfileView';
+import { TduSsoLoginModal } from './components/TduSsoLoginModal';
 import { INITIAL_VBCC_DATA, INITIAL_TEACHING_DATA, INITIAL_ACCOUNTS } from './data/mockData';
 import {
   VbccRecord,
@@ -164,6 +165,35 @@ export default function App() {
   const [isAddingInline, setIsAddingInline] = useState<boolean>(false);
   const [inlineNotice, setInlineNotice] = useState<string | null>(null);
   const [isExcelImportOpen, setIsExcelImportOpen] = useState<boolean>(false);
+  const [isSsoModalOpen, setIsSsoModalOpen] = useState<boolean>(false);
+
+  const handleSsoLoginSuccess = (user: any) => {
+    if (!user) return;
+    const mappedRole: UserRole =
+      user.vaiTroCode === 'admin'
+        ? 'admin'
+        : user.vaiTroCode === 'truong_khoa' || user.vaiTroCode === 'truong_phong'
+        ? 'approver'
+        : user.vaiTroCode === 'chuyen_vien'
+        ? 'accountant_specialist'
+        : user.vaiTroCode === 'tro_ly'
+        ? 'dean_faculty'
+        : 'lecturer';
+
+    const matchedAccount: UserAccount = {
+      id: String(user.id || 'sso-user'),
+      email: user.email || 'canbo@tdu.edu.vn',
+      fullName: user.hoTen || user.name || 'Cán bộ TDU',
+      role: mappedRole,
+      unit: user.donVi || 'Đại học Tây Đô',
+      phone: '',
+      gender: user.gioiTinh === 'Nữ' ? 'female' : 'male',
+      isActive: true,
+      lastLogin: new Date().toISOString(),
+    };
+    setCurrentAccount(matchedAccount);
+    setCurrentRole(mappedRole);
+  };
   const [isAppendMode, setIsAppendMode] = useState<boolean>(false);
   const [isMinutesOpen, setIsMinutesOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -661,6 +691,7 @@ export default function App() {
           onOpenFeedbacks={() => setIsFeedbackListOpen(true)}
           onSendFeedback={() => setIsFeedbackModalOpen(true)}
           onOpenProfile={() => setIsProfileOpen(true)}
+          onOpenSsoModal={() => setIsSsoModalOpen(true)}
         />
 
         {/* Main Center Content Zone */}
@@ -1218,6 +1249,13 @@ export default function App() {
       <ColumnSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* TDU SSO Google & Email Login Modal */}
+      <TduSsoLoginModal
+        isOpen={isSsoModalOpen}
+        onClose={() => setIsSsoModalOpen(false)}
+        onLoginSuccess={handleSsoLoginSuccess}
       />
     </div>
   );
