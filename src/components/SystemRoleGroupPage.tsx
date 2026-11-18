@@ -1289,22 +1289,9 @@ export const SystemRoleGroupPage: React.FC = () => {
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/80 flex items-center justify-center shadow-2xs">
                   <UserPlus className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-[16px] text-slate-800 leading-tight">
-                    Thêm thành viên vào vai trò: {selectedRole.name}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span
-                      className="text-[11px] font-semibold px-2 py-0.2 rounded font-mono"
-                      style={{ backgroundColor: selectedRole.badgeBg, color: selectedRole.badgeText }}
-                    >
-                      {selectedRole.code}
-                    </span>
-                    <span className="text-[12px] text-slate-500">
-                      Chọn cán bộ, giảng viên theo đơn vị để cấp vai trò phân quyền
-                    </span>
-                  </div>
-                </div>
+                <h3 className="font-bold text-[16px] text-slate-800 leading-tight">
+                  Thêm thành viên
+                </h3>
               </div>
               <button
                 onClick={() => {

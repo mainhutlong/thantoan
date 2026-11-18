@@ -610,11 +610,8 @@ export const SystemUsersPage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-[17px] font-bold text-slate-900 leading-tight">
-                  QUẢN LÝ NGƯỜI DÙNG & HỒ SƠ NHÂN SỰ
+                  Người dùng
                 </h1>
-                <p className="text-[12px] text-slate-500">
-                  Dữ liệu cán bộ, giảng viên, học hàm, học vị, hợp đồng và kiêm nhiệm chuẩn file Đại học Tây Đô
-                </p>
               </div>
             </div>
           </div>
@@ -669,49 +666,6 @@ export const SystemUsersPage: React.FC = () => {
               <Plus className="w-4 h-4" />
               <span>+ Thêm người dùng mới</span>
             </button>
-          </div>
-        </div>
-
-        {/* 2. Metric Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-100">
-          <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[13px]">
-              {users.length}
-            </div>
-            <div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Tổng số cán bộ</div>
-              <div className="text-[13px] font-semibold text-slate-800">100% hồ sơ số hóa</div>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-[13px]">
-              {users.filter((u) => u.hocHam).length}
-            </div>
-            <div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Giáo sư / PGS</div>
-              <div className="text-[13px] font-semibold text-purple-800">Học hàm đầu ngành</div>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[13px]">
-              {users.filter((u) => u.hocVi.includes('Tiến sĩ')).length}
-            </div>
-            <div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Tiến sĩ (TS)</div>
-              <div className="text-[13px] font-semibold text-emerald-800">Trình độ sau ĐH</div>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[13px]">
-              {users.filter((u) => u.kiemNhiem).length}
-            </div>
-            <div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Có kiêm nhiệm</div>
-              <div className="text-[13px] font-semibold text-amber-800">Hưởng chế độ giảm trừ</div>
-            </div>
           </div>
         </div>
       </div>
