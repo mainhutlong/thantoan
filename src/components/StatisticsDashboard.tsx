@@ -4,9 +4,6 @@ import {
   Download,
   Printer,
   Building2,
-  Users,
-  Award,
-  DollarSign,
   TrendingUp,
   FileSpreadsheet
 } from 'lucide-react';
@@ -248,73 +245,55 @@ export const StatisticsDashboard: React.FC<StatisticsDashboardProps> = ({
         </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards (Clear, Readable Numbers) */}
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Card 1: Thực nhận */}
-        <div className="bg-white rounded-xl p-4 border border-emerald-200/90 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[13px] font-medium">Tổng kinh phí thực nhận</span>
-            <span className="w-7 h-7 rounded-lg bg-emerald-50 text-[#005325] flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+      {/* 2. Tổng quan số liệu thống kê (Trình bày dạng danh mục thông tin - Bỏ các ô card) */}
+      <div className="px-5 py-3.5 bg-white border-b border-slate-200">
+        <div className="space-y-1.5 text-[13.5px]">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-semibold text-slate-800 min-w-[190px] sm:min-w-[210px]">
+              Tổng kinh phí:
+            </span>
+            <span className="font-mono font-bold text-[16px] text-[#005325]">
+              {totalNet.toLocaleString('vi-VN')} VNĐ
+            </span>
+            <span className="text-slate-500 text-[12px]">
+              (Thực nhận sau thuế · Trước thuế: <span className="font-mono font-semibold text-slate-700">{totalGross.toLocaleString('vi-VN')} đ</span>)
             </span>
           </div>
-          <div className="text-[20px] font-bold font-mono text-[#005325] tabular-nums mt-0.5">
-            {totalNet.toLocaleString('vi-VN')} <span className="text-[14px] font-sans font-medium text-slate-600">VNĐ</span>
-          </div>
-          <div className="text-[12px] text-slate-500 mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-            <span>Trước thuế:</span>
-            <span className="font-mono font-semibold text-slate-700">{totalGross.toLocaleString('vi-VN')} đ</span>
-          </div>
-        </div>
 
-        {/* Card 2: Tổng tiết QC */}
-        <div className="bg-white rounded-xl p-4 border border-sky-200/90 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[13px] font-medium">Tổng tiết quy chuẩn (QC)</span>
-            <span className="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
-              <Award className="w-4 h-4" />
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-semibold text-slate-800 min-w-[190px] sm:min-w-[210px]">
+              Tổng tiết quy chuẩn:
+            </span>
+            <span className="font-mono font-bold text-[15px] text-sky-800">
+              {totalQC.toFixed(1)} tiết
+            </span>
+            <span className="text-slate-500 text-[12px]">
+              (Ghi nhận <span className="font-mono font-semibold text-slate-700">{totalRecords}</span> lượt kê khai công tác)
             </span>
           </div>
-          <div className="text-[20px] font-bold font-mono text-sky-800 tabular-nums mt-0.5">
-            {totalQC.toFixed(1)} <span className="text-[14px] font-sans font-medium text-slate-600">tiết</span>
-          </div>
-          <div className="text-[12px] text-slate-500 mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-            <span>Tổng số lượt ghi nhận:</span>
-            <span className="font-mono font-semibold text-slate-700">{totalRecords} lượt</span>
-          </div>
-        </div>
 
-        {/* Card 3: Số Giảng viên */}
-        <div className="bg-white rounded-xl p-4 border border-purple-200/90 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[13px] font-medium">Số Giảng viên tham gia</span>
-            <span className="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-semibold text-slate-800 min-w-[190px] sm:min-w-[210px]">
+              Số giảng viên tham gia:
+            </span>
+            <span className="font-mono font-bold text-[15px] text-purple-800">
+              {uniqueLecturers} Thầy / Cô
+            </span>
+            <span className="text-slate-500 text-[12px]">
+              (Phân bổ theo <span className="font-semibold text-slate-700">{displayedFacultyStats.length}</span> Khoa / Đơn vị)
             </span>
           </div>
-          <div className="text-[20px] font-bold font-mono text-purple-800 tabular-nums mt-0.5">
-            {uniqueLecturers} <span className="text-[14px] font-sans font-medium text-slate-600">Thầy / Cô</span>
-          </div>
-          <div className="text-[12px] text-slate-500 mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-            <span>Phân bố theo:</span>
-            <span className="font-medium text-slate-700">{displayedFacultyStats.length} Khoa / Đơn vị</span>
-          </div>
-        </div>
 
-        {/* Card 4: Thuế TNCN */}
-        <div className="bg-white rounded-xl p-4 border border-rose-200/90 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[13px] font-medium">Thuế TNCN khấu trừ (10%)</span>
-            <span className="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center font-bold text-[12px]">
-              10%
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-semibold text-slate-800 min-w-[190px] sm:min-w-[210px]">
+              Thuế:
             </span>
-          </div>
-          <div className="text-[20px] font-bold font-mono text-rose-700 tabular-nums mt-0.5">
-            {totalTax.toLocaleString('vi-VN')} <span className="text-[14px] font-sans font-medium text-slate-600">VNĐ</span>
-          </div>
-          <div className="text-[12px] text-slate-500 mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-            <span>Tỷ lệ trích nộp:</span>
-            <span className="font-medium text-rose-700">Theo luật thuế hiện hành</span>
+            <span className="font-mono font-bold text-[15px] text-rose-700">
+              {totalTax.toLocaleString('vi-VN')} VNĐ
+            </span>
+            <span className="text-slate-500 text-[12px]">
+              (Thuế TNCN 10% khấu trừ tại nguồn theo quy định hiện hành)
+            </span>
           </div>
         </div>
       </div>
