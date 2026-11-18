@@ -227,6 +227,7 @@ export interface UserAccount {
   email: string;
   role: AccountRoleType;
   departmentName: string;
+  chucVu?: string;
   assignedModule: string;
   maGV?: string;
   status: 'active' | 'locked';

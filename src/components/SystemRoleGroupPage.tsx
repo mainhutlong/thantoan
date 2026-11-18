@@ -312,20 +312,48 @@ const MODULE_CATALOG: ModulePermissionCatalog[] = [
   },
 ];
 
-// Tự động phân bổ 245 cán bộ vào các nhóm vai trò chuẩn TDU
-const initialRoleMembers = (() => {
-  const super_admin: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const ban_giam_hieu: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const phong_dao_tao: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const phong_tai_chinh: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const trung_tam_khao_thi: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const phong_nckh: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const phong_tuyen_sinh_ctsv: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const phong_tchc: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const lanh_dao_khoa: { id: string; name: string; code: string; unit: string; email: string }[] = [];
-  const giang_vien: { id: string; name: string; code: string; unit: string; email: string }[] = [];
+const ALL_PERMISSION_IDS = MODULE_CATALOG.flatMap((m) =>
+  m.sections.flatMap((s) => s.items.map((i) => i.id))
+);
+
+// 26 vai trò theo 26 đơn vị chính thức của Trường Đại học Tây Đô
+export const UNIT_ROLES_26_CONFIG = [
+  { id: 'hoi_dong_co_van', name: 'Hội đồng cố vấn', code: 'HOI_DONG_CO_VAN', color: '#64748b' },
+  { id: 'hoi_dong_truong', name: 'Hội đồng trường', code: 'HOI_DONG_TRUONG', color: '#6366f1' },
+  { id: 'ban_giam_hieu', name: 'Ban Giám hiệu', code: 'BAN_GIAM_HIEU', color: '#9333ea' },
+  { id: 'khoa_co_ban', name: 'Khoa cơ bản', code: 'KHOA_CO_BAN', color: '#0284c7' },
+  { id: 'khoa_luat', name: 'Khoa Luật', code: 'KHOA_LUAT', color: '#0284c7' },
+  { id: 'ban_phap_che_kiem_tra', name: 'Ban Pháp chế - Kiểm tra', code: 'BAN_PHAP_CHE_KIEM_TRA', color: '#64748b' },
+  { id: 'tap_chi_nckh_ptkt', name: 'Tạp chí NCKH&PTKT', code: 'TAP_CHI_NCKH_PTKT', color: '#0d9488' },
+  { id: 'khoa_duoc_dieu_duong', name: 'Khoa Dược - Điều dưỡng', code: 'KHOA_DUOC_DIEU_DUONG', color: '#0284c7' },
+  { id: 'khoa_ke_toan_tai_chinh_ngan_hang', name: 'Khoa Kế toán - Tài chính - Ngân hàng', code: 'KHOA_KT_TC_NH', color: '#0284c7' },
+  { id: 'khoa_quan_tri_kinh_doanh_du_lich', name: 'Khoa Quản trị kinh doanh - Du lịch', code: 'KHOA_QTKD_DU_LICH', color: '#0284c7' },
+  { id: 'khoa_ky_thuat_cong_nghe', name: 'Khoa Kỹ thuật - Công nghệ', code: 'KHOA_KY_THUAT_CONG_NGHE', color: '#0284c7' },
+  { id: 'khoa_ngoai_ngu_xhnv_tt', name: 'Khoa Ngoại ngữ - Xã hội nhân văn và Truyền thông', code: 'KHOA_NN_XHNV_TT', color: '#0284c7' },
+  { id: 'khoa_sinh_hoc_ung_dung', name: 'Khoa Sinh học ứng dụng', code: 'KHOA_SINH_HOC_UNG_DUNG', color: '#0284c7' },
+  { id: 'phong_to_chuc_hanh_chinh', name: 'Phòng Tổ chức - Hành chính', code: 'PHONG_TO_CHUC_HANH_CHINH', color: '#ec4899' },
+  { id: 'phong_cong_nghe_thong_tin', name: 'Phòng Công nghệ thông tin', code: 'PHONG_CONG_NGHE_THONG_TIN', color: '#dc2626' },
+  { id: 'phong_quan_tri_thiet_bi', name: 'Phòng Quản trị thiết bị', code: 'PHONG_QUAN_TRI_THIET_BI', color: '#64748b' },
+  { id: 'phong_quan_ly_dao_tao', name: 'Phòng Quản lý Đào tạo', code: 'PHONG_QUAN_LY_DAO_TAO', color: '#2563eb' },
+  { id: 'phong_ctct_qlsv', name: 'Phòng Công tác chính trị - Quản lý sinh viên', code: 'PHONG_CTCT_QLSV', color: '#f97316' },
+  { id: 'phong_tai_chinh_ke_hoach', name: 'Phòng Tài chính - Kế hoạch', code: 'PHONG_TAI_CHINH_KE_HOACH', color: '#16a34a' },
+  { id: 'phong_tuyen_sinh_truyen_thong', name: 'Phòng Tuyển sinh và Truyền thông', code: 'PHONG_TUYEN_SINH_TRUYEN_THONG', color: '#ea580c' },
+  { id: 'phong_qlkh_htqt', name: 'Phòng Quản lý khoa học và Hợp tác quốc tế', code: 'PHONG_QLKH_HTQT', color: '#0891b2' },
+  { id: 'tt_kiem_tra_dbclgd', name: 'Trung tâm Kiểm tra và Đảm bảo chất lượng giáo dục', code: 'TT_KT_DBCLGD', color: '#7c3aed' },
+  { id: 'tt_ngoai_ngu_tin_hoc', name: 'Trung tâm Ngoại ngữ - Tin học', code: 'TT_NGOAI_NGU_TIN_HOC', color: '#0284c7' },
+  { id: 'tt_khoi_nghiep_doi_moi_sang_tao', name: 'Trung tâm Khởi nghiệp Đổi mới sáng tạo Hỗ trợ sinh viên và Hợp tác doanh nghiệp', code: 'TT_KHOI_NGHIEP_DOANH_NGHIEP', color: '#d97706' },
+  { id: 'thu_vien', name: 'Thư viện', code: 'THU_VIEN', color: '#64748b' },
+  { id: 'van_phong_dang', name: 'Văn phòng Đảng', code: 'VAN_PHONG_DANG', color: '#dc2626' },
+];
+
+export const buildInitialRoles26 = (): RoleItem[] => {
+  const membersMap: Record<string, { id: string; name: string; code: string; unit: string; email: string }[]> = {};
+  for (const cfg of UNIT_ROLES_26_CONFIG) {
+    membersMap[cfg.name] = [];
+  }
 
   for (const p of FULL_PERSONNEL_245) {
+    const rawDonVi = (p.donVi || '').replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
     const item = {
       id: `u-${p.stt}`,
       name: p.hoTen,
@@ -333,256 +361,66 @@ const initialRoleMembers = (() => {
       unit: p.donVi,
       email: p.email || '',
     };
-    const emailLower = (p.email || '').toLowerCase();
-    const hoTenLower = p.hoTen.toLowerCase();
-    const donViLower = p.donVi.toLowerCase();
-    const chucVuLower = (p.chucVu || '').toLowerCase();
 
-    if (emailLower === 'mnlong@tdu.edu.vn' || hoTenLower.includes('mai nhựt long')) {
-      super_admin.push(item);
-    } else if (
-      donViLower.includes('ban giám hiệu') ||
-      donViLower.includes('hội đồng trường') ||
-      chucVuLower.includes('hiệu trưởng') ||
-      chucVuLower.includes('chủ tịch')
-    ) {
-      ban_giam_hieu.push(item);
-    } else if (donViLower.includes('đào tạo')) {
-      phong_dao_tao.push(item);
-    } else if (donViLower.includes('tài chính') || donViLower.includes('kế hoạch')) {
-      phong_tai_chinh.push(item);
-    } else if (donViLower.includes('khảo thí') || donViLower.includes('đảm bảo chất lượng')) {
-      trung_tam_khao_thi.push(item);
-    } else if (donViLower.includes('quản lý khoa học')) {
-      phong_nckh.push(item);
-    } else if (donViLower.includes('tuyển sinh') || donViLower.includes('truyền thông')) {
-      phong_tuyen_sinh_ctsv.push(item);
-    } else if (donViLower.includes('tổ chức') || donViLower.includes('hành chính')) {
-      phong_tchc.push(item);
-    } else if (
-      chucVuLower.includes('trưởng khoa') ||
-      chucVuLower.includes('phó trưởng khoa') ||
-      chucVuLower.includes('trưởng bộ môn')
-    ) {
-      lanh_dao_khoa.push(item);
+    let matchedKey: string | null = null;
+    for (const cfg of UNIT_ROLES_26_CONFIG) {
+      const cfgName = cfg.name.replace(/\s+/g, ' ').toLowerCase();
+      if (rawDonVi === cfgName || rawDonVi.includes(cfgName) || cfgName.includes(rawDonVi)) {
+        matchedKey = cfg.name;
+        break;
+      }
+    }
+
+    if (matchedKey && membersMap[matchedKey]) {
+      membersMap[matchedKey].push(item);
     } else {
-      giang_vien.push(item);
+      membersMap['Khoa cơ bản']?.push(item);
     }
   }
 
-  return {
-    super_admin,
-    ban_giam_hieu,
-    phong_dao_tao,
-    phong_tai_chinh,
-    trung_tam_khao_thi,
-    phong_nckh,
-    phong_tuyen_sinh_ctsv,
-    phong_tchc,
-    lanh_dao_khoa,
-    giang_vien,
-  };
-})();
+  return UNIT_ROLES_26_CONFIG.map((cfg) => {
+    let desc = '';
+    let disabled: string[] = [];
 
-// Danh sách Vai trò sát với cơ cấu vận hành thực tế tại Trường Đại học Tây Đô (TDU)
-const INITIAL_ROLES: RoleItem[] = [
-  {
-    id: 'super_admin',
-    name: 'Quản trị hệ thống',
-    code: 'QUẢN TRỊ HỆ THỐNG (SUPER ADMIN)',
-    dotColor: '#2563eb',
-    badgeBg: '#f3e8ff',
-    badgeText: '#9333ea',
-    description: 'Toàn quyền quản trị hệ thống Thanh toán giờ giảng TDU, quản lý người dùng, phân quyền group, cấu hình đơn giá và nhật ký kiểm toán.',
-    members: initialRoleMembers.super_admin,
-    disabledPermissions: [],
-  },
-  {
-    id: 'ban_giam_hieu',
-    name: 'Ban Giám hiệu',
-    code: 'BAN GIÁM HIỆU (PHÊ DUYỆT)',
-    dotColor: '#2563eb',
-    badgeBg: '#dcfce7',
-    badgeText: '#15803d',
-    description: 'Xem toàn bộ báo cáo thống kê tổng hợp, phê duyệt bảng tổng hợp thanh toán toàn trường, ký số biên bản nghiệm thu và khóa kỳ thanh toán.',
-    members: initialRoleMembers.ban_giam_hieu,
-    disabledPermissions: [
-      'gg_xoa',
-      'nckh_bb_xoa',
-      'nckh_sm_xoa',
-      'nckh_dt_xoa',
-      'kt_xoa',
-      'ts_xoa',
-      'ctk_xoa',
-      'nd_xoa',
-    ],
-  },
-  {
-    id: 'phong_dao_tao',
-    name: 'Phòng Đào tạo',
-    code: 'PHÒNG ĐÀO TẠO',
-    dotColor: '#2563eb',
-    badgeBg: '#e0f2fe',
-    badgeText: '#0284c7',
-    description: 'Phụ trách nhập liệu, kiểm tra, đối soát danh mục Thanh toán giờ giảng, Cố vấn học tập, phê duyệt phản hồi giờ giảng và lập biên bản nghiệm thu.',
-    members: initialRoleMembers.phong_dao_tao,
-    disabledPermissions: [
-      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
-      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
-      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
-      'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
-      'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
-    ],
-  },
-  {
-    id: 'phong_tai_chinh',
-    name: 'Phòng Kế hoạch - Tài chính',
-    code: 'PHÒNG KẾ HOẠCH - TÀI CHÍNH',
-    dotColor: '#16a34a',
-    badgeBg: '#dcfce7',
-    badgeText: '#15803d',
-    description: 'Quản lý bảng tổng hợp thanh toán toàn trường, kiểm soát khấu trừ thuế TNCN 10%, lập lệnh Ủy nhiệm chi (UNC) và xác nhận giải ngân tài chính.',
-    members: initialRoleMembers.phong_tai_chinh,
-    disabledPermissions: [
-      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_xoa',
-      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_xoa',
-      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_xoa',
-      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_xoa',
-      'kt_them_moi', 'kt_import_excel', 'kt_xoa',
-      'ts_them_moi', 'ts_import_excel', 'ts_xoa',
-      'ctk_nhap_lieu', 'ctk_xoa',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien',
-    ],
-  },
-  {
-    id: 'trung_tam_khao_thi',
-    name: 'Trung tâm Khảo thí',
-    code: 'TRUNG TÂM KHẢO THÍ & ĐBCL',
-    dotColor: '#2563eb',
-    badgeBg: '#f3e8ff',
-    badgeText: '#7e22ce',
-    description: 'Chịu trách nhiệm nhập liệu, rà soát danh mục Coi thi, chấm thi, ra đề kết thúc học phần và giải trình phản hồi khảo thí của giảng viên.',
-    members: initialRoleMembers.trung_tam_khao_thi,
-    disabledPermissions: [
-      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
-      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
-      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
-      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
-      'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
-    ],
-  },
-  {
-    id: 'phong_nckh',
-    name: 'Phòng QLKH & HTQT',
-    code: 'PHÒNG QLKH & HỢP TÁC QUỐC TẾ',
-    dotColor: '#2563eb',
-    badgeBg: '#cffafe',
-    badgeText: '#0e7490',
-    description: 'Thẩm định và nhập liệu danh mục Nghiên cứu Khoa học (3 tab: Bài báo khoa học, Seminar học thuật, Đề tài NCKH), xét duyệt định mức hoàn thành NCKH.',
-    members: initialRoleMembers.phong_nckh,
-    disabledPermissions: [
-      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
-      'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
-      'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
-    ],
-  },
-  {
-    id: 'phong_tuyen_sinh_ctsv',
-    name: 'P. Tuyển sinh & CTSV',
-    code: 'PHÒNG TUYỂN SINH & CÔNG TÁC SV',
-    dotColor: '#2563eb',
-    badgeBg: '#ffedd5',
-    badgeText: '#c2410c',
-    description: 'Quản lý kê khai giờ chuẩn Công tác tuyển sinh, Tư vấn hướng nghiệp và danh sách phân công Cố vấn học tập các lớp sinh viên.',
-    members: initialRoleMembers.phong_tuyen_sinh_ctsv,
-    disabledPermissions: [
-      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
-      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
-      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
-      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
-      'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
-    ],
-  },
-  {
-    id: 'phong_tchc',
-    name: 'Phòng Tổ chức - Hành chính',
-    code: 'PHÒNG TỔ CHỨC - HÀNH CHÍNH',
-    dotColor: '#ec4899',
-    badgeBg: '#fce7f3',
-    badgeText: '#db2777',
-    description: 'Quản lý danh sách Người dùng & Hồ sơ cán bộ giảng viên (20 cột thông tin: học hàm, học vị, hợp đồng lao động, chứng chỉ, kiêm nhiệm).',
-    members: initialRoleMembers.phong_tchc,
-    disabledPermissions: [
-      'gg_xoa', 'gg_khoa_ky',
-      'nckh_bb_xoa', 'nckh_sm_xoa', 'nckh_dt_xoa',
-      'kt_xoa',
-      'ts_xoa',
-      'ctk_xoa',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien',
-    ],
-  },
-  {
-    id: 'lanh_dao_khoa',
-    name: 'Ban Chủ nhiệm Khoa / BM',
-    code: 'BAN CHỦ NHIỆM KHOA / BỘ MÔN',
-    dotColor: '#2563eb',
-    badgeBg: '#fef3c7',
-    badgeText: '#b45309',
-    description: 'Trưởng/Phó Khoa và Trưởng Bộ môn rà soát bảng kê giờ giảng, NCKH, công tác khác của giảng viên thuộc Khoa mình quản lý trước khi trình Nhà trường.',
-    members: initialRoleMembers.lanh_dao_khoa,
-    disabledPermissions: [
-      'gg_xoa', 'gg_khoa_ky',
-      'nckh_bb_xoa', 'nckh_sm_xoa', 'nckh_dt_xoa',
-      'kt_xoa',
-      'ts_xoa',
-      'ctk_xoa',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
-    ],
-  },
-  {
-    id: 'giang_vien',
-    name: 'Giảng viên',
-    code: 'GIẢNG VIÊN (CƠ HỮU & THỈNH GIẢNG)',
-    dotColor: '#2563eb',
-    badgeBg: '#f1f5f9',
-    badgeText: '#334155',
-    description: 'Giảng viên tra cứu bảng thống kê thù lao 3 tab cá nhân (Giờ giảng, NCKH, Công tác khác), đối soát chi tiết, bấm xác nhận (3/3 mục) hoặc gửi phản hồi đính chính.',
-    members: initialRoleMembers.giang_vien,
-    disabledPermissions: [
-      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky', 'gg_duyet_dinh_chinh',
-      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
-      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
-      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
-      'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
-      'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'cvht_nhap_lieu', 'cvht_sua_xoa',
-      'ctk_nhap_lieu', 'ctk_sua', 'ctk_xoa',
-      'tt_chot_so_lieu', 'tt_export_tong',
-      'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi', 'tc_xuat_unc_excel',
-      'ph_xu_ly_dinh_chinh', 'ph_tu_choi',
-      'bb_lap_bien_ban', 'bb_ky_so_duyet',
-      'nd_them_moi', 'nd_chinh_sua', 'nd_xoa', 'nd_export_excel',
-      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien',
-      'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc', 'ht_nhat_ky_xem', 'ht_nhat_ky_xuat',
-    ],
-  },
-];
+    if (cfg.id === 'phong_cong_nghe_thong_tin') {
+      desc = 'Quản trị hệ thống (Toàn quyền): Toàn quyền truy cập, quản lý và cấu hình mọi phân hệ giờ giảng, NCKH, thù lao, thanh toán, báo cáo và hệ thống người dùng.';
+      disabled = [];
+    } else if (cfg.id === 'phong_quan_ly_dao_tao') {
+      desc = 'Phòng Quản lý Đào tạo: Thấy được menu Thanh toán giờ giảng (toàn quyền) và Phản hồi của giảng viên.';
+      disabled = ALL_PERMISSION_IDS.filter(
+        (id) => !id.startsWith('gg_') && id !== 'ph_xem_ds' && id !== 'ph_xu_ly_dinh_chinh' && id !== 'ph_tu_choi'
+      );
+    } else if (cfg.id === 'phong_qlkh_htqt') {
+      desc = 'Phòng Quản lý khoa học và Hợp tác quốc tế: Thấy được menu Nghiên cứu khoa học (toàn quyền) và Phản hồi của giảng viên.';
+      disabled = ALL_PERMISSION_IDS.filter(
+        (id) => !id.startsWith('nckh_') && id !== 'ph_xem_ds' && id !== 'ph_xu_ly_dinh_chinh' && id !== 'ph_tu_choi'
+      );
+    } else if (cfg.id === 'phong_tai_chinh_ke_hoach') {
+      desc = 'Phòng Tài chính - Kế hoạch: Xem được toàn bộ số liệu thống kê, tổng hợp thanh toán và chi trả tài chính UNC (ngoại trừ menu Hệ thống).';
+      disabled = ALL_PERMISSION_IDS.filter((id) => id.startsWith('nd_') || id.startsWith('ht_'));
+    } else if (cfg.name.toLowerCase().startsWith('khoa')) {
+      desc = 'Khoa chuyên môn: Người dùng có chức vụ Giảng viên thấy được menu tra cứu và phản hồi (toàn quyền) xem cái của mình.';
+      disabled = ALL_PERMISSION_IDS.filter((id) => !id.startsWith('tc_gv_') && id !== 'ph_gui_moi');
+    } else {
+      desc = 'Đơn vị chức năng: Không có quyền quản lý trực tiếp các phân hệ chuyên môn giờ giảng và NCKH.';
+      disabled = [...ALL_PERMISSION_IDS];
+    }
+
+    return {
+      id: cfg.id,
+      name: cfg.name,
+      code: cfg.code,
+      dotColor: cfg.color,
+      badgeBg: '#eff6ff',
+      badgeText: cfg.color,
+      description: desc,
+      members: membersMap[cfg.name] || [],
+      disabledPermissions: disabled,
+    };
+  });
+};
+
+const INITIAL_ROLES: RoleItem[] = buildInitialRoles26();
 
 export interface StaffCandidate {
   id: string;
@@ -634,7 +472,8 @@ export const SystemRoleGroupPage: React.FC = () => {
         console.warn('Could not fetch /api/roles, using initialMembers', err);
       });
   }, []);
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('super_admin');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('phong_cong_nghe_thong_tin');
+  const [roleSearchQuery, setRoleSearchQuery] = useState<string>('');
   const [activeTopTab, setActiveTopTab] = useState<'thong_tin' | 'module' | 'quyen_han' | 'thanh_vien'>('quyen_han');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('thanh_toan_gio_giang');
   const [permissionSearch, setPermissionSearch] = useState<string>('');
@@ -880,10 +719,10 @@ export const SystemRoleGroupPage: React.FC = () => {
         {/* ============================================================
             LEFT COLUMN: DANH SÁCH VAI TRÒ
             ============================================================ */}
-        <div className="w-[240px] border-r border-slate-200 flex flex-col shrink-0 bg-white">
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              DANH SÁCH VAI TRÒ
+        <div className="w-[285px] border-r border-slate-200 flex flex-col shrink-0 bg-white">
+          <div className="px-3.5 pt-3.5 pb-2 flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              DANH SÁCH 26 VAI TRÒ
             </span>
             <button
               onClick={() => setIsAddRoleOpen(true)}
@@ -894,38 +733,76 @@ export const SystemRoleGroupPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
-            {roles.map((role) => {
-              const isSelected = role.id === selectedRole.id;
-              return (
+          {/* Quick search among 26 unit roles */}
+          <div className="px-2.5 pb-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Tìm vai trò / đơn vị..."
+                value={roleSearchQuery}
+                onChange={(e) => setRoleSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-[12px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-slate-700"
+              />
+              {roleSearchQuery && (
                 <button
-                  key={role.id}
-                  onClick={() => setSelectedRoleId(role.id)}
-                  className={`w-full text-left px-2.5 py-2.5 rounded-r-full flex items-center gap-2 transition-all cursor-pointer relative ${
-                    isSelected
-                      ? 'bg-[#eff6ff] text-[#1d4ed8] font-semibold'
-                      : 'text-slate-700 hover:bg-slate-50 font-normal'
-                  }`}
+                  type="button"
+                  onClick={() => setRoleSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  {/* Left active blue bar indicator */}
-                  {isSelected && (
-                    <span className="absolute left-0 top-1 bottom-1 w-[3.5px] bg-[#2563eb] rounded-r" />
-                  )}
-
-                  {/* Drag handle 6 dots */}
-                  <GripVertical className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-
-                  {/* Colored status dot */}
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: role.dotColor }}
-                  />
-
-                  {/* Role Name */}
-                  <span className="text-[12.5px] truncate">{role.name}</span>
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              );
-            })}
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+            {roles
+              .filter((role) => {
+                if (!roleSearchQuery.trim()) return true;
+                const q = roleSearchQuery.toLowerCase().trim();
+                return role.name.toLowerCase().includes(q) || role.code.toLowerCase().includes(q);
+              })
+              .map((role) => {
+                const isSelected = role.id === selectedRole.id;
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => setSelectedRoleId(role.id)}
+                    title={`${role.name} (${role.members.length} thành viên)`}
+                    className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer relative ${
+                      isSelected
+                        ? 'bg-[#eff6ff] text-[#1d4ed8] font-semibold shadow-2xs'
+                        : 'text-slate-700 hover:bg-slate-50 font-normal'
+                    }`}
+                  >
+                    {/* Left active blue bar indicator */}
+                    {isSelected && (
+                      <span className="absolute left-0 top-1 bottom-1 w-[3.5px] bg-[#2563eb] rounded-r" />
+                    )}
+
+                    {/* Colored status dot */}
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: role.dotColor }}
+                    />
+
+                    {/* Role Name */}
+                    <span className="text-[12px] truncate flex-1">{role.name}</span>
+
+                    {/* Member count badge */}
+                    <span
+                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${
+                        isSelected
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {role.members.length}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         </div>
 

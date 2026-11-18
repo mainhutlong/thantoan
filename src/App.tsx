@@ -101,11 +101,12 @@ export default function App() {
         return {
           id: String(u.id || '1'),
           username: (u.email || 'mnlong@tdu.edu.vn').split('@')[0],
-          fullName: u.hoTen || u.name || 'Mai Như Long',
+          fullName: u.hoTen || u.name || 'Mai Nhựt Long',
           email: u.email || 'mnlong@tdu.edu.vn',
           role: mappedRole as any,
-          departmentName: u.donVi || 'Khoa Công nghệ thông tin',
-          assignedModule: u.chucVu || 'Phó Trưởng phòng CNTT',
+          departmentName: u.donVi || 'Phòng Công nghệ thông tin',
+          chucVu: u.chucVu || 'Phó Trưởng phòng',
+          assignedModule: u.chucVu || 'Toàn quyền hệ thống',
           maGV: u.maNhanSu || 'TDU00128',
           status: 'active',
           lastLogin: new Date().toLocaleString('vi-VN'),
@@ -237,11 +238,12 @@ export default function App() {
     const matchedAccount: UserAccount = {
       id: String(user.id || '1'),
       username: (user.email || 'mnlong@tdu.edu.vn').split('@')[0],
-      fullName: user.hoTen || user.name || 'Mai Như Long',
+      fullName: user.hoTen || user.name || 'Mai Nhựt Long',
       email: user.email || 'mnlong@tdu.edu.vn',
       role: mappedRole as any,
-      departmentName: user.donVi || 'Khoa Công nghệ thông tin',
-      assignedModule: user.chucVu || 'Phó Trưởng phòng CNTT',
+      departmentName: user.donVi || 'Phòng Công nghệ thông tin',
+      chucVu: user.chucVu || 'Cán bộ',
+      assignedModule: user.chucVu || 'Toàn quyền hệ thống',
       maGV: user.maNhanSu || 'TDU00128',
       status: 'active',
       lastLogin: new Date().toLocaleString('vi-VN'),
@@ -252,6 +254,26 @@ export default function App() {
       setSelectedLecturerMa(user.maNhanSu);
     }
     setIsAuthenticated(true);
+
+    // Tự động định tuyến ban đầu thông minh theo phân quyền đơn vị
+    const emailLower = (user.email || '').toLowerCase().trim();
+    const deptLower = (user.donVi || '').toLowerCase().trim();
+    const isSuper = emailLower === 'mnlong@tdu.edu.vn' || deptLower.includes('công nghệ thông tin') || mappedRole === 'admin';
+    const isDaoTao = !isSuper && deptLower.includes('đào tạo');
+    const isQLKH = !isSuper && (deptLower.includes('khoa học') || deptLower.includes('qlkh'));
+    const isTaiChinh = !isSuper && (deptLower.includes('tài chính') || deptLower.includes('kế hoạch'));
+
+    if (isDaoTao) {
+      setActiveSidebarItem('ke_khai_upload');
+      setSelectedDepartment('dao_tao');
+    } else if (isQLKH) {
+      setActiveSidebarItem('ke_khai_upload');
+      setSelectedDepartment('nckh');
+    } else if (isTaiChinh) {
+      setActiveSidebarItem('tong_thanh_toan');
+    } else if (!isSuper) {
+      setActiveSidebarItem('tra_cuu_giang_vien');
+    }
   };
 
   const handleLogout = () => {

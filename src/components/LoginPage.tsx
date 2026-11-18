@@ -70,6 +70,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 } else if (found?.donVi.toLowerCase().includes('đào tạo')) {
                   role = 'PHONG_DAO_TAO';
                   roleName = 'Phòng Quản lý Đào tạo';
+                } else if (found?.donVi.toLowerCase().includes('khoa học') || found?.donVi.toLowerCase().includes('qlkh')) {
+                  role = 'PHONG_QLKH';
+                  roleName = 'Phòng Quản lý khoa học và Hợp tác quốc tế';
+                } else if (found?.donVi.toLowerCase().includes('tài chính') || found?.donVi.toLowerCase().includes('kế hoạch')) {
+                  role = 'PHONG_TAI_CHINH';
+                  roleName = 'Phòng Tài chính - Kế hoạch';
                 }
 
                 const fallbackUser = {
