@@ -5,10 +5,13 @@ import {
   Plus,
   Download,
   Upload,
+  UploadCloud,
   Edit2,
+  Edit3,
   Trash2,
   Eye,
   X,
+  Check,
   CheckCircle2,
   Filter,
   UserCheck,
@@ -19,7 +22,11 @@ import {
   ArrowLeft,
   AlertCircle,
   FileUp,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SystemUserProfile } from '../types';
@@ -124,11 +131,23 @@ export const SystemUsersPage: React.FC = () => {
   const [selectedDegree, setSelectedDegree] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
 
+  // Pagination states (10, 20, 50, 100 rows per page)
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Reset current page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDept, selectedDegree, selectedGender, pageSize]);
+
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SystemUserProfile | null>(null);
-  const [viewingUser, setViewingUser] = useState<SystemUserProfile | null>(null);
+
+  // Slide-over Drawer states (merged Detail & Edit)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerUser, setDrawerUser] = useState<SystemUserProfile | null>(null);
+  const [drawerFormData, setDrawerFormData] = useState<Partial<SystemUserProfile>>({});
 
   // Import Excel Modal states
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -138,7 +157,7 @@ export const SystemUsersPage: React.FC = () => {
   const [overwriteExisting, setOverwriteExisting] = useState(true);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
 
-  // Form state for 20 columns
+  // Form state for 20 columns (Used by Add Modal)
   const [formData, setFormData] = useState<Partial<SystemUserProfile>>({
     hoTen: '',
     chucVu: 'Giảng viên cơ hữu',
@@ -190,6 +209,42 @@ export const SystemUsersPage: React.FC = () => {
       return true;
     });
   }, [users, searchTerm, selectedDept, selectedDegree, selectedGender]);
+
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedUsers = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, safeCurrentPage, pageSize]);
+
+  // Open Drawer (Detail & Edit)
+  const handleOpenDrawer = (user: SystemUserProfile) => {
+    setDrawerUser(user);
+    setDrawerFormData({ ...user });
+    setIsDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setDrawerUser(null);
+  };
+
+  const handleSaveDrawer = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!drawerUser) return;
+    if (!drawerFormData.hoTen || !drawerFormData.maNhanSu) {
+      alert('Vui lòng điền đầy đủ Họ tên và Mã nhân sự!');
+      return;
+    }
+
+    setUsers((prev) =>
+      prev.map((u) => (u.id === drawerUser.id ? ({ ...u, ...drawerFormData } as SystemUserProfile) : u))
+    );
+    setDrawerUser((prev) => (prev ? ({ ...prev, ...drawerFormData } as SystemUserProfile) : null));
+    alert('Đã cập nhật thông tin hồ sơ cán bộ thành công!');
+    setIsDrawerOpen(false);
+  };
 
   // Open Add modal
   const handleOpenAdd = () => {
@@ -367,11 +422,8 @@ export const SystemUsersPage: React.FC = () => {
     }
   };
 
-  // Handle file select for Excel import
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Handle file parsing for Excel import (shared by file input and drag-drop)
+  const handleProcessExcelFile = (file: File) => {
     setImportFile(file);
     setImportError(null);
     setIsProcessingFile(true);
@@ -515,6 +567,11 @@ export const SystemUsersPage: React.FC = () => {
     reader.readAsBinaryString(file);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleProcessExcelFile(file);
+  };
+
   // Confirm and apply imported users
   const handleConfirmImport = () => {
     if (parsedImportUsers.length === 0) return;
@@ -543,133 +600,6 @@ export const SystemUsersPage: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col bg-[#f8fafc] overflow-y-auto">
-      {isDetailModalOpen && viewingUser ? (
-        <div className="flex-1 flex flex-col bg-[#f8fafc]">
-          {/* Top Bar */}
-          <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0">
-            <button
-              onClick={() => setIsDetailModalOpen(false)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[12.5px] font-bold transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Quay lại danh sách nhân sự</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setIsDetailModalOpen(false);
-                  handleOpenEdit(viewingUser);
-                }}
-                className="h-[32px] px-3.5 rounded-lg bg-[#005325] hover:bg-[#00421e] text-white text-[12px] font-bold flex items-center gap-1.5 cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                <span>Chỉnh sửa hồ sơ</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Inline Detail Card */}
-          <div className="p-6 max-w-[960px] w-full mx-auto space-y-4">
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-[#005325] to-emerald-800 text-white p-5 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl text-white border border-white/30">
-                    {viewingUser.hoTen.slice(0, 1)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-[18px] leading-tight">{viewingUser.hoTen}</h3>
-                    <p className="text-[12.5px] text-emerald-100 mt-0.5 font-semibold">
-                      {viewingUser.chucVu} • {viewingUser.donVi}
-                    </p>
-                    <div className="mt-1.5 flex items-center gap-2 text-[12px] font-bold">
-                      <span className="bg-white/20 px-2.5 py-0.5 rounded text-white">
-                        Mã NS: {viewingUser.maNhanSu}
-                      </span>
-                      {viewingUser.hocHam && (
-                        <span className="bg-white/20 px-2.5 py-0.5 rounded text-white">
-                          Học hàm: {viewingUser.hocHam}
-                        </span>
-                      )}
-                      <span className="bg-white/20 px-2.5 py-0.5 rounded text-white">
-                        Học vị: {viewingUser.hocVi}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-5 text-[13px]">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-200">
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Giới tính</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.gioiTinh}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Ngày, tháng, năm sinh</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.ngaySinh}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Chuyên môn đào tạo</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.chuyenMon}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm tốt nghiệp ĐH</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namTotNghiep}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-200">
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm tuyển dụng</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namTuyenDung}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Ngày ký HĐLĐ chính thức</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.ngayKyHDLD}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm công nhận học hàm PGS</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namCongNhanPGS || '—'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Năm công nhận học hàm GS</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.namCongNhanGS || '—'}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-slate-200">
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Chứng chỉ sư phạm (CCSP)</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.ccsp}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Trình độ ngoại ngữ / Anh văn</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.anhVan}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Trình độ tin học</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.tinHoc}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Nhiệm vụ kiêm nhiệm</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">
-                      {viewingUser.kiemNhiem || 'Không có nhiệm vụ kiêm nhiệm'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11.5px] font-semibold">Đơn vị kiêm nhiệm</span>
-                    <span className="font-bold text-slate-900 mt-0.5 block">{viewingUser.donViKiemNhiem || '—'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
       {/* 1. Header Zone */}
       <div className="bg-white border-b border-slate-200 px-6 py-4 shrink-0 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -939,16 +869,18 @@ export const SystemUsersPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user, idx) => (
+                  paginatedUsers.map((user, idx) => {
+                    const globalIdx = (safeCurrentPage - 1) * pageSize + idx + 1;
+                    return (
                     <tr key={user.id} className="h-[38px] hover:bg-blue-50/40 transition-colors font-normal text-slate-600">
                       <td className="px-2.5 text-center border-r border-slate-200">
-                        {idx + 1}
+                        {globalIdx}
                       </td>
 
                       {/* Họ tên */}
                       <td className="px-3 font-normal text-slate-600 border-r border-slate-200 whitespace-nowrap">
                         <button
-                          onClick={() => handleOpenDetail(user)}
+                          onClick={() => handleOpenDrawer(user)}
                           className="hover:text-[#005325] hover:underline cursor-pointer text-left font-normal"
                         >
                           {user.hoTen}
@@ -1047,26 +979,20 @@ export const SystemUsersPage: React.FC = () => {
                         {user.donViKiemNhiem || '—'}
                       </td>
 
-                      {/* Thao tác */}
+                      {/* Thao tác (Gộp nút xem chi tiết và chỉnh sửa làm một) */}
                       <td className="px-3 text-center whitespace-nowrap sticky right-0 bg-white shadow-xs">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
-                            onClick={() => handleOpenDetail(user)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 cursor-pointer"
-                            title="Xem chi tiết"
+                            onClick={() => handleOpenDrawer(user)}
+                            className="h-7 px-2.5 rounded-lg flex items-center gap-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 cursor-pointer text-[11.5px] font-medium transition-colors"
+                            title="Xem chi tiết & Chỉnh sửa hồ sơ nhân sự"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEdit(user)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-50 text-[#005325] hover:bg-emerald-100 border border-emerald-200 cursor-pointer"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Chi tiết & Sửa</span>
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 cursor-pointer"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 cursor-pointer transition-colors"
                             title="Xóa hồ sơ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1074,15 +1000,90 @@ export const SystemUsersPage: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* 4.5. Thanh phân trang & Chế độ hiển thị 10, 20, 50, 100 dòng */}
+          {filteredUsers.length > 0 && (
+            <div className="bg-white border-t border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-600">
+              {/* Chế độ hiển thị */}
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-slate-500">Hiển thị</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="h-[28px] px-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-700 font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value={10}>10 dòng</option>
+                  <option value={20}>20 dòng</option>
+                  <option value={50}>50 dòng</option>
+                  <option value={100}>100 dòng</option>
+                </select>
+                <span className="font-medium text-slate-500">/ trang</span>
+                <span className="text-slate-300 mx-1">|</span>
+                <span className="text-slate-600">
+                  Hiển thị <b>{(safeCurrentPage - 1) * pageSize + 1}</b> -{' '}
+                  <b>{Math.min(safeCurrentPage * pageSize, filteredUsers.length)}</b> trong tổng số{' '}
+                  <b>{filteredUsers.length}</b> cán bộ
+                </span>
+              </div>
+
+              {/* Điều hướng trang */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={safeCurrentPage === 1}
+                  className="h-7 px-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-slate-600 transition-colors"
+                  title="Trang đầu"
+                >
+                  <ChevronsLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage === 1}
+                  className="h-7 px-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-slate-600 transition-colors"
+                  title="Trang trước"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Chỉ số trang */}
+                <div className="flex items-center gap-1 mx-1.5 font-medium">
+                  <span className="px-2 py-0.5 rounded-md bg-[#005325] text-white text-[11.5px] font-semibold">
+                    Trang {safeCurrentPage}
+                  </span>
+                  <span className="text-slate-400">/</span>
+                  <span className="text-slate-700">{totalPages}</span>
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                  className="h-7 px-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-slate-600 transition-colors"
+                  title="Trang sau"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={safeCurrentPage === totalPages}
+                  className="h-7 px-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-slate-600 transition-colors"
+                  title="Trang cuối"
+                >
+                  <ChevronsRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      </>
-      )}
 
       {/* 5. Modal: Add / Edit User (Covering all 20 columns) */}
       {isFormModalOpen && (
@@ -1374,35 +1375,67 @@ export const SystemUsersPage: React.FC = () => {
         </div>
       )}
 
-      {/* 6. Modal: Import Users from Excel (18 Columns) */}
+      {/* 6. Modal: Import Users from Excel (Thiết kế chuẩn theo mẫu) */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[950px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
-            {/* Header */}
-            <div className="bg-[#005325] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-300" />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+            {/* Header theo thiết kế mẫu */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shadow-2xs">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="font-bold text-[15px]">
-                    IMPORT HỒ SƠ NGƯỜI DÙNG TỪ FILE EXCEL
-                  </h3>
-                  <p className="text-[11.5px] text-emerald-100">
-                    Hỗ trợ file Excel 18 cột nhân sự theo định dạng chuẩn Đại học Tây Đô
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-[16px] text-slate-900 leading-tight">
+                      Import dữ liệu hồ sơ nhân sự
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11.5px] bg-slate-100 text-slate-600 font-medium border border-slate-200/80">
+                      Hồ sơ 18 cột TDU
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-slate-500 mt-0.5">
+                    Kéo thả file ở trên để đối soát và nạp mã nhân sự vào hệ thống
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleCloseImportModal}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg cursor-pointer transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-[12.5px]">
-              {/* Dropzone Upload Box */}
-              <div className="border-2 border-dashed border-emerald-300 rounded-2xl bg-emerald-50/40 p-6 text-center hover:bg-emerald-50/70 transition-colors">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 text-[12.5px]">
+              {/* Section 1 Header */}
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800 text-[13px]">
+                  <UploadCloud className="w-4 h-4 text-slate-700" />
+                  <span>1. Chọn hoặc kéo thả tập tin Excel (.xlsx, .xls)</span>
+                  <span className="text-rose-500 font-bold">*</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="text-[#1a73e8] hover:underline font-medium text-[12.5px] inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải file mẫu chuẩn</span>
+                </button>
+              </div>
+
+              {/* Dashed Dropzone Upload Box */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleProcessExcelFile(file);
+                }}
+                className="border-2 border-dashed border-slate-300 rounded-2xl bg-white p-7 text-center hover:border-blue-400 hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center"
+              >
                 <input
                   type="file"
                   id="excel-file-upload-input"
@@ -1410,33 +1443,21 @@ export const SystemUsersPage: React.FC = () => {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <div className="flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-100 text-[#005325] flex items-center justify-center mb-2.5 shadow-2xs">
-                    <FileUp className="w-6 h-6" />
-                  </div>
-                  <label
-                    htmlFor="excel-file-upload-input"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#005325] hover:bg-[#00421e] text-white font-medium rounded-xl cursor-pointer shadow-xs transition-all text-[13px]"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>Chọn file Excel (.xlsx, .xls)</span>
-                  </label>
-                  <p className="text-slate-500 text-[12px] mt-2">
-                    Hệ thống sẽ tự động nhận diện và ghép đúng 18 cột thông tin nhân sự
-                  </p>
-
-                  <div className="mt-3 flex items-center gap-2 text-[12px]">
-                    <span className="text-slate-500">Chưa có file mẫu chuẩn?</span>
-                    <button
-                      type="button"
-                      onClick={handleDownloadTemplate}
-                      className="text-[#005325] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Tải file Excel mẫu 18 cột</span>
-                    </button>
-                  </div>
+                <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 mb-2.5 shadow-2xs">
+                  <UploadCloud className="w-5 h-5" />
                 </div>
+                <div className="font-semibold text-slate-800 text-[13.5px]">
+                  Kéo thả file Excel vào đây hoặc bấm nút để chọn file
+                </div>
+                <div className="text-slate-400 text-[12px] mt-1 mb-3.5">
+                  Định dạng hỗ trợ: XLS, XLSX — Tối đa 20MB
+                </div>
+                <label
+                  htmlFor="excel-file-upload-input"
+                  className="px-5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[12.5px] font-medium shadow-2xs cursor-pointer transition-all inline-flex items-center gap-2"
+                >
+                  <span>Chọn file từ máy</span>
+                </label>
               </div>
 
               {/* Error Alert */}
@@ -1453,144 +1474,455 @@ export const SystemUsersPage: React.FC = () => {
               {/* Processing Loader */}
               {isProcessingFile && (
                 <div className="py-6 flex flex-col items-center justify-center text-slate-500 gap-2">
-                  <RefreshCw className="w-6 h-6 animate-spin text-emerald-600" />
-                  <span>Đang đọc và xử lý dữ liệu từ file Excel...</span>
+                  <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+                  <span>Đang đọc và phân tích cấu trúc file Excel...</span>
                 </div>
               )}
 
-              {/* Data Loaded Preview Card */}
+              {/* Preview data when file is parsed */}
               {importFile && parsedImportUsers.length > 0 && !isProcessingFile && (
-                <div className="space-y-4">
-                  {/* Summary Bar */}
-                  <div className="bg-blue-50/90 border border-blue-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[14px]">
+                <div className="space-y-3 mt-3">
+                  <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-3 flex items-center justify-between text-[12.5px]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                         {parsedImportUsers.length}
                       </div>
                       <div>
-                        <div className="font-semibold text-blue-900 text-[13px]">
-                          Đã đọc thành công {parsedImportUsers.length} hồ sơ nhân sự
-                        </div>
-                        <div className="text-blue-700 text-[11.5px]">
-                          Tên file: <span className="font-medium">{importFile.name}</span> ({(importFile.size / 1024).toFixed(1)} KB)
-                        </div>
+                        <span className="font-semibold text-blue-950">Đã đọc thành công {parsedImportUsers.length} hồ sơ nhân sự</span>
+                        <span className="text-blue-700 block text-[11.5px]">Tệp: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)</span>
                       </div>
                     </div>
-
-                    {/* Overwrite Checkbox */}
-                    <label className="flex items-center gap-2 text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
-                      <input
-                        type="checkbox"
-                        checked={overwriteExisting}
-                        onChange={(e) => setOverwriteExisting(e.target.checked)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                      />
-                      <span className="font-medium text-[12px]">Xóa toàn bộ dữ liệu cũ và ghi đè</span>
-                    </label>
+                    <span className="text-emerald-700 font-semibold bg-emerald-100/70 px-2.5 py-1 rounded-md text-[11.5px] flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Hợp lệ 18 cột
+                    </span>
                   </div>
 
                   {/* Preview Table of first 5 rows */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-semibold text-slate-700 text-[12px]">
-                        Xem trước 5 hồ sơ đầu tiên (trong tổng số {parsedImportUsers.length} cán bộ):
-                      </span>
-                      <span className="text-slate-400 text-[11.5px]">
-                        Cuộn ngang để xem tất cả cột đã ghép
-                      </span>
-                    </div>
-
-                    <div className="border border-slate-200 rounded-xl overflow-x-auto max-h-[220px]">
-                      <table className="w-full text-left text-[11.5px] border-collapse min-w-[1400px]">
-                        <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200">
-                          <tr>
-                            <th className="p-2 border-r border-slate-200 w-10 text-center">STT</th>
-                            <th className="p-2 border-r border-slate-200">Họ tên</th>
-                            <th className="p-2 border-r border-slate-200">Mã NS</th>
-                            <th className="p-2 border-r border-slate-200">Chức vụ</th>
-                            <th className="p-2 border-r border-slate-200">Đơn vị</th>
-                            <th className="p-2 border-r border-slate-200 text-center">Giới tính</th>
-                            <th className="p-2 border-r border-slate-200 text-center">Ngày sinh</th>
-                            <th className="p-2 border-r border-slate-200">Học hàm</th>
-                            <th className="p-2 border-r border-slate-200">Học vị</th>
-                            <th className="p-2 border-r border-slate-200">Chuyên môn</th>
-                            <th className="p-2 border-r border-slate-200 text-center">Năm TD</th>
-                            <th className="p-2 border-r border-slate-200 text-center">Ký HĐLĐ</th>
-                            <th className="p-2 border-r border-slate-200 text-center">CCSP</th>
-                            <th className="p-2 border-r border-slate-200">Anh văn</th>
-                            <th className="p-2 border-r border-slate-200">Tin học</th>
-                            <th className="p-2 border-r border-slate-200">Kiêm nhiệm</th>
-                            <th className="p-2">Đơn vị kiêm nhiệm</th>
+                  <div className="border border-slate-200 rounded-xl overflow-x-auto max-h-[190px]">
+                    <table className="w-full text-left text-[11.5px] border-collapse min-w-[1300px]">
+                      <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200">
+                        <tr>
+                          <th className="p-2 border-r border-slate-200 w-10 text-center">STT</th>
+                          <th className="p-2 border-r border-slate-200">Họ tên</th>
+                          <th className="p-2 border-r border-slate-200">Mã NS</th>
+                          <th className="p-2 border-r border-slate-200">Chức vụ</th>
+                          <th className="p-2 border-r border-slate-200">Đơn vị</th>
+                          <th className="p-2 border-r border-slate-200 text-center">Giới tính</th>
+                          <th className="p-2 border-r border-slate-200 text-center">Ngày sinh</th>
+                          <th className="p-2 border-r border-slate-200">Học hàm</th>
+                          <th className="p-2 border-r border-slate-200">Học vị</th>
+                          <th className="p-2 border-r border-slate-200">Chuyên môn</th>
+                          <th className="p-2 border-r border-slate-200 text-center">Năm TD</th>
+                          <th className="p-2 border-r border-slate-200 text-center">Ký HĐLĐ</th>
+                          <th className="p-2 border-r border-slate-200 text-center">CCSP</th>
+                          <th className="p-2 border-r border-slate-200">Anh văn</th>
+                          <th className="p-2 border-r border-slate-200">Tin học</th>
+                          <th className="p-2">Kiêm nhiệm</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {parsedImportUsers.slice(0, 5).map((u, i) => (
+                          <tr key={u.id} className="hover:bg-slate-50">
+                            <td className="p-2 text-center border-r border-slate-200 font-medium">{i + 1}</td>
+                            <td className="p-2 border-r border-slate-200 font-semibold text-slate-800">{u.hoTen}</td>
+                            <td className="p-2 border-r border-slate-200 font-mono">{u.maNhanSu}</td>
+                            <td className="p-2 border-r border-slate-200">{u.chucVu}</td>
+                            <td className="p-2 border-r border-slate-200">{u.donVi}</td>
+                            <td className="p-2 border-r border-slate-200 text-center">{u.gioiTinh}</td>
+                            <td className="p-2 border-r border-slate-200 text-center">{u.ngaySinh}</td>
+                            <td className="p-2 border-r border-slate-200">{u.hocHam || '—'}</td>
+                            <td className="p-2 border-r border-slate-200">{u.hocVi}</td>
+                            <td className="p-2 border-r border-slate-200">{u.chuyenMon}</td>
+                            <td className="p-2 border-r border-slate-200 text-center">{u.namTuyenDung}</td>
+                            <td className="p-2 border-r border-slate-200 text-center">{u.ngayKyHDLD}</td>
+                            <td className="p-2 border-r border-slate-200 text-center">{u.ccsp}</td>
+                            <td className="p-2 border-r border-slate-200">{u.anhVan}</td>
+                            <td className="p-2 border-r border-slate-200 truncate max-w-[120px]">{u.tinHoc}</td>
+                            <td className="p-2">{u.kiemNhiem || '—'}</td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {parsedImportUsers.slice(0, 5).map((u, i) => (
-                            <tr key={u.id} className="hover:bg-slate-50">
-                              <td className="p-2 text-center border-r border-slate-200 font-medium">{i + 1}</td>
-                              <td className="p-2 border-r border-slate-200 font-semibold text-slate-800">{u.hoTen}</td>
-                              <td className="p-2 border-r border-slate-200 font-mono">{u.maNhanSu}</td>
-                              <td className="p-2 border-r border-slate-200">{u.chucVu}</td>
-                              <td className="p-2 border-r border-slate-200">{u.donVi}</td>
-                              <td className="p-2 border-r border-slate-200 text-center">{u.gioiTinh}</td>
-                              <td className="p-2 border-r border-slate-200 text-center">{u.ngaySinh}</td>
-                              <td className="p-2 border-r border-slate-200">{u.hocHam || '—'}</td>
-                              <td className="p-2 border-r border-slate-200">{u.hocVi}</td>
-                              <td className="p-2 border-r border-slate-200">{u.chuyenMon}</td>
-                              <td className="p-2 border-r border-slate-200 text-center">{u.namTuyenDung}</td>
-                              <td className="p-2 border-r border-slate-200 text-center">{u.ngayKyHDLD}</td>
-                              <td className="p-2 border-r border-slate-200 text-center">{u.ccsp}</td>
-                              <td className="p-2 border-r border-slate-200">{u.anhVan}</td>
-                              <td className="p-2 border-r border-slate-200 truncate max-w-[120px]">{u.tinHoc}</td>
-                              <td className="p-2 border-r border-slate-200">{u.kiemNhiem || '—'}</td>
-                              <td className="p-2">{u.donViKiemNhiem || '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
 
-              {/* Structure Reference Information */}
-              <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-slate-600 text-[11.5px] space-y-1">
-                <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Danh sách 18 cột nhân sự theo yêu cầu:</span>
+              {/* Chế độ import: Toggle Button Group giống thiết kế ảnh */}
+              <div className="border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between bg-white mt-4">
+                <span className="text-slate-700 font-semibold text-[13px]">Chế độ import:</span>
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                  <button
+                    type="button"
+                    onClick={() => setOverwriteExisting(true)}
+                    className={`px-4 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all cursor-pointer ${
+                      overwriteExisting
+                        ? 'bg-[#0f172a] text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                    }`}
+                  >
+                    Tạo mới (Ghi đè)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOverwriteExisting(false)}
+                    className={`px-4 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all cursor-pointer ${
+                      !overwriteExisting
+                        ? 'bg-[#0f172a] text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900 bg-transparent'
+                    }`}
+                  >
+                    Cập nhật bổ sung
+                  </button>
                 </div>
-                <p className="leading-relaxed">
-                  1. STT, 2. Họ tên, 3. Chức vụ, 4. Đơn vị, 5. Mã nhân sự, 6. Giới tính, 7. Ngày tháng năm sinh, 8. Học hàm, học vị (tự động phân tách GS/PGS và TS/ThS nếu chung cột), 9. Chuyên môn, 10. Năm tuyển dụng, 11. Ngày ký HĐLĐ chính thức, 12. Năm tốt nghiệp, 13. Năm công nhận PGS, 14. Năm công nhận Giáo sư, 15. CCSP, 16. Anh văn, 17. Tin học, 18. Kiêm nhiệm, Đơn vị kiêm nhiệm.
-                </p>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="bg-slate-50 border-t border-slate-200 px-5 py-3 flex items-center justify-between shrink-0">
+            {/* Modal Footer giống thiết kế ảnh */}
+            <div className="border-t border-slate-200 px-6 py-3.5 flex items-center justify-end gap-3 bg-slate-50/60 shrink-0">
               <button
                 type="button"
                 onClick={handleCloseImportModal}
-                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 cursor-pointer"
+                className="px-5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium text-[13px] cursor-pointer shadow-2xs"
               >
-                Hủy bỏ
+                Hủy
               </button>
-
               <button
                 type="button"
                 disabled={parsedImportUsers.length === 0 || isProcessingFile}
                 onClick={handleConfirmImport}
-                className={`px-5 py-2 rounded-xl font-medium flex items-center gap-2 shadow-xs transition-all ${
+                className={`px-5 py-2 rounded-xl font-medium text-[13px] transition-all shadow-xs ${
                   parsedImportUsers.length > 0 && !isProcessingFile
-                    ? 'bg-[#005325] hover:bg-[#00421e] text-white cursor-pointer'
-                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    ? 'bg-[#1e40af] hover:bg-blue-800 text-white cursor-pointer'
+                    : 'bg-[#e2e8f0] text-slate-400 cursor-not-allowed'
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  {parsedImportUsers.length > 0
-                    ? `Xác nhận nạp ${parsedImportUsers.length} cán bộ vào hệ thống`
-                    : 'Vui lòng chọn file Excel'}
-                </span>
+                Import dữ liệu ({parsedImportUsers.length} dòng)
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Slide-over Popup Drawer từ bên phải qua (Chi tiết & Chỉnh sửa tích hợp) */}
+      {isDrawerOpen && drawerUser && (
+        <div className="fixed inset-0 z-50 overflow-hidden animate-fadeIn">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-2xs transition-opacity"
+            onClick={handleCloseDrawer}
+          />
+
+          {/* Slide-over Panel from right */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-[660px] bg-white shadow-2xl flex flex-col border-l border-slate-200">
+              {/* Drawer Header */}
+              <div className="bg-gradient-to-r from-[#005325] to-emerald-800 text-white px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl text-white border border-white/30 shadow-2xs">
+                    {(drawerFormData.hoTen || drawerUser.hoTen).slice(0, 1)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-[17px] leading-tight text-white">
+                        {drawerFormData.hoTen || drawerUser.hoTen}
+                      </h3>
+                      <span className="bg-white/20 px-2 py-0.5 rounded text-[11px] font-medium text-emerald-100">
+                        {drawerFormData.maNhanSu || drawerUser.maNhanSu}
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-emerald-100 mt-0.5 font-medium">
+                      {drawerFormData.chucVu || drawerUser.chucVu} • {drawerFormData.donVi || drawerUser.donVi}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCloseDrawer}
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg cursor-pointer transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer Form Body */}
+              <form onSubmit={handleSaveDrawer} className="flex-1 overflow-y-auto p-6 space-y-5 text-[12.5px]">
+                {/* Card 1: Thông tin cá nhân & Công tác */}
+                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
+                    <UserCheck className="w-4 h-4" /> 1. Thông tin cá nhân & Công tác
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-600 font-medium mb-1">
+                        Họ và tên <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={drawerFormData.hoTen || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, hoTen: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">
+                        Mã nhân sự <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={drawerFormData.maNhanSu || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, maNhanSu: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Giới tính</label>
+                      <select
+                        value={drawerFormData.gioiTinh || 'Nam'}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, gioiTinh: e.target.value as 'Nam' | 'Nữ' })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      >
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Ngày, tháng năm sinh</label>
+                      <input
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        value={drawerFormData.ngaySinh || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, ngaySinh: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Chức vụ</label>
+                      <input
+                        type="text"
+                        value={drawerFormData.chucVu || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, chucVu: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-600 font-medium mb-1">Đơn vị (Khoa/Phòng/TT)</label>
+                      <input
+                        type="text"
+                        value={drawerFormData.donVi || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, donVi: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Học hàm, học vị & Chuyên môn */}
+                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
+                    <Award className="w-4 h-4" /> 2. Trình độ học vấn & Chuyên môn
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Học hàm</label>
+                      <select
+                        value={drawerFormData.hocHam || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, hocHam: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      >
+                        <option value="">(Không có học hàm)</option>
+                        <option value="Phó Giáo sư">Phó Giáo sư (PGS)</option>
+                        <option value="Giáo sư">Giáo sư (GS)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Học vị</label>
+                      <input
+                        type="text"
+                        placeholder="Tiến sĩ, Thạc sĩ, Cử nhân..."
+                        value={drawerFormData.hocVi || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, hocVi: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-600 font-medium mb-1">Chuyên môn đào tạo</label>
+                      <input
+                        type="text"
+                        value={drawerFormData.chuyenMon || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, chuyenMon: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Năm tốt nghiệp ĐH</label>
+                      <input
+                        type="number"
+                        value={drawerFormData.namTotNghiep || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, namTotNghiep: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Năm công nhận PGS</label>
+                      <input
+                        type="text"
+                        placeholder="Để trống nếu chưa có"
+                        value={drawerFormData.namCongNhanPGS || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, namCongNhanPGS: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Năm công nhận Giáo sư</label>
+                      <input
+                        type="text"
+                        placeholder="Để trống nếu chưa có"
+                        value={drawerFormData.namCongNhanGS || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, namCongNhanGS: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Hợp đồng & Tiêu chuẩn */}
+                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
+                    <BookOpen className="w-4 h-4" /> 3. Hợp đồng & Tiêu chuẩn chức danh
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Năm tuyển dụng</label>
+                      <input
+                        type="number"
+                        value={drawerFormData.namTuyenDung || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, namTuyenDung: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Ngày ký HĐLĐ chính thức</label>
+                      <input
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        value={drawerFormData.ngayKyHDLD || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, ngayKyHDLD: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Chứng chỉ sư phạm (CCSP)</label>
+                      <input
+                        type="text"
+                        value={drawerFormData.ccsp || 'Đã có'}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, ccsp: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Anh văn / Ngoại ngữ</label>
+                      <input
+                        type="text"
+                        placeholder="B2, IELTS, TOEIC..."
+                        value={drawerFormData.anhVan || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, anhVan: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-600 font-medium mb-1">Tin học</label>
+                      <input
+                        type="text"
+                        placeholder="Ứng dụng CNTT Nâng cao, MOS..."
+                        value={drawerFormData.tinHoc || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, tinHoc: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Nhiệm vụ kiêm nhiệm */}
+                <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <h4 className="font-bold text-slate-800 text-[13px] flex items-center gap-2 text-[#005325]">
+                    <Briefcase className="w-4 h-4" /> 4. Nhiệm vụ kiêm nhiệm
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Nhiệm vụ kiêm nhiệm</label>
+                      <input
+                        type="text"
+                        placeholder="Trưởng BM, Cố vấn học tập, Thư ký..."
+                        value={drawerFormData.kiemNhiem || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, kiemNhiem: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 font-medium mb-1">Đơn vị kiêm nhiệm</label>
+                      <input
+                        type="text"
+                        placeholder="Khoa Công nghệ thông tin..."
+                        value={drawerFormData.donViKiemNhiem || ''}
+                        onChange={(e) => setDrawerFormData({ ...drawerFormData, donViKiemNhiem: e.target.value })}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+              {/* Drawer Footer */}
+              <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Bạn có chắc chắn muốn xóa hồ sơ cán bộ "${drawerUser.hoTen}" không?`)) {
+                      handleDeleteUser(drawerUser.id);
+                      handleCloseDrawer();
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[12px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Xóa hồ sơ</span>
+                </button>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleCloseDrawer}
+                    className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[12.5px] font-medium cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveDrawer()}
+                    className="px-5 py-2 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Lưu thay đổi</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
