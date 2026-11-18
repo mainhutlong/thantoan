@@ -8,23 +8,20 @@ import {
   Search,
   Save,
   GripVertical,
-  FileText,
-  BookOpen,
-  GraduationCap,
-  Megaphone,
-  FlaskConical,
-  UserCheck,
-  Briefcase,
-  Banknote,
-  CreditCard,
-  MessageSquare,
-  BarChart3,
-  ShieldCheck,
   Check,
   Trash2,
   UserPlus,
 } from 'lucide-react';
 import { RoleGroupPermission } from '../types';
+import {
+  IconGiangDay,
+  IconNghienCuuKH,
+  IconNgoaiGio,
+  IconThanhToanGroup,
+  IconTraCuuGroup,
+  IconBaoCaoGroup,
+  IconHeThong,
+} from './Sidebar3DIcons';
 
 export const INITIAL_ROLE_GROUPS: RoleGroupPermission[] = [];
 
@@ -59,145 +56,154 @@ interface RoleItem {
   disabledPermissions: string[];
 }
 
-// Danh mục chức năng & quyền hạn chuẩn xác theo 5 phân hệ của Hệ thống Thanh toán Thù lao & Giờ giảng TDU
+// Danh mục chức năng & quyền hạn chuẩn xác theo 7 phân hệ module của Hệ thống Thanh toán Thù lao & Giờ giảng TDU
 const MODULE_CATALOG: ModulePermissionCatalog[] = [
   {
     id: 'thanh_toan_gio_giang',
     name: 'Thanh toán giờ giảng',
-    icon: <BookOpen className="w-4 h-4" />,
+    icon: <IconGiangDay size={18} />,
     sections: [
       {
-        id: 'sec_gio_giang',
-        title: 'Thanh toán giờ giảng (Lý thuyết, Thực hành, Thực tập, Đồ án)',
+        id: 'sec_gio_giang_ke_khai',
+        title: 'Kê khai & Quản lý dữ liệu giờ giảng (Lý thuyết & Thực hành)',
         items: [
-          { id: 'gg_xem_ds', label: 'Thanh toán giờ giảng - Xem danh sách kê khai giờ giảng', enabled: true },
-          { id: 'gg_xem_chi_tiet', label: 'Thanh toán giờ giảng - Xem chi tiết bảng kê chuẩn theo giảng viên', enabled: true },
+          { id: 'gg_xem_ds', label: 'Thanh toán giờ giảng - Xem danh sách kê khai giờ giảng toàn trường', enabled: true },
+          { id: 'gg_xem_chi_tiet', label: 'Thanh toán giờ giảng - Xem chi tiết bảng kê giờ giảng chuẩn theo giảng viên', enabled: true },
           { id: 'gg_them_moi', label: 'Thanh toán giờ giảng - Thêm mới bản ghi giờ giảng', enabled: true },
-          { id: 'gg_tai_mau', label: 'Thanh toán giờ giảng - Tải mẫu trống chuẩn Phòng Đào tạo', enabled: true },
-          { id: 'gg_import_excel', label: 'Thanh toán giờ giảng - Nhập liệu từ Excel (Import mới)', enabled: true },
+          { id: 'gg_tai_mau', label: 'Thanh toán giờ giảng - Tải file mẫu trống Excel chuẩn Phòng Đào tạo', enabled: true },
+          { id: 'gg_import_excel', label: 'Thanh toán giờ giảng - Nhập dữ liệu từ file Excel (Import mới)', enabled: true },
           { id: 'gg_import_bo_sung', label: 'Thanh toán giờ giảng - Nhập bổ sung dữ liệu từ Excel', enabled: true },
-          { id: 'gg_sua', label: 'Thanh toán giờ giảng - Chỉnh sửa hệ số lớp, số tiết và giờ quy chuẩn', enabled: true },
-          { id: 'gg_xoa', label: 'Thanh toán giờ giảng - Xoá bản ghi kê khai', enabled: true },
-          { id: 'gg_export', label: 'Thanh toán giờ giảng - Xuất dữ liệu ra file Excel', enabled: true },
+          { id: 'gg_sua', label: 'Thanh toán giờ giảng - Chỉnh sửa hệ số lớp, số tiết, giờ quy chuẩn và thù lao', enabled: true },
+          { id: 'gg_xoa', label: 'Thanh toán giờ giảng - Xóa bản ghi giờ giảng', enabled: true },
+          { id: 'gg_export', label: 'Thanh toán giờ giảng - Xuất dữ liệu bảng kê ra Excel', enabled: true },
           { id: 'gg_khoa_ky', label: 'Thanh toán giờ giảng - Khóa / Mở khóa kỳ đối soát giờ giảng', enabled: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'coi_thi_cham_thi',
-    name: 'Coi thi chấm thi ra đề',
-    icon: <GraduationCap className="w-4 h-4" />,
-    sections: [
-      {
-        id: 'sec_khao_thi',
-        title: 'Coi thi, chấm thi, ra đề kết thúc học phần',
-        items: [
-          { id: 'kt_xem_ds', label: 'Coi thi chấm thi - Xem danh sách kê khai khảo thí', enabled: true },
-          { id: 'kt_xem_chi_tiet', label: 'Coi thi chấm thi - Xem chi tiết công việc khảo thí', enabled: true },
-          { id: 'kt_them_moi', label: 'Coi thi chấm thi - Thêm mới công việc ra đề, coi thi, chấm thi', enabled: true },
-          { id: 'kt_tai_mau', label: 'Coi thi chấm thi - Tải mẫu trống chuẩn Trung tâm Khảo thí', enabled: true },
-          { id: 'kt_import_excel', label: 'Coi thi chấm thi - Nhập liệu từ file Excel Khảo thí', enabled: true },
-          { id: 'kt_sua', label: 'Coi thi chấm thi - Chỉnh sửa số lượng đề/bài/ca thi và giờ quy đổi', enabled: true },
-          { id: 'kt_xoa', label: 'Coi thi chấm thi - Xoá bản ghi khảo thí', enabled: true },
-          { id: 'kt_export', label: 'Coi thi chấm thi - Xuất bảng kê khảo thí ra Excel', enabled: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'cong_tac_tuyen_sinh',
-    name: 'Công tác tuyển sinh',
-    icon: <Megaphone className="w-4 h-4" />,
-    sections: [
-      {
-        id: 'sec_tuyen_sinh',
-        title: 'Công tác tuyển sinh & Tư vấn hướng nghiệp',
-        items: [
-          { id: 'ts_xem_ds', label: 'Công tác tuyển sinh - Xem danh sách kê khai tuyển sinh', enabled: true },
-          { id: 'ts_them_moi', label: 'Công tác tuyển sinh - Thêm mới đợt công tác tuyển sinh', enabled: true },
-          { id: 'ts_import_excel', label: 'Công tác tuyển sinh - Nhập liệu từ Excel Phòng Tuyển sinh', enabled: true },
-          { id: 'ts_sua', label: 'Công tác tuyển sinh - Chỉnh sửa số ngày công tác và tiết quy đổi', enabled: true },
-          { id: 'ts_xoa', label: 'Công tác tuyển sinh - Xoá bản ghi tuyển sinh', enabled: true },
-          { id: 'ts_export', label: 'Công tác tuyển sinh - Xuất dữ liệu tuyển sinh ra Excel', enabled: true },
+          { id: 'gg_duyet_dinh_chinh', label: 'Thanh toán giờ giảng - Phê duyệt đề xuất điều chỉnh & Cập nhật Version mới', enabled: true },
         ],
       },
     ],
   },
   {
     id: 'nghien_cuu_khoa_hoc',
-    name: 'Nghiên cứu Khoa học',
-    icon: <FlaskConical className="w-4 h-4" />,
+    name: 'Nghiên cứu khoa học',
+    icon: <IconNghienCuuKH size={18} />,
     sections: [
       {
-        id: 'sec_nckh',
-        title: 'Nghiên cứu Khoa học (Đề tài, Bài báo, Giáo trình, Hướng dẫn SV)',
+        id: 'sec_nckh_bai_bao',
+        title: '1. Bài báo khoa học (ISI/Scopus, Tạp chí chuyên ngành, Kỷ yếu)',
         items: [
-          { id: 'nckh_xem_ds', label: 'Nghiên cứu Khoa học - Xem danh sách kê khai giờ NCKH', enabled: true },
-          { id: 'nckh_xem_bang_ke', label: 'Nghiên cứu Khoa học - Xem chi tiết biểu mẫu thống kê NCKH chuẩn', enabled: true },
-          { id: 'nckh_them_moi', label: 'Nghiên cứu Khoa học - Thêm mới công trình / đề tài NCKH', enabled: true },
-          { id: 'nckh_import_excel', label: 'Nghiên cứu Khoa học - Nhập liệu từ Excel Phòng QLKH', enabled: true },
-          { id: 'nckh_sua', label: 'Nghiên cứu Khoa học - Cập nhật định mức và mức độ hoàn thành NCKH', enabled: true },
-          { id: 'nckh_xoa', label: 'Nghiên cứu Khoa học - Xoá bản ghi NCKH', enabled: true },
-          { id: 'nckh_export', label: 'Nghiên cứu Khoa học - Xuất bảng thống kê NCKH ra Excel', enabled: true },
+          { id: 'nckh_bb_xem_ds', label: 'Bài báo - Xem danh sách bài báo khoa học', enabled: true },
+          { id: 'nckh_bb_xem_chi_tiet', label: 'Bài báo - Xem chi tiết bài báo & danh sách đồng tác giả', enabled: true },
+          { id: 'nckh_bb_them_moi', label: 'Bài báo - Thêm mới bài báo khoa học', enabled: true },
+          { id: 'nckh_bb_import_excel', label: 'Bài báo - Nhập danh sách bài báo từ file Excel', enabled: true },
+          { id: 'nckh_bb_sua', label: 'Bài báo - Chỉnh sửa thông tin bài báo, xếp loại & số giờ QC', enabled: true },
+          { id: 'nckh_bb_xoa', label: 'Bài báo - Xóa bài báo khoa học', enabled: true },
+          { id: 'nckh_bb_export', label: 'Bài báo - Xuất danh sách bài báo ra Excel', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_nckh_seminar',
+        title: '2. Seminar học thuật (Hội thảo khoa học, Tọa đàm, Báo cáo chuyên đề)',
+        items: [
+          { id: 'nckh_sm_xem_ds', label: 'Seminar - Xem danh sách báo cáo seminar học thuật', enabled: true },
+          { id: 'nckh_sm_xem_chi_tiet', label: 'Seminar - Xem chi tiết chuyên đề seminar & đơn vị tổ chức', enabled: true },
+          { id: 'nckh_sm_them_moi', label: 'Seminar - Thêm mới buổi báo cáo seminar', enabled: true },
+          { id: 'nckh_sm_import_excel', label: 'Seminar - Nhập danh sách seminar từ file Excel', enabled: true },
+          { id: 'nckh_sm_sua', label: 'Seminar - Chỉnh sửa nội dung, số giờ và thù lao seminar', enabled: true },
+          { id: 'nckh_sm_xoa', label: 'Seminar - Xóa bản ghi seminar', enabled: true },
+          { id: 'nckh_sm_export', label: 'Seminar - Xuất danh sách seminar ra Excel', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_nckh_de_tai',
+        title: '3. Nghiên cứu khoa học & Giáo trình (Đề tài các cấp, Luận văn, Sách)',
+        items: [
+          { id: 'nckh_dt_xem_ds', label: 'Đề tài NCKH - Xem danh sách đề tài NCKH, luận văn, giáo trình', enabled: true },
+          { id: 'nckh_dt_xem_bang_ke', label: 'Đề tài NCKH - Xem chi tiết biểu mẫu thống kê NCKH chuẩn', enabled: true },
+          { id: 'nckh_dt_them_moi', label: 'Đề tài NCKH - Thêm mới đề tài NCKH / biên soạn giáo trình', enabled: true },
+          { id: 'nckh_dt_import_excel', label: 'Đề tài NCKH - Nhập liệu đề tài NCKH từ file Excel', enabled: true },
+          { id: 'nckh_dt_sua', label: 'Đề tài NCKH - Cập nhật tiến độ nghiệm thu, định mức và giờ QC', enabled: true },
+          { id: 'nckh_dt_xoa', label: 'Đề tài NCKH - Xóa bản ghi đề tài NCKH', enabled: true },
+          { id: 'nckh_dt_export', label: 'Đề tài NCKH - Xuất biểu mẫu thống kê NCKH ra Excel', enabled: true },
         ],
       },
     ],
   },
   {
-    id: 'cvht_cong_tac_khac',
-    name: 'Cố vấn HT & Công tác khác',
-    icon: <Briefcase className="w-4 h-4" />,
+    id: 'cong_tac_khac',
+    name: 'Công tác khác',
+    icon: <IconNgoaiGio size={18} />,
     sections: [
       {
-        id: 'sec_cvht',
-        title: 'Cố vấn học tập (CVHT)',
+        id: 'sec_ctk_khao_thi',
+        title: 'Coi thi, chấm thi, ra đề kết thúc học phần (TT Khảo thí)',
         items: [
-          { id: 'cvht_xem_ds', label: 'Cố vấn học tập - Xem danh sách phân công lớp CVHT', enabled: true },
-          { id: 'cvht_nhap_lieu', label: 'Cố vấn học tập - Thêm mới / Import danh sách CVHT', enabled: true },
-          { id: 'cvht_sua_xoa', label: 'Cố vấn học tập - Chỉnh sửa và xoá bản ghi CVHT', enabled: true },
+          { id: 'kt_xem_ds', label: 'Khảo thí - Xem danh sách kê khai coi thi, chấm thi, ra đề', enabled: true },
+          { id: 'kt_xem_chi_tiet', label: 'Khảo thí - Xem chi tiết công việc khảo thí của giảng viên', enabled: true },
+          { id: 'kt_them_moi', label: 'Khảo thí - Thêm mới nhiệm vụ ra đề, coi thi, chấm thi', enabled: true },
+          { id: 'kt_tai_mau', label: 'Khảo thí - Tải mẫu trống Excel Trung tâm Khảo thí', enabled: true },
+          { id: 'kt_import_excel', label: 'Khảo thí - Nhập liệu từ file Excel Khảo thí', enabled: true },
+          { id: 'kt_sua', label: 'Khảo thí - Chỉnh sửa số lượng bài/đề/ca thi và giờ quy đổi', enabled: true },
+          { id: 'kt_xoa', label: 'Khảo thí - Xóa bản ghi khảo thí', enabled: true },
+          { id: 'kt_export', label: 'Khảo thí - Xuất dữ liệu khảo thí ra Excel', enabled: true },
         ],
       },
       {
-        id: 'sec_cong_tac_khac',
-        title: 'Công tác khác (Hội đồng khoa học, Thanh tra, Kiểm định)',
+        id: 'sec_ctk_tuyen_sinh',
+        title: 'Công tác tuyển sinh & Tư vấn hướng nghiệp (P. Tuyển sinh & TT)',
         items: [
-          { id: 'ctk_xem_ds', label: 'Công tác khác - Xem danh sách nhiệm vụ công tác khác', enabled: true },
-          { id: 'ctk_nhap_lieu', label: 'Công tác khác - Thêm mới / Import nhiệm vụ kiêm nhiệm', enabled: true },
-          { id: 'ctk_sua_xoa', label: 'Công tác khác - Chỉnh sửa và xoá bản ghi công tác khác', enabled: true },
+          { id: 'ts_xem_ds', label: 'Tuyển sinh - Xem danh sách kê khai công tác tuyển sinh', enabled: true },
+          { id: 'ts_them_moi', label: 'Tuyển sinh - Thêm mới đợt công tác tuyển sinh, tư vấn', enabled: true },
+          { id: 'ts_import_excel', label: 'Tuyển sinh - Nhập liệu từ Excel Phòng Tuyển sinh', enabled: true },
+          { id: 'ts_sua', label: 'Tuyển sinh - Chỉnh sửa số ngày công tác và tiết quy đổi', enabled: true },
+          { id: 'ts_xoa', label: 'Tuyển sinh - Xóa bản ghi tuyển sinh', enabled: true },
+          { id: 'ts_export', label: 'Tuyển sinh - Xuất dữ liệu tuyển sinh ra Excel', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_ctk_cvht',
+        title: 'Cố vấn học tập (P. CTSV & Đào tạo)',
+        items: [
+          { id: 'cvht_xem_ds', label: 'Cố vấn học tập - Xem danh sách phân công cố vấn học tập', enabled: true },
+          { id: 'cvht_nhap_lieu', label: 'Cố vấn học tập - Thêm mới / Import danh sách CVHT từ Excel', enabled: true },
+          { id: 'cvht_sua_xoa', label: 'Cố vấn học tập - Chỉnh sửa lớp phụ trách và số tiết quy chuẩn', enabled: true },
+          { id: 'cvht_export', label: 'Cố vấn học tập - Xuất danh sách CVHT ra Excel', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_ctk_chuyen_mon',
+        title: 'Nhiệm vụ chuyên môn khác (HĐKH, Thanh tra, Kiểm định, Kiêm nhiệm - 40+ mục)',
+        items: [
+          { id: 'ctk_xem_ds', label: 'Công tác khác - Xem danh mục nhiệm vụ kiêm nhiệm, thanh tra, hội đồng', enabled: true },
+          { id: 'ctk_nhap_lieu', label: 'Công tác khác - Thêm mới / Import nhiệm vụ chuyên môn từ Excel', enabled: true },
+          { id: 'ctk_sua', label: 'Công tác khác - Chỉnh sửa nội dung, số giờ và thù lao nhiệm vụ', enabled: true },
+          { id: 'ctk_xoa', label: 'Công tác khác - Xóa bản ghi công tác khác', enabled: true },
+          { id: 'ctk_export', label: 'Công tác khác - Xuất bảng kê công tác khác ra Excel', enabled: true },
         ],
       },
     ],
   },
   {
-    id: 'quan_ly_thanh_toan',
-    name: 'Quản lý thanh toán',
-    icon: <Banknote className="w-4 h-4" />,
+    id: 'thanh_toan',
+    name: 'Thanh toán',
+    icon: <IconThanhToanGroup size={18} />,
     sections: [
       {
-        id: 'sec_tong_thanh_toan',
-        title: 'Quản lý thanh toán tổng hợp toàn trường (6 nguồn thù lao)',
+        id: 'sec_tt_quan_ly',
+        title: 'Quản lý thanh toán tổng hợp toàn trường (Giờ giảng, NCKH, Công tác khác)',
         items: [
-          { id: 'tt_xem_tong_hop', label: 'Quản lý thanh toán - Xem bảng tổng hợp 6 nguồn thù lao toàn trường', enabled: true },
-          { id: 'tt_xem_chi_tiet_gv', label: 'Quản lý thanh toán - Xem chi tiết bảng kê từng giảng viên', enabled: true },
-          { id: 'tt_kiem_tra_thue', label: 'Quản lý thanh toán - Đối soát thuế TNCN 10% và thực nhận', enabled: true },
+          { id: 'tt_xem_tong_hop', label: 'Quản lý thanh toán - Xem bảng tổng hợp thanh toán toàn trường', enabled: true },
+          { id: 'tt_xem_chi_tiet_gv', label: 'Quản lý thanh toán - Xem chi tiết bảng kê 3 nguồn của từng giảng viên', enabled: true },
+          { id: 'tt_kiem_tra_thue', label: 'Quản lý thanh toán - Đối soát khấu trừ thuế TNCN 10% và thực nhận', enabled: true },
           { id: 'tt_chot_so_lieu', label: 'Quản lý thanh toán - Chốt số liệu chuyển Phòng Kế hoạch - Tài chính', enabled: true },
-          { id: 'tt_export_tong', label: 'Quản lý thanh toán - Xuất Excel tổng hợp thanh toán toàn trường', enabled: true },
+          { id: 'tt_export_tong', label: 'Quản lý thanh toán - Xuất file Excel tổng hợp thanh toán toàn trường', enabled: true },
         ],
       },
-    ],
-  },
-  {
-    id: 'chi_tra_tai_chinh',
-    name: 'Chi trả tài chính',
-    icon: <CreditCard className="w-4 h-4" />,
-    sections: [
       {
-        id: 'sec_chi_tra_unc',
+        id: 'sec_tt_chi_tra',
         title: 'Chi trả tài chính & Lệnh Ủy nhiệm chi (UNC)',
         items: [
           { id: 'tc_xem_ds_chi', label: 'Chi trả tài chính - Xem danh sách giảng viên đủ điều kiện chi trả', enabled: true },
-          { id: 'tc_lap_lenh_unc', label: 'Chi trả tài chính - Khởi tạo lô thanh toán & Lệnh Ủy nhiệm chi (UNC)', enabled: true },
+          { id: 'tc_lap_lenh_unc', label: 'Chi trả tài chính - Khởi tạo lô thanh toán & Lập lệnh Ủy nhiệm chi (UNC)', enabled: true },
           { id: 'tc_xac_nhan_da_chi', label: 'Chi trả tài chính - Xác nhận đã giải ngân qua ngân hàng', enabled: true },
           { id: 'tc_xuat_unc_excel', label: 'Chi trả tài chính - Xuất bảng kê chuyển khoản ngân hàng & Thuế TNCN', enabled: true },
         ],
@@ -205,83 +211,98 @@ const MODULE_CATALOG: ModulePermissionCatalog[] = [
     ],
   },
   {
-    id: 'tra_cuu_va_phan_hoi',
-    name: 'Tra cứu và phản hồi',
-    icon: <MessageSquare className="w-4 h-4" />,
+    id: 'tra_cuu_phan_hoi',
+    name: 'Tra cứu phản hồi',
+    icon: <IconTraCuuGroup size={18} />,
     sections: [
       {
-        id: 'sec_gv_tra_cuu',
-        title: 'Giảng viên tra cứu & Xác nhận khối lượng cá nhân',
+        id: 'sec_tc_gv',
+        title: 'Giảng viên tra cứu & Xác nhận khối lượng cá nhân (3 tab: Giờ giảng, NCKH, Công tác khác)',
         items: [
-          { id: 'tc_gv_xem', label: 'Giảng viên tra cứu - Xem bảng tổng hợp thù lao cá nhân 6 nguồn', enabled: true },
-          { id: 'tc_gv_xac_nhan_muc', label: 'Giảng viên tra cứu - Đồng ý xác nhận số liệu từng danh mục', enabled: true },
-          { id: 'tc_gv_xac_nhan_all', label: 'Giảng viên tra cứu - Đồng ý xác nhận toàn bộ thù lao học kỳ', enabled: true },
+          { id: 'tc_gv_xem', label: 'Giảng viên tra cứu - Xem bảng thống kê thù lao cá nhân 3 tab', enabled: true },
+          { id: 'tc_gv_xac_nhan_muc', label: 'Giảng viên tra cứu - Đồng ý xác nhận số liệu từng tab cụ thể', enabled: true },
+          { id: 'tc_gv_xac_nhan_all', label: 'Giảng viên tra cứu - Đồng ý xác nhận toàn bộ (3/3 mục) thù lao học kỳ', enabled: true },
           { id: 'tc_gv_in_phieu', label: 'Giảng viên tra cứu - In phiếu xác nhận thù lao cá nhân', enabled: true },
         ],
       },
       {
-        id: 'sec_phan_hoi_gv',
+        id: 'sec_ph_gv',
         title: 'Phản hồi của Giảng viên & Giải trình đối soát',
         items: [
-          { id: 'ph_gui_moi', label: 'Phản hồi của Giảng viên - Gửi phản hồi / khiếu nại sai lệch số tiết', enabled: true },
-          { id: 'ph_xem_ds', label: 'Phản hồi của Giảng viên - Xem danh sách phản hồi toàn trường', enabled: true },
-          { id: 'ph_xu_ly_dinh_chinh', label: 'Phản hồi của Giảng viên - Phê duyệt phản hồi & Điều chỉnh nhanh số liệu', enabled: true },
-          { id: 'ph_tu_choi', label: 'Phản hồi của Giảng viên - Từ chối phản hồi kèm lý do giải trình', enabled: true },
+          { id: 'ph_gui_moi', label: 'Phản hồi - Giảng viên gửi phản hồi / khiếu nại sai lệch số liệu', enabled: true },
+          { id: 'ph_xem_ds', label: 'Phản hồi - Xem danh sách phản hồi toàn trường', enabled: true },
+          { id: 'ph_xu_ly_dinh_chinh', label: 'Phản hồi - Phê duyệt phản hồi & Đề xuất điều chỉnh số liệu (Cập nhật Version)', enabled: true },
+          { id: 'ph_tu_choi', label: 'Phản hồi - Từ chối phản hồi kèm lý do giải trình', enabled: true },
         ],
       },
     ],
   },
   {
-    id: 'bao_cao_bien_ban',
-    name: 'Báo cáo & Biên bản',
-    icon: <BarChart3 className="w-4 h-4" />,
+    id: 'bao_cao',
+    name: 'Báo cáo',
+    icon: <IconBaoCaoGroup size={18} />,
     sections: [
       {
-        id: 'sec_bao_cao_thong_ke',
-        title: 'Báo cáo thống kê tổng hợp & Biên bản nghiệm thu số hóa',
+        id: 'sec_bc_thong_ke',
+        title: 'Báo cáo thống kê tổng hợp',
         items: [
-          { id: 'bc_xem_thong_ke', label: 'Báo cáo thống kê - Xem biểu đồ & báo cáo tổng hợp theo Khoa / Đơn vị', enabled: true },
-          { id: 'bc_xuat_phu_luc', label: 'Báo cáo thống kê - Xuất các phụ lục báo cáo tổng hợp ra Excel', enabled: true },
-          { id: 'bb_lap_bien_ban', label: 'Biên bản nghiệm thu - Đóng gói dữ liệu và lập biên bản nghiệm thu số hóa', enabled: true },
+          { id: 'bc_xem_thong_ke', label: 'Báo cáo thống kê - Xem biểu đồ & báo cáo tổng hợp theo Khoa / Viện / Đơn vị', enabled: true },
+          { id: 'bc_xem_so_sanh', label: 'Báo cáo thống kê - Xem báo cáo phân tích và so sánh các kỳ thanh toán', enabled: true },
+          { id: 'bc_xuat_phu_luc', label: 'Báo cáo thống kê - Xuất các biểu mẫu phụ lục báo cáo ra file Excel', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_bb_nghiem_thu',
+        title: 'Biên bản nghiệm thu số hóa',
+        items: [
+          { id: 'bb_lap_bien_ban', label: 'Biên bản nghiệm thu - Khởi tạo và đóng gói dữ liệu nghiệm thu số hóa', enabled: true },
           { id: 'bb_ky_so_duyet', label: 'Biên bản nghiệm thu - Ký số phê duyệt biên bản nghiệm thu cấp Trường', enabled: true },
-          { id: 'bb_in_xuat_pdf', label: 'Biên bản nghiệm thu - In ấn và xuất biên bản nghiệm thu chuẩn TDU', enabled: true },
+          { id: 'bb_in_xuat_pdf', label: 'Biên bản nghiệm thu - In ấn và xuất biên bản nghiệm thu chuẩn TDU (PDF/Excel)', enabled: true },
         ],
       },
     ],
   },
   {
-    id: 'quan_ly_nguoi_dung',
-    name: 'Người dùng & Nhân sự',
-    icon: <UserCheck className="w-4 h-4" />,
+    id: 'he_thong',
+    name: 'Hệ thống',
+    icon: <IconHeThong size={18} />,
     sections: [
       {
-        id: 'sec_ho_so_nhan_su',
-        title: 'Quản lý Người dùng & Hồ sơ cán bộ giảng viên (20 cột chuẩn file TDU)',
+        id: 'sec_ht_nguoi_dung',
+        title: 'Người dùng & Hồ sơ cán bộ giảng viên (20 cột chuẩn TDU)',
         items: [
-          { id: 'nd_xem_ds', label: 'Người dùng - Xem danh sách cán bộ, giảng viên (Học hàm, Học vị, HĐLĐ, Kiêm nhiệm)', enabled: true },
+          { id: 'nd_xem_ds', label: 'Người dùng - Xem danh sách cán bộ giảng viên (Học hàm, Học vị, HĐLĐ, Kiêm nhiệm)', enabled: true },
           { id: 'nd_xem_chi_tiet', label: 'Người dùng - Xem chi tiết hồ sơ nhân sự trên giao diện', enabled: true },
           { id: 'nd_them_moi', label: 'Người dùng - Thêm mới hồ sơ cán bộ giảng viên', enabled: true },
           { id: 'nd_chinh_sua', label: 'Người dùng - Chỉnh sửa thông tin học hàm, học vị, chứng chỉ, kiêm nhiệm', enabled: true },
-          { id: 'nd_xoa', label: 'Người dùng - Xoá hồ sơ người dùng khỏi hệ thống', enabled: true },
-          { id: 'nd_export_excel', label: 'Người dùng - Xuất danh sách nhân sự chuẩn file Excel Đại học Tây Đô', enabled: true },
+          { id: 'nd_xoa', label: 'Người dùng - Xóa hồ sơ cán bộ giảng viên khỏi hệ thống', enabled: true },
+          { id: 'nd_export_excel', label: 'Người dùng - Xuất danh sách nhân sự ra file Excel', enabled: true },
         ],
       },
-    ],
-  },
-  {
-    id: 'quan_tri_he_thong',
-    name: 'Cấu hình & Nhật ký HT',
-    icon: <ShieldCheck className="w-4 h-4" />,
-    sections: [
       {
-        id: 'sec_he_thong',
-        title: 'Vai trò phân quyền, Cấu hình định mức & Nhật ký hệ thống',
+        id: 'sec_ht_phan_quyen',
+        title: 'Vai trò & Phân quyền theo group',
         items: [
-          { id: 'ht_vai_tro', label: 'Hệ thống - Quản lý vai trò và phân quyền theo group', enabled: true },
+          { id: 'ht_vai_tro_xem', label: 'Vai trò phân quyền - Xem danh sách vai trò hệ thống', enabled: true },
+          { id: 'ht_vai_tro_them_sua', label: 'Vai trò phân quyền - Thêm mới, chỉnh sửa thông tin vai trò', enabled: true },
+          { id: 'ht_phan_quyen_toggle', label: 'Vai trò phân quyền - Bật / tắt phân quyền theo từng module & chức năng', enabled: true },
+          { id: 'ht_phan_cong_thanh_vien', label: 'Vai trò phân quyền - Thêm / xóa cán bộ giảng viên vào nhóm vai trò', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_ht_cau_hinh',
+        title: 'Cấu hình hệ thống & Định mức',
+        items: [
           { id: 'ht_cau_hinh_don_gia', label: 'Hệ thống - Cấu hình đơn giá tiết chuẩn, hệ số học hàm/học vị, hệ số lớp đông', enabled: true },
           { id: 'ht_cau_hinh_dinh_muc', label: 'Hệ thống - Cấu hình định mức giờ chuẩn giảng dạy & định mức NCKH', enabled: true },
-          { id: 'ht_nhat_ky', label: 'Hệ thống - Xem và tra cứu Nhật ký hệ thống (Audit Logs)', enabled: true },
-          { id: 'ht_xuat_nhat_ky', label: 'Hệ thống - Xuất báo cáo nhật ký truy cập và thao tác dữ liệu', enabled: true },
+        ],
+      },
+      {
+        id: 'sec_ht_nhat_ky',
+        title: 'Nhật ký hệ thống (Audit Logs)',
+        items: [
+          { id: 'ht_nhat_ky_xem', label: 'Nhật ký hệ thống - Xem và tra cứu lịch sử truy cập & thao tác dữ liệu', enabled: true },
+          { id: 'ht_nhat_ky_xuat', label: 'Nhật ký hệ thống - Xuất báo cáo nhật ký truy cập ra Excel', enabled: true },
         ],
       },
     ],
@@ -318,9 +339,12 @@ const INITIAL_ROLES: RoleItem[] = [
     ],
     disabledPermissions: [
       'gg_xoa',
+      'nckh_bb_xoa',
+      'nckh_sm_xoa',
+      'nckh_dt_xoa',
       'kt_xoa',
       'ts_xoa',
-      'nckh_xoa',
+      'ctk_xoa',
       'nd_xoa',
     ],
   },
@@ -331,18 +355,20 @@ const INITIAL_ROLES: RoleItem[] = [
     dotColor: '#2563eb',
     badgeBg: '#e0f2fe',
     badgeText: '#0284c7',
-    description: 'Phụ trách nhập liệu, kiểm tra, đối soát danh mục Thanh toán giờ giảng, Cố vấn học tập, xử lý phản hồi giờ giảng và lập biên bản nghiệm thu.',
+    description: 'Phụ trách nhập liệu, kiểm tra, đối soát danh mục Thanh toán giờ giảng, Cố vấn học tập, phê duyệt phản hồi giờ giảng và lập biên bản nghiệm thu.',
     members: [
       { id: 'm5', name: 'TS. Nguyễn Văn Hòa', code: 'TDU00312', unit: 'Phòng Đào tạo', email: 'nvhoa@tdu.edu.vn' },
       { id: 'm6', name: 'CN. Trương Minh Tuấn', code: 'TDU00511', unit: 'Phòng Đào tạo', email: 'tmtuan@tdu.edu.vn' },
     ],
     disabledPermissions: [
+      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
+      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
+      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
       'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
       'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'nckh_them_moi', 'nckh_import_excel', 'nckh_sua', 'nckh_xoa',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
     ],
   },
   {
@@ -359,11 +385,14 @@ const INITIAL_ROLES: RoleItem[] = [
     ],
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_xoa',
+      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_xoa',
+      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_xoa',
+      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_xoa',
       'kt_them_moi', 'kt_import_excel', 'kt_xoa',
       'ts_them_moi', 'ts_import_excel', 'ts_xoa',
-      'nckh_them_moi', 'nckh_import_excel', 'nckh_xoa',
+      'ctk_nhap_lieu', 'ctk_xoa',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien',
     ],
   },
   {
@@ -379,11 +408,13 @@ const INITIAL_ROLES: RoleItem[] = [
     ],
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
+      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
+      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
+      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
       'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'nckh_them_moi', 'nckh_import_excel', 'nckh_sua', 'nckh_xoa',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
     ],
   },
   {
@@ -393,7 +424,7 @@ const INITIAL_ROLES: RoleItem[] = [
     dotColor: '#2563eb',
     badgeBg: '#cffafe',
     badgeText: '#0e7490',
-    description: 'Thẩm định và nhập liệu danh mục Nghiên cứu Khoa học (Đề tài, bài báo ISI/Scopus, giáo trình), xét duyệt định mức hoàn thành NCKH.',
+    description: 'Thẩm định và nhập liệu danh mục Nghiên cứu Khoa học (3 tab: Bài báo khoa học, Seminar học thuật, Đề tài NCKH), xét duyệt định mức hoàn thành NCKH.',
     members: [
       { id: 'm10', name: 'PGS.TS. Đinh Văn Khải', code: 'TDU00152', unit: 'Phòng QLKH & HTQT', email: 'dvkhai@tdu.edu.vn' },
     ],
@@ -403,7 +434,7 @@ const INITIAL_ROLES: RoleItem[] = [
       'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
     ],
   },
   {
@@ -419,11 +450,13 @@ const INITIAL_ROLES: RoleItem[] = [
     ],
     disabledPermissions: [
       'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
+      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
+      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
+      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
       'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
-      'nckh_them_moi', 'nckh_import_excel', 'nckh_sua', 'nckh_xoa',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
     ],
   },
   {
@@ -439,11 +472,12 @@ const INITIAL_ROLES: RoleItem[] = [
     ],
     disabledPermissions: [
       'gg_xoa', 'gg_khoa_ky',
+      'nckh_bb_xoa', 'nckh_sm_xoa', 'nckh_dt_xoa',
       'kt_xoa',
       'ts_xoa',
-      'nckh_xoa',
+      'ctk_xoa',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
-      'ht_vai_tro',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien',
     ],
   },
   {
@@ -453,19 +487,20 @@ const INITIAL_ROLES: RoleItem[] = [
     dotColor: '#2563eb',
     badgeBg: '#fef3c7',
     badgeText: '#b45309',
-    description: 'Trưởng/Phó Khoa và Trưởng Bộ môn rà soát bảng kê giờ giảng, NCKH của giảng viên thuộc Khoa mình quản lý trước khi trình Phòng Đào tạo.',
+    description: 'Trưởng/Phó Khoa và Trưởng Bộ môn rà soát bảng kê giờ giảng, NCKH, công tác khác của giảng viên thuộc Khoa mình quản lý trước khi trình Nhà trường.',
     members: [
       { id: 'm13', name: 'Mai Như Long', code: 'TDU00128', unit: 'Khoa Công nghệ thông tin', email: 'mnlong@tdu.edu.vn' },
       { id: 'm14', name: 'PGS.TS. Trần Quốc Hùng', code: 'TDU00245', unit: 'Khoa Dược - Điều dưỡng', email: 'tqhung@tdu.edu.vn' },
     ],
     disabledPermissions: [
       'gg_xoa', 'gg_khoa_ky',
+      'nckh_bb_xoa', 'nckh_sm_xoa', 'nckh_dt_xoa',
       'kt_xoa',
       'ts_xoa',
-      'nckh_xoa',
+      'ctk_xoa',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa',
-      'ht_vai_tro', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc',
     ],
   },
   {
@@ -475,23 +510,27 @@ const INITIAL_ROLES: RoleItem[] = [
     dotColor: '#2563eb',
     badgeBg: '#f1f5f9',
     badgeText: '#334155',
-    description: 'Giảng viên tra cứu bảng thống kê 6 khoản thù lao cá nhân, đối soát chi tiết giờ giảng/NCKH, bấm đồng ý xác nhận hoặc gửi phản hồi đính chính.',
+    description: 'Giảng viên tra cứu bảng thống kê thù lao 3 tab cá nhân (Giờ giảng, NCKH, Công tác khác), đối soát chi tiết, bấm xác nhận (3/3 mục) hoặc gửi phản hồi đính chính.',
     members: [
       { id: 'm15', name: 'TS. Đặng Minh Khôi', code: 'TDU00199', unit: 'Khoa Công nghệ thông tin', email: 'dmkhoi@tdu.edu.vn' },
       { id: 'm16', name: 'ThS. Võ Hoàng Yến', code: 'TDU00288', unit: 'Khoa Kinh tế - Quản trị', email: 'vhyen@tdu.edu.vn' },
     ],
     disabledPermissions: [
-      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky',
+      'gg_them_moi', 'gg_import_excel', 'gg_import_bo_sung', 'gg_sua', 'gg_xoa', 'gg_khoa_ky', 'gg_duyet_dinh_chinh',
+      'nckh_bb_them_moi', 'nckh_bb_import_excel', 'nckh_bb_sua', 'nckh_bb_xoa',
+      'nckh_sm_them_moi', 'nckh_sm_import_excel', 'nckh_sm_sua', 'nckh_sm_xoa',
+      'nckh_dt_them_moi', 'nckh_dt_import_excel', 'nckh_dt_sua', 'nckh_dt_xoa',
       'kt_them_moi', 'kt_import_excel', 'kt_sua', 'kt_xoa',
       'ts_them_moi', 'ts_import_excel', 'ts_sua', 'ts_xoa',
-      'nckh_them_moi', 'nckh_import_excel', 'nckh_sua', 'nckh_xoa',
-      'cvht_nhap_lieu', 'cvht_sua_xoa', 'ctk_nhap_lieu', 'ctk_sua_xoa',
+      'cvht_nhap_lieu', 'cvht_sua_xoa',
+      'ctk_nhap_lieu', 'ctk_sua', 'ctk_xoa',
       'tt_chot_so_lieu', 'tt_export_tong',
       'tc_lap_lenh_unc', 'tc_xac_nhan_da_chi', 'tc_xuat_unc_excel',
       'ph_xu_ly_dinh_chinh', 'ph_tu_choi',
       'bb_lap_bien_ban', 'bb_ky_so_duyet',
       'nd_them_moi', 'nd_chinh_sua', 'nd_xoa', 'nd_export_excel',
-      'ht_vai_tro', 'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc', 'ht_nhat_ky', 'ht_xuat_nhat_ky',
+      'ht_vai_tro_them_sua', 'ht_phan_quyen_toggle', 'ht_phan_cong_thanh_vien',
+      'ht_cau_hinh_don_gia', 'ht_cau_hinh_dinh_muc', 'ht_nhat_ky_xem', 'ht_nhat_ky_xuat',
     ],
   },
 ];
@@ -611,7 +650,12 @@ export const SystemRoleGroupPage: React.FC = () => {
     <div className="flex-1 flex flex-col bg-white overflow-hidden select-none font-sans">
       {/* Top Title Bar: "Vai trò" */}
       <div className="px-6 py-3.5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
-        <h1 className="text-[18px] font-bold text-slate-800 tracking-tight">Vai trò</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-[18px] font-bold text-slate-800 tracking-tight">Vai trò & Phân quyền hệ thống</h1>
+          <span className="text-[11.5px] bg-blue-50 text-blue-700 font-medium px-2.5 py-0.5 rounded-full border border-blue-200">
+            7 phân hệ module chuẩn
+          </span>
+        </div>
         {savedToast && (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[12px] font-medium animate-fadeIn">
             <Check className="w-3.5 h-3.5" />
@@ -734,7 +778,7 @@ export const SystemRoleGroupPage: React.FC = () => {
                 }`}
               >
                 <Lock className="w-4 h-4" />
-                <span>Quyền hạn (Dev)</span>
+                <span>Phân quyền chi tiết</span>
               </button>
 
               <button
@@ -757,20 +801,20 @@ export const SystemRoleGroupPage: React.FC = () => {
           {activeTopTab === 'quyen_han' && (
             <div className="flex-1 flex overflow-hidden">
               {/* Sub-column 1: Module Vertical List */}
-              <div className="w-[225px] border-r border-slate-100 py-3 px-2.5 overflow-y-auto space-y-1 shrink-0 bg-white">
+              <div className="w-[240px] border-r border-slate-100 py-3 px-2.5 overflow-y-auto space-y-1 shrink-0 bg-white">
                 {MODULE_CATALOG.map((mod) => {
                   const isModActive = mod.id === selectedModule.id;
                   return (
                     <button
                       key={mod.id}
                       onClick={() => setSelectedModuleId(mod.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-full flex items-center gap-2.5 text-[12.5px] transition-all cursor-pointer ${
+                      className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-[12.5px] transition-all cursor-pointer ${
                         isModActive
-                          ? 'bg-[#eff6ff] text-[#2563eb] font-medium'
+                          ? 'bg-[#eff6ff] text-[#2563eb] font-semibold shadow-2xs'
                           : 'text-slate-700 hover:bg-slate-50 font-normal'
                       }`}
                     >
-                      <span className={isModActive ? 'text-[#2563eb]' : 'text-slate-400'}>
+                      <span className="shrink-0 flex items-center justify-center">
                         {mod.icon}
                       </span>
                       <span className="truncate">{mod.name}</span>
