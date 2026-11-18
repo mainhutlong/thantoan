@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SystemUserProfile } from '../types';
+import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
 
 // Helper to normalize strings for header matching (strips accents, lowercases, removes non-alphanumeric)
 const normalizeHeader = (str: string): string => {
@@ -100,8 +101,8 @@ const parseAcademicTitle = (raw: string): { hocHam: string; hocVi: string } => {
   return { hocHam, hocVi };
 };
 
-// Cleared old mock data as requested; starts empty or loads from user's imported storage
-export const INITIAL_SYSTEM_USERS: SystemUserProfile[] = [];
+// 245 university personnel initialized from master dataset
+export const INITIAL_SYSTEM_USERS: SystemUserProfile[] = FULL_PERSONNEL_245;
 
 export const SystemUsersPage: React.FC = () => {
   const [users, setUsers] = useState<SystemUserProfile[]>(() => {
@@ -109,13 +110,53 @@ export const SystemUsersPage: React.FC = () => {
       const saved = localStorage.getItem('tdu_system_users_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length >= 200) return parsed;
       }
     } catch {
       // fallback
     }
-    return INITIAL_SYSTEM_USERS;
+    return FULL_PERSONNEL_245;
   });
+
+  // Fetch full 245 users from MySQL backend if running
+  useEffect(() => {
+    fetch('/api/users')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.data) && data.data.length >= 200) {
+          const mapped: SystemUserProfile[] = data.data.map((u: any, idx: number) => ({
+            id: `user-${u.id || idx + 1}`,
+            stt: idx + 1,
+            hoTen: u.hoTen,
+            chucVu: u.chucVu || '',
+            donVi: u.donVi || '',
+            maNhanSu: u.maNhanSu || '',
+            email: u.email || '',
+            gioiTinh: u.gioiTinh || 'Nam',
+            ngaySinh: u.ngaySinh || '',
+            hocHam: u.hocHam || '',
+            hocVi: u.hocVi || '',
+            chuyenMon: u.chuyenMon || '',
+            namTuyenDung: u.namTuyenDung || undefined,
+            ngayKyHDLD: u.ngayKyHDLD || '',
+            namTotNghiep: u.namTotNghiep || undefined,
+            namCongNhanPGS: u.namCongNhanPGS || '',
+            namCongNhanGS: u.namCongNhanGS || '',
+            ccsp: u.ccsp || '',
+            anhVan: u.anhVan || '',
+            tinHoc: u.tinHoc || '',
+            kiemNhiem: u.kiemNhiem || '',
+            donViKiemNhiem: u.donViKiemNhiem || '',
+            trangThai: u.trangThai === 'KHOA' ? 'khoa' : 'hoat_dong',
+          }));
+          setUsers(mapped);
+          localStorage.setItem('tdu_system_users_v2', JSON.stringify(mapped));
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch /api/users, fallback to local data', err);
+      });
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {

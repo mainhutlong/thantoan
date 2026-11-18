@@ -20,7 +20,7 @@ router.get('/', async (_req: Request, res: Response) => {
         u.lan_dang_nhap_cuoi AS lanDangNhapCuoi
       FROM nguoi_dung u
       LEFT JOIN don_vi d ON u.don_vi_id = d.id
-      ORDER BY u.id DESC
+      ORDER BY u.id ASC
     `;
     const [rows]: any = await pool.query(query);
     return res.json({ success: true, data: rows });
