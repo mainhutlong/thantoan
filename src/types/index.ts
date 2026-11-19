@@ -241,6 +241,7 @@ export interface SystemUserProfile {
   id: string;
   stt: number;
   hoTen: string;
+  email?: string;
   chucVu: string;
   donVi: string;
   maNhanSu: string;

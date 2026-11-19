@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Bell,
   HelpCircle,
@@ -117,37 +117,162 @@ export const Header: React.FC<HeaderProps> = ({
     return parts[parts.length - 1].charAt(0).toUpperCase();
   };
 
-  // Role list styled like Screenshot 1 & tailored to the Teaching Payment System
-  const roleOptions: { role: UserRole; title: string; badgeText: string }[] = [
-    {
-      role: 'admin',
-      title: 'Super Admin',
-      badgeText: 'SUPER ADMIN',
-    },
-    {
-      role: 'approver',
-      title: 'Trưởng/phó đơn vị',
-      badgeText: 'TRƯỞNG/PHÓ ĐƠN VỊ',
-    },
-    {
-      role: 'accountant_specialist',
-      title: 'Chuyên viên',
-      badgeText: 'CHUYÊN VIÊN',
-    },
-    {
-      role: 'dean_faculty',
-      title: 'Đơn vị kê khai',
-      badgeText: 'ĐƠN VỊ KÊ KHAI',
-    },
-    {
-      role: 'lecturer',
-      title: 'Giảng viên',
-      badgeText: 'GIẢNG VIÊN',
-    },
-  ];
+  // Lấy danh sách các vai trò thực tế mà tài khoản hiện tại ĐÃ ĐƯỢC PHÂN QUYỀN
+  const userAssignedRoles = useMemo(() => {
+    const email = (userEmail || '').toLowerCase().trim();
+    const staffCode = (userStaffCode || '').toLowerCase().trim();
+
+    // 1. Đọc vai trò từ phiên đăng nhập (tdu_auth_user)
+    const sessionRoleCodes = new Set<string>();
+    const roleTitleMap = new Map<string, string>();
+
+    try {
+      const userStr = localStorage.getItem('tdu_auth_user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (Array.isArray(u.roles)) {
+          u.roles.forEach((code: string, idx: number) => {
+            const c = (code || '').toUpperCase().trim();
+            sessionRoleCodes.add(c);
+            if (u.roleNames && u.roleNames[idx]) {
+              roleTitleMap.set(c, u.roleNames[idx]);
+            }
+          });
+        }
+      }
+    } catch {}
+
+    // 2. Đọc vai trò từ phân quyền hệ thống (tdu_roles_state_v3 do Quản trị viên lưu)
+    try {
+      const cached = localStorage.getItem('tdu_roles_state_v3');
+      if (cached) {
+        const allRoles: any[] = JSON.parse(cached);
+        if (Array.isArray(allRoles)) {
+          for (const r of allRoles) {
+            const isMember = (r.members || []).some(
+              (m: any) =>
+                (m.email && m.email.toLowerCase().trim() === email) ||
+                (m.code && m.code.toLowerCase().trim() === staffCode)
+            );
+            if (isMember) {
+              const c = (r.code || r.id || '').toUpperCase().trim();
+              sessionRoleCodes.add(c);
+              if (r.name) roleTitleMap.set(c, r.name);
+            }
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Tài khoản Super Admin đặc biệt: mnlong và lvlinh
+    if (email === 'mnlong@tdu.edu.vn' || email === 'lvlinh@tdu.edu.vn' || email.includes('lvlinh')) {
+      sessionRoleCodes.add('QUAN_TRI_VIEN_HE_THONG');
+      roleTitleMap.set('QUAN_TRI_VIEN_HE_THONG', 'Super Admin');
+      sessionRoleCodes.add('PHONG_CONG_NGHE_THONG_TIN');
+      roleTitleMap.set('PHONG_CONG_NGHE_THONG_TIN', 'Phòng Công nghệ thông tin');
+    }
+
+    // 4. Nếu trong hồ sơ 245 cán bộ có chức vụ Giảng viên
+    if (matchedStaff && (matchedStaff.chucVu || '').toLowerCase().includes('giảng viên')) {
+      sessionRoleCodes.add('GIANG_VIEN');
+      if (!roleTitleMap.has('GIANG_VIEN')) roleTitleMap.set('GIANG_VIEN', 'Giảng viên');
+    }
+
+    // 5. Tổng hợp danh sách hiển thị chỉ gồm các vai trò mà tài khoản thực sự có
+    const result: {
+      id: string;
+      code: string;
+      title: string;
+      badgeText: string;
+      userRole: UserRole;
+    }[] = [];
+
+    // Quản trị viên hệ thống (Super Admin)
+    if (sessionRoleCodes.has('QUAN_TRI_VIEN_HE_THONG') || sessionRoleCodes.has('SUPER_ADMIN')) {
+      result.push({
+        id: 'quan_tri_vien_he_thong',
+        code: 'QUAN_TRI_VIEN_HE_THONG',
+        title: 'Super Admin',
+        badgeText: 'SUPER ADMIN',
+        userRole: 'admin',
+      });
+    }
+
+    // Trưởng/phó đơn vị (Ban Giám hiệu, Hội đồng trường, Lãnh đạo Khoa)
+    if (
+      sessionRoleCodes.has('BAN_GIAM_HIEU') ||
+      sessionRoleCodes.has('HOI_DONG_TRUONG') ||
+      sessionRoleCodes.has('LANH_DAO_KHOA')
+    ) {
+      const customTitle = roleTitleMap.get('BAN_GIAM_HIEU') || roleTitleMap.get('HOI_DONG_TRUONG') || 'Trưởng/phó đơn vị';
+      result.push({
+        id: 'truong_pho_don_vi',
+        code: 'BAN_GIAM_HIEU',
+        title: customTitle.includes('Trưởng/phó') ? customTitle : `Trưởng/phó đơn vị (${customTitle})`,
+        badgeText: 'TRƯỞNG/PHÓ ĐƠN VỊ',
+        userRole: 'approver',
+      });
+    }
+
+    // Chuyên viên tổng hợp (Phòng Đào tạo, Tài chính, Khảo thí, TCHC, CNTT)
+    const specialistCodes = [
+      'PHONG_DAO_TAO',
+      'PHONG_TAI_CHINH_KE_HOACH',
+      'PHONG_TAI_CHINH',
+      'TRUNG_TAM_KHAO_THI',
+      'PHONG_TO_CHUC_HANH_CHINH',
+      'PHONG_CONG_NGHE_THONG_TIN',
+    ];
+    for (const sc of specialistCodes) {
+      if (sessionRoleCodes.has(sc)) {
+        const sName = roleTitleMap.get(sc) || (sc === 'PHONG_CONG_NGHE_THONG_TIN' ? 'Phòng Công nghệ thông tin' : 'Chuyên viên');
+        result.push({
+          id: `spec_${sc.toLowerCase()}`,
+          code: sc,
+          title: sc === 'PHONG_CONG_NGHE_THONG_TIN' ? sName : `Chuyên viên (${sName})`,
+          badgeText: sName.toUpperCase(),
+          userRole: sc === 'PHONG_CONG_NGHE_THONG_TIN' ? 'admin' : 'accountant_specialist',
+        });
+      }
+    }
+
+    // Đơn vị kê khai (Khoa cơ bản, Khoa luật, Khoa dược..., Phòng QLKH)
+    Array.from(sessionRoleCodes).forEach((c) => {
+      if (c.startsWith('KHOA_') || c === 'PHONG_QLKH') {
+        const kName = roleTitleMap.get(c) || 'Đơn vị kê khai';
+        result.push({
+          id: `faculty_${c.toLowerCase()}`,
+          code: c,
+          title: `Đơn vị kê khai (${kName})`,
+          badgeText: kName.toUpperCase(),
+          userRole: 'dean_faculty',
+        });
+      }
+    });
+
+    // Giảng viên
+    if (sessionRoleCodes.has('GIANG_VIEN') || result.length === 0) {
+      result.push({
+        id: 'giang_vien',
+        code: 'GIANG_VIEN',
+        title: 'Giảng viên',
+        badgeText: 'GIẢNG VIÊN',
+        userRole: 'lecturer',
+      });
+    }
+
+    return result;
+  }, [userEmail, userStaffCode, matchedStaff]);
 
   const currentRoleOption =
-    roleOptions.find((r) => r.role === currentRole) || roleOptions[2];
+    userAssignedRoles.find((r) => r.userRole === currentRole) ||
+    userAssignedRoles[0] || {
+      id: 'default',
+      code: 'GIANG_VIEN',
+      title: 'Giảng viên',
+      badgeText: 'GIẢNG VIÊN',
+      userRole: 'lecturer' as UserRole,
+    };
 
   return (
     <header className="bg-white border-b border-slate-200/90 h-[72px] px-4 sm:px-6 flex items-center justify-between select-none z-30 shrink-0 shadow-2xs">
@@ -416,48 +541,55 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
 
-                {/* 2. Role Switcher List */}
+                {/* 2. Role Switcher List - Chỉ hiển thị các vai trò mà tài khoản được phân quyền */}
                 {rolesExpanded && (
-                  <div className="divide-y divide-slate-100">
-                    {roleOptions.map((item) => {
-                      const isCurrent = currentRole === item.role;
-                      return (
-                        <button
-                          key={item.role}
-                          type="button"
-                          onClick={() => {
-                            onChangeRole(item.role);
-                            setShowUserMenu(false);
-                          }}
-                          className={`w-full text-left px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
-                            isCurrent
-                              ? 'bg-[#f3f6fc]'
-                              : 'bg-white hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="min-w-0 pr-2">
-                            <div
-                              className={`text-[13px] truncate ${
-                                isCurrent
-                                  ? 'font-semibold text-[#1e40af]'
-                                  : 'font-medium text-slate-800'
-                              }`}
-                            >
-                              {item.title}
+                  <div>
+                    <div className="px-4 py-1.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Vai trò được phân quyền ({userAssignedRoles.length})
+                      </span>
+                    </div>
+                    <div className="divide-y divide-slate-100 max-h-[250px] overflow-y-auto">
+                      {userAssignedRoles.map((item) => {
+                        const isCurrent = currentRole === item.userRole;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              onChangeRole(item.userRole);
+                              setShowUserMenu(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                              isCurrent
+                                ? 'bg-[#f3f6fc]'
+                                : 'bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div
+                                className={`text-[13px] truncate ${
+                                  isCurrent
+                                    ? 'font-semibold text-[#1e40af]'
+                                    : 'font-medium text-slate-800'
+                                }`}
+                              >
+                                {item.title}
+                              </div>
+                              <div className="text-[11.5px] text-slate-500 truncate">
+                                {userEmail}
+                              </div>
                             </div>
-                            <div className="text-[11.5px] text-slate-500 truncate">
-                              {userEmail}
-                            </div>
-                          </div>
 
-                          {isCurrent && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-[#d3e3fd] text-[#0b57d0] text-[11px] font-semibold shrink-0">
-                              Hiện tại
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                            {isCurrent && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-[#d3e3fd] text-[#0b57d0] text-[11px] font-semibold shrink-0">
+                                Hiện tại
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
