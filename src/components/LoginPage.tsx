@@ -152,7 +152,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           const btnContainer = document.getElementById('google-sso-native-container');
           if (btnContainer) {
             btnContainer.innerHTML = '';
-            const btnWidth = typeof window !== 'undefined' ? Math.min(380, Math.max(280, window.innerWidth - 64)) : 360;
+            const btnWidth = typeof window !== 'undefined' ? Math.min(300, Math.max(250, window.innerWidth - 80)) : 280;
             // @ts-ignore
             window.google.accounts.id.renderButton(btnContainer, {
               theme: 'outline',
@@ -165,6 +165,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               locale: 'vi',
             });
             setIsGsiLoaded(true);
+
             if (checkInterval) clearInterval(checkInterval);
           }
         } catch (e) {
@@ -234,17 +235,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f8fafc] px-4 py-8 sm:py-12 select-none">
-      <div className="w-full max-w-[480px] bg-white rounded-[32px] shadow-2xl border border-slate-200/90 p-8 sm:p-12 flex flex-col items-center text-center animate-fadeIn">
+      <div className="w-full max-w-[500px] sm:max-w-[520px] bg-white rounded-[32px] sm:rounded-[36px] shadow-2xl border border-slate-200/90 p-8 sm:p-14 flex flex-col items-center text-center animate-fadeIn">
         {/* Logo Trường Đại học Tây Đô */}
-        <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-3 mb-5 overflow-hidden">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-3.5 mb-6 overflow-hidden">
           <img src={logoTdu} alt="TDU Logo" className="w-full h-full object-contain" />
         </div>
 
         {/* Tiêu đề Đăng nhập */}
-        <h1 className="text-[28px] sm:text-[32px] font-extrabold text-slate-900 tracking-tight">
+        <h1 className="text-[30px] sm:text-[34px] font-black text-slate-900 tracking-tight">
           Đăng nhập
         </h1>
-        <p className="text-[15px] sm:text-[16px] font-medium text-slate-500 mt-2 mb-8">
+        <p className="text-[16px] sm:text-[17px] font-medium text-slate-500 mt-2.5 mb-8 sm:mb-10">
           Hệ thống thanh toán giờ giảng TDU
         </p>
 
@@ -265,20 +266,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         )}
 
         {/* Nút đăng nhập Google chính thức: Tự động mở giao diện chọn tài khoản Google chuẩn */}
-        <div className="w-full flex flex-col items-center justify-center min-h-[56px] py-1">
-          {/* Nút chuẩn của Google Identity Services: tăng tỉ lệ scale để nút cao hơn, chữ to rõ hơn */}
+        <div className="w-full flex flex-col items-center justify-center min-h-[72px] py-2 overflow-visible">
+          {/* Nút chuẩn của Google Identity Services: Tăng tỉ lệ scale để nút cao to, chữ to rõ nét */}
           <div
             id="google-sso-native-container"
-            className="flex items-center justify-center min-h-[54px] w-full [&_iframe]:scale-[1.08] sm:[&_iframe]:scale-[1.12] [&_iframe]:origin-center transition-transform"
+            style={{ transform: 'scale(1.25)', transformOrigin: 'center' }}
+            className="flex items-center justify-center min-h-[54px] w-full"
           ></div>
 
-          {/* Nút bấm hiển thị dự phòng trong tích tắc trước khi Google iframe render */}
+          {/* Nút bấm hiển thị dự phòng kích thước to rõ */}
           {!isGsiLoaded && (
             <button
               type="button"
               disabled={isLoading}
               onClick={handleFallbackButtonClick}
-              className="w-full max-w-[380px] h-14 px-6 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-[16px] sm:text-[16.5px] flex items-center justify-center gap-3.5 shadow-xs hover:shadow-md transition-all cursor-pointer"
+              className="w-full max-w-[400px] h-15 px-6 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-[17.5px] flex items-center justify-center gap-3.5 shadow-sm hover:shadow-md transition-all cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="w-6 h-6 shrink-0">
                 <path
