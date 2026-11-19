@@ -144,9 +144,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [researchViewMode, setResearchViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
-  const [isTopViewMenuOpen, setIsTopViewMenuOpen] = useState(false);
-  const [isTopActionMenuOpen, setIsTopActionMenuOpen] = useState(false);
-  const [isSheetEditable, setIsSheetEditable] = useState(true);
 
   // Active records & Table Versioning
   const [activeRecords, setActiveRecords] = useState<TeachingRecord[]>(records);
@@ -999,8 +996,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
               type="button"
               onClick={() => {
                 setIsVersionMenuOpen((prev) => !prev);
-                setIsTopViewMenuOpen(false);
-                setIsTopActionMenuOpen(false);
               }}
               className={`h-[30px] px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs ${
                 currentVersion > 1
@@ -1068,160 +1063,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
             )}
           </div>
 
-          {/* Nút Con mắt: Chế độ hiển thị (kế bên dấu 3 chấm dọc) */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setIsTopViewMenuOpen((prev) => !prev);
-                setIsTopActionMenuOpen(false);
-              }}
-              className="w-[30px] h-[30px] rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer flex items-center justify-center transition-colors shadow-2xs"
-              title="Chế độ hiển thị"
-            >
-              <Eye className="w-4 h-4 text-slate-700" />
-            </button>
-
-            {isTopViewMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-30"
-                  onClick={() => setIsTopViewMenuOpen(false)}
-                />
-                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 flex flex-col">
-                  <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                    Chế độ hiển thị
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTeachingViewMode('excel_sheet');
-                      setResearchViewMode('excel_sheet');
-                      setIsTopViewMenuOpen(false);
-                    }}
-                    className={`w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors ${
-                      (activeTab === 'nckh' ? researchViewMode : teachingViewMode) === 'excel_sheet'
-                        ? 'text-[#005325] font-semibold bg-emerald-50/50'
-                        : 'text-slate-700'
-                    }`}
-                  >
-                    <span>Mẫu Bảng thống kê chuẩn</span>
-                    {(activeTab === 'nckh' ? researchViewMode : teachingViewMode) === 'excel_sheet' && (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#005325]" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTeachingViewMode('compact_table');
-                      setResearchViewMode('compact_table');
-                      setIsTopViewMenuOpen(false);
-                    }}
-                    className={`w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center justify-between cursor-pointer transition-colors ${
-                      (activeTab === 'nckh' ? researchViewMode : teachingViewMode) === 'compact_table'
-                        ? 'text-[#005325] font-semibold bg-emerald-50/50'
-                        : 'text-slate-700'
-                    }`}
-                  >
-                    <span>Danh sách rút gọn</span>
-                    {(activeTab === 'nckh' ? researchViewMode : teachingViewMode) === 'compact_table' && (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#005325]" />
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Nút Dấu 3 chấm dọc: Đang bật nhập liệu, Lưu bảng, Xuất Excel, In biểu mẫu */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setIsTopActionMenuOpen((prev) => !prev);
-                setIsTopViewMenuOpen(false);
-              }}
-              className="w-[30px] h-[30px] rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 cursor-pointer flex items-center justify-center transition-colors shadow-2xs"
-              title="Tùy chọn thao tác"
-            >
-              <MoreVertical className="w-4 h-4 text-slate-700" />
-            </button>
-
-            {isTopActionMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-30"
-                  onClick={() => setIsTopActionMenuOpen(false)}
-                />
-                <div className="absolute right-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-40 flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSheetEditable((prev) => !prev);
-                      setIsTopActionMenuOpen(false);
-                      showToast(!isSheetEditable ? 'Đã bật chế độ nhập dữ liệu' : 'Đã chuyển sang chế độ xem');
-                    }}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
-                  >
-                    <Edit3 className={`w-3.5 h-3.5 ${isSheetEditable ? 'text-amber-600' : 'text-slate-500'}`} />
-                    <span className={isSheetEditable ? 'font-medium text-amber-800' : ''}>
-                      {isSheetEditable ? 'Đang bật nhập liệu' : 'Chế độ xem'}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsTopActionMenuOpen(false);
-                      showToast('Đã lưu bảng dữ liệu thành công!');
-                    }}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
-                  >
-                    <Save className="w-3.5 h-3.5 text-[#005325]" />
-                    <span>Lưu bảng</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsTopActionMenuOpen(false);
-                      const exportRows = currentTabRecords.map((r, i) => ({
-                        STT: i + 1,
-                        'Mã GV': r.maGV,
-                        'Họ và tên': r.hoTen,
-                        'Nội dung / Học phần': r.tenHocPhan || r.noiDungNCKH || r.tenCongViec || '',
-                        'Lớp / Mã': r.maLopHocPhan || '',
-                        'Số tiết / Giờ QC': r.tongTietQC,
-                        'Thù lao gộp (VNĐ)': r.tongTienThuLao,
-                        'Thuế TNCN (VNĐ)': r.thueTNCN,
-                        'Thực nhận (VNĐ)': r.thucNhan,
-                      }));
-                      const wb = XLSX.utils.book_new();
-                      const ws = XLSX.utils.json_to_sheet(exportRows.length > 0 ? exportRows : [{ 'Thông báo': 'Chưa có dữ liệu' }]);
-                      XLSX.utils.book_append_sheet(wb, ws, 'Bang_Ke_Giang_Vien');
-                      XLSX.writeFile(wb, `Bang_Thong_Ke_${summary.maGV || 'TDU'}.xlsx`);
-                    }}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
-                  >
-                    <Download className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Xuất Excel</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsTopActionMenuOpen(false);
-                      window.print();
-                    }}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors text-slate-700"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-slate-600" />
-                    <span>In biểu mẫu</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
         </div>
       </div>
 
@@ -1522,13 +1363,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       {/* ========================================================================= */}
       <div className="flex-1 w-full max-w-full min-w-0 flex flex-col min-h-0 bg-white">
           <div className="flex-1 w-full max-w-full min-w-0 flex flex-col overflow-hidden">
-            {/* Responsive scroll hint banner */}
-            <div className="xl:hidden flex items-center justify-between px-3 py-1.5 bg-emerald-50/80 border-b border-emerald-200 text-[11px] text-emerald-900 font-medium">
-              <span>↔ Bảng có thể cuộn ngang để kiểm tra chi tiết tất cả các cột dữ liệu</span>
-              <span className="text-[10px] bg-emerald-200/70 text-emerald-900 px-2 py-0.5 rounded font-semibold">
-                Cuộn ngang
-              </span>
-            </div>
             <div className="flex-1 w-full max-w-full min-w-0 overflow-x-auto">
               {/* Tab 2: Giờ giảng (BẢNG THỐNG KÊ CÔNG TÁC GIẢNG DẠY - Theo mẫu hình ảnh chuẩn) */}
               {activeTab === 'dao_tao' && (
@@ -2105,57 +1939,6 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Sub-total summary footer matching DataTable */}
-            <div className="bg-[#fcfcfd] border-t border-[#cbd5e1] px-4 py-2 flex items-center justify-between flex-wrap gap-2 text-[12px]">
-              <span className="text-slate-600">
-                Hiển thị {currentTabRecords.length} dòng kê khai chi tiết trong mục {currentTabConfig.label}.
-              </span>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500">Khối lượng QC:</span>
-                  <span className="font-mono text-slate-800 font-normal">
-                    {currentTabRecords
-                      .reduce(
-                        (s, r) =>
-                          s +
-                          (r.soGioQuyChuan ||
-                            r.soGioQCNCKH ||
-                            r.tongSoGioTheoCV ||
-                            r.tongTietQC ||
-                            0),
-                        0
-                      )
-                      .toFixed(1)}{' '}
-                    tiết/giờ
-                  </span>
-                </div>
-
-                <span className="text-slate-300">·</span>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500">Tổng thù lao gộp:</span>
-                  <span className="font-mono text-slate-800 font-normal">
-                    {currentTabRecords
-                      .reduce((s, r) => s + r.tongTienThuLao, 0)
-                      .toLocaleString('vi-VN')}{' '}
-                    đ
-                  </span>
-                </div>
-
-                <span className="text-slate-300">·</span>
-
-                <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
-                  <span className="text-emerald-800 font-normal">Thực nhận sau thuế:</span>
-                  <span className="font-mono text-[#005325] font-semibold">
-                    {currentTabRecords
-                      .reduce((s, r) => s + r.thucNhan, 0)
-                      .toLocaleString('vi-VN')}{' '}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
       </div>

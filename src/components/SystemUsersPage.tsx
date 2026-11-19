@@ -933,24 +933,13 @@ export const SystemUsersPage: React.FC = () => {
               <span>Xuất Excel</span>
             </button>
 
-            {users.length > 0 && (
-              <button
-                onClick={handleClearAllUsers}
-                className="h-[34px] px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
-                title="Xóa toàn bộ dữ liệu nhân sự cũ hiện tại"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Xóa tất cả ({users.length})</span>
-              </button>
-            )}
-
             <button
               onClick={handleStartAddRow}
               className="h-[34px] px-4 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs transition-all"
-              title="Thêm hàng người dùng mới trực tiếp vào bảng"
+              title="Thêm mới người dùng vào hệ thống"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Thêm hàng (từng người)</span>
+              <span>Thêm mới</span>
             </button>
           </div>
         </div>
@@ -1371,9 +1360,10 @@ export const SystemUsersPage: React.FC = () => {
                           <button
                             onClick={handleStartAddRow}
                             className="h-[36px] px-4 rounded-xl bg-[#005325] hover:bg-[#00421e] text-white text-[12.5px] font-medium flex items-center gap-2 cursor-pointer shadow-xs transition-all"
+                            title="Thêm mới người dùng vào hệ thống"
                           >
                             <Plus className="w-4 h-4" />
-                            <span>+ Thêm hàng (từng người)</span>
+                            <span>Thêm mới</span>
                           </button>
                         </div>
                       </div>
