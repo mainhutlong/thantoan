@@ -144,6 +144,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [researchViewMode, setResearchViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
   const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
+  const [evidencePreviewModal, setEvidencePreviewModal] = useState<{ name: string; url: string; size?: number } | null>(null);
 
   // Active records & Table Versioning
   const [activeRecords, setActiveRecords] = useState<TeachingRecord[]>(records);
@@ -1819,6 +1820,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                               <th className="px-2.5 text-right border-r border-slate-200 w-[110px]">Số giờ quy chuẩn</th>
                               <th className="px-2 text-center border-r border-slate-200 w-[100px]">Định mức</th>
                               <th className="px-2.5 text-center border-r border-slate-200 w-[130px]">Hoàn thành</th>
+                              <th className="px-2.5 text-center border-r border-slate-200 w-[120px]">Minh chứng</th>
                               <th className="px-3 text-right border-r border-slate-200 w-[125px]">Thù lao / Thưởng</th>
                               <th className="px-3 text-right w-[125px]">Thực nhận (VNĐ)</th>
                             </tr>
@@ -1826,7 +1828,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                           <tbody className="divide-y divide-[#e2e8f0]">
                             {currentTabRecords.length === 0 ? (
                               <tr>
-                                <td colSpan={9} className="py-10 text-center text-slate-500 font-normal">
+                                <td colSpan={10} className="py-10 text-center text-slate-500 font-normal">
                                   Chưa có dữ liệu kê khai Nghiên cứu khoa học cho Thầy/Cô.
                                 </td>
                               </tr>
@@ -1879,6 +1881,25 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                                       </span>
                                     )}
                                   </td>
+                                  <td className="px-2 text-center border-r border-[#f1f5f9] whitespace-nowrap">
+                                    {rec.fileMinhChungUrl ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setEvidencePreviewModal({
+                                          name: rec.tenFileMinhChung || 'Minh chứng NCKH',
+                                          url: rec.fileMinhChungUrl!,
+                                          size: rec.dungLuongFile
+                                        })}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-medium border border-blue-200 transition-colors cursor-pointer"
+                                        title={`Bấm xem minh chứng: ${rec.tenFileMinhChung || 'File đính kèm'}`}
+                                      >
+                                        <FileText className="w-3.5 h-3.5 text-blue-600" />
+                                        <span className="truncate max-w-[75px]">{rec.tenFileMinhChung || 'Xem file'}</span>
+                                      </button>
+                                    ) : (
+                                      <span className="text-slate-400 text-[11px] italic">Chưa nộp</span>
+                                    )}
+                                  </td>
                                   <td className="px-3 text-right font-mono border-r border-[#f1f5f9]">
                                     {rec.tongTienThuLao.toLocaleString('vi-VN')} đ
                                   </td>
@@ -1898,7 +1919,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
                               <td className="px-2.5 text-right font-mono border-r border-slate-200 text-[#005325]">
                                 {currentTabRecords.reduce((sum, r) => sum + (r.soGioQCNCKH || r.tongTietQC || 0), 0).toFixed(1)} h
                               </td>
-                              <td colSpan={2} className="border-r border-slate-200 bg-slate-50"></td>
+                              <td colSpan={3} className="border-r border-slate-200 bg-slate-50"></td>
                               <td className="px-3 text-right font-mono border-r border-slate-200">
                                 {currentTabRecords.reduce((sum, r) => sum + (r.tongTienThuLao || 0), 0).toLocaleString('vi-VN')} đ
                               </td>
@@ -1942,6 +1963,76 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
             </div>
           </div>
       </div>
+      {/* MODAL XEM CHI TIẾT MINH CHỨNG BÀI BÁO NCKH */}
+      {evidencePreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            {/* Header modal */}
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="truncate">
+                  <h4 className="font-semibold text-sm truncate">{evidencePreviewModal.name}</h4>
+                  <span className="text-[11px] text-slate-400">
+                    {evidencePreviewModal.size ? `${(evidencePreviewModal.size / 1024 / 1024).toFixed(2)} MB • ` : ''}Minh chứng bài báo nghiên cứu khoa học TDU
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={evidencePreviewModal.url}
+                  download={evidencePreviewModal.name}
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Tải file về máy"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải về</span>
+                </a>
+                <button
+                  onClick={() => setEvidencePreviewModal(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Đóng cửa sổ"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Nội dung xem trước file */}
+            <div className="flex-1 overflow-auto p-4 bg-slate-100 flex items-center justify-center min-h-[350px]">
+              {evidencePreviewModal.url.startsWith('data:image/') || evidencePreviewModal.name.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                <img
+                  src={evidencePreviewModal.url}
+                  alt={evidencePreviewModal.name}
+                  className="max-w-full max-h-[70vh] object-contain rounded shadow"
+                />
+              ) : evidencePreviewModal.url.startsWith('data:application/pdf') || evidencePreviewModal.name.endsWith('.pdf') ? (
+                <iframe
+                  src={evidencePreviewModal.url}
+                  className="w-full h-[70vh] rounded border border-slate-300 bg-white"
+                  title={evidencePreviewModal.name}
+                />
+              ) : (
+                <div className="text-center p-8 bg-white rounded-xl shadow-xs border border-slate-200 max-w-md">
+                  <FileText className="w-16 h-16 text-blue-500 mx-auto mb-3" />
+                  <p className="font-medium text-slate-800 text-sm mb-1">{evidencePreviewModal.name}</p>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Tài liệu minh chứng bài báo nghiên cứu đã được đính kèm thành công.
+                  </p>
+                  <a
+                    href={evidencePreviewModal.url}
+                    download={evidencePreviewModal.name}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#005325] text-white text-xs font-semibold hover:bg-[#00421e] transition-colors shadow-xs"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Tải file về máy</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

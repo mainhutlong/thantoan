@@ -10,7 +10,11 @@ import {
   Edit3,
   ChevronDown,
   MoreVertical,
-  Eye
+  Eye,
+  Upload,
+  FileText,
+  Trash2,
+  Paperclip
 } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
 import { saveWorkbookToFile, stripAcademicTitle } from '../utils/excelTemplateGenerator';
@@ -22,6 +26,9 @@ export interface ResearchScheduleRow {
   theLoai: string;
   soGioQuyChuan: string | number;
   xacNhanQLKH: string;
+  fileMinhChungUrl?: string;
+  tenFileMinhChung?: string;
+  dungLuongFile?: number;
 }
 
 interface ResearchScheduleReportProps {
@@ -149,6 +156,9 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           theLoai: match.theLoaiNCKH || match.loaiHoatDong || '',
           soGioQuyChuan: match.soGioQCNCKH || match.tongTietQC || '',
           xacNhanQLKH: 'Đã xác nhận',
+          fileMinhChungUrl: match.fileMinhChungUrl,
+          tenFileMinhChung: match.tenFileMinhChung,
+          dungLuongFile: match.dungLuongFile,
         });
       } else {
         rows.push({
@@ -165,10 +175,48 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   };
 
   const [nckhRows, setNckhRows] = useState<ResearchScheduleRow[]>(initRows);
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string; size?: number } | null>(null);
 
   useEffect(() => {
     setNckhRows(initRows());
   }, [maGV, records]);
+
+  // Handle file upload for proof
+  const handleFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      alert('Dung lượng file vượt quá giới hạn cho phép (25MB).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const updated = [...nckhRows];
+      updated[index] = {
+        ...updated[index],
+        fileMinhChungUrl: reader.result as string,
+        tenFileMinhChung: file.name,
+        dungLuongFile: file.size,
+      };
+      setNckhRows(updated);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  // Handle remove file proof
+  const handleRemoveFile = (index: number) => {
+    const updated = [...nckhRows];
+    updated[index] = {
+      ...updated[index],
+      fileMinhChungUrl: undefined,
+      tenFileMinhChung: undefined,
+      dungLuongFile: undefined,
+    };
+    setNckhRows(updated);
+  };
 
   // Handle cell change
   const handleCellChange = (index: number, field: keyof ResearchScheduleRow, value: string) => {
@@ -396,6 +444,9 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
             nguoiThucHien: 'Phòng Quản lý Khoa học TDU',
             trangThai: 'da_so_hoa',
             dotThanhToan: firstRec.dotThanhToan || 'Đợt 1 - Học kỳ 2 (2025 - 2026)',
+            fileMinhChungUrl: r.fileMinhChungUrl,
+            tenFileMinhChung: r.tenFileMinhChung,
+            dungLuongFile: r.dungLuongFile,
           });
         }
       });
@@ -722,6 +773,9 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                   <th className="w-[135px] px-2 py-1 text-center font-normal border border-black">
                     Xác nhận<br />của P.QLKH
                   </th>
+                  <th className="w-[140px] px-2 py-1 text-center font-normal border border-black">
+                    Minh chứng<br />(File đính kèm)
+                  </th>
                 </tr>
               </thead>
 
@@ -817,6 +871,50 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                       <td className="px-2 py-0 border border-black text-center bg-white text-black text-[11px]">
                         {row.xacNhanQLKH || ''}
                       </td>
+
+                      {/* Minh chứng (File đính kèm) */}
+                      <td className="px-2 py-0 border border-black text-center bg-white">
+                        {row.fileMinhChungUrl ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewFile({
+                                name: row.tenFileMinhChung || 'Minh chứng bài báo',
+                                url: row.fileMinhChungUrl!,
+                                size: row.dungLuongFile,
+                              })}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-medium border border-blue-200 transition-colors cursor-pointer max-w-[100px] truncate"
+                              title={`Xem minh chứng: ${row.tenFileMinhChung || 'File đính kèm'}`}
+                            >
+                              <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              <span className="truncate">{row.tenFileMinhChung || 'Xem file'}</span>
+                            </button>
+                            {isEditable && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFile(index)}
+                                className="p-0.5 text-slate-400 hover:text-red-600 rounded transition-colors cursor-pointer"
+                                title="Gỡ file minh chứng"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ) : isEditable && Boolean(row.noiDung.trim()) ? (
+                          <label className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-[#005325] text-[11px] font-medium border border-dashed border-slate-300 hover:border-[#005325] transition-colors cursor-pointer">
+                            <Upload className="w-3 h-3 text-slate-500" />
+                            <span>Tải lên</span>
+                            <input
+                              type="file"
+                              accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(index, e)}
+                            />
+                          </label>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] italic">Chưa có</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -842,7 +940,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                   </td>
 
                   {/* White Cell: Empty */}
-                  <td className="border border-black bg-white"></td>
+                  <td colSpan={2} className="border border-black bg-white"></td>
                 </tr>
 
                 {/* FOOTER ROW 2: MỨC ĐỘ HOÀN THÀNH BÀI BÁO QUỐC TẾ - EXACTLY MATCHING IMAGE */}
@@ -875,7 +973,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                   </td>
 
                   {/* White Cell: Empty */}
-                  <td className="border border-black bg-white"></td>
+                  <td colSpan={2} className="border border-black bg-white"></td>
                 </tr>
               </tbody>
             </table>
@@ -904,6 +1002,76 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           </div>
         </div>
       </div>
+      )}
+      {/* MODAL XEM CHI TIẾT MINH CHỨNG BÀI BÁO NCKH */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            {/* Header modal */}
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="truncate">
+                  <h4 className="font-semibold text-sm truncate">{previewFile.name}</h4>
+                  <span className="text-[11px] text-slate-400">
+                    {previewFile.size ? `${(previewFile.size / 1024 / 1024).toFixed(2)} MB • ` : ''}Minh chứng bài báo nghiên cứu khoa học TDU
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewFile.url}
+                  download={previewFile.name}
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Tải file về máy tính"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải về</span>
+                </a>
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Đóng cửa sổ"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Nội dung xem trước file */}
+            <div className="flex-1 overflow-auto p-4 bg-slate-100 flex items-center justify-center min-h-[350px]">
+              {previewFile.url.startsWith('data:image/') || previewFile.name.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.name}
+                  className="max-w-full max-h-[70vh] object-contain rounded shadow"
+                />
+              ) : previewFile.url.startsWith('data:application/pdf') || previewFile.name.endsWith('.pdf') ? (
+                <iframe
+                  src={previewFile.url}
+                  className="w-full h-[70vh] rounded border border-slate-300 bg-white"
+                  title={previewFile.name}
+                />
+              ) : (
+                <div className="text-center p-8 bg-white rounded-xl shadow-xs border border-slate-200 max-w-md">
+                  <FileText className="w-16 h-16 text-blue-500 mx-auto mb-3" />
+                  <p className="font-medium text-slate-800 text-sm mb-1">{previewFile.name}</p>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Tài liệu minh chứng bài báo nghiên cứu đã được đính kèm thành công.
+                  </p>
+                  <a
+                    href={previewFile.url}
+                    download={previewFile.name}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#005325] text-white text-xs font-semibold hover:bg-[#00421e] transition-colors shadow-xs"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Tải file về máy</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -119,6 +119,10 @@ export interface TeachingRecord {
   soGioQCNCKH?: number;     // Số giờ quy chuẩn NCKH
   mucDoHoanThanhNCKH?: 'hoan_thanh' | 'khong_hoan_thanh'; // Mức độ hoàn thành hoặc không hoàn thành
   dinhMucNCKH?: number;     // Định mức NCKH theo ngạch chức danh (vd: 150 giờ)
+  fileMinhChungUrl?: string; // URL / đường dẫn file minh chứng PDF/ảnh bài báo
+  tenFileMinhChung?: string; // Tên file minh chứng gốc (vd: Minh_Chung_Bai_Bao_Scopus_2026.pdf)
+  dungLuongFile?: number;    // Dung lượng file (bytes)
+  ngayUploadMinhChung?: string; // Thời gian tải minh chứng lên
 
   // 3. Fields for Exam & Evaluation (Coi thi, Chấm thi, Ra đề)
   nhomCongViec?: string;    // Nhóm công việc: Ra đề thi, Duyệt đề thi, Coi thi kết thúc HP, Chấm thi tự luận, Chấm thi thực hành...
