@@ -265,11 +265,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         )}
 
         {/* Nút đăng nhập Google chính thức: Tự động mở giao diện chọn tài khoản Google chuẩn */}
-        <div className="w-full flex flex-col items-center justify-center min-h-[50px]">
-          {/* Nút chuẩn của Google Identity Services */}
+        <div className="w-full flex flex-col items-center justify-center min-h-[56px] py-1">
+          {/* Nút chuẩn của Google Identity Services: tăng tỉ lệ scale để nút cao hơn, chữ to rõ hơn */}
           <div
             id="google-sso-native-container"
-            className="flex items-center justify-center min-h-[50px] w-full"
+            className="flex items-center justify-center min-h-[54px] w-full [&_iframe]:scale-[1.08] sm:[&_iframe]:scale-[1.12] [&_iframe]:origin-center transition-transform"
           ></div>
 
           {/* Nút bấm hiển thị dự phòng trong tích tắc trước khi Google iframe render */}
@@ -278,9 +278,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               type="button"
               disabled={isLoading}
               onClick={handleFallbackButtonClick}
-              className="w-full max-w-[380px] h-12.5 px-6 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[14.5px] flex items-center justify-center gap-3 shadow-xs hover:shadow-md transition-all cursor-pointer"
+              className="w-full max-w-[380px] h-14 px-6 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-[16px] sm:text-[16.5px] flex items-center justify-center gap-3.5 shadow-xs hover:shadow-md transition-all cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" className="w-5.5 h-5.5 shrink-0">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 shrink-0">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
