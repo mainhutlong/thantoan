@@ -50,10 +50,16 @@ export const Header: React.FC<HeaderProps> = ({
   const userRef = useRef<HTMLDivElement>(null);
   const zoomMenuRef = useRef<HTMLDivElement>(null);
 
-  // Zoom level state (Default: 1.0 = 100% chuẩn cho mọi thiết bị)
+  // Zoom level state (Default: 1.25 = 125% tối ưu rõ nét, vừa đẹp cho màn hình Desktop/Laptop)
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
     const saved = localStorage.getItem('tdu_zoom');
-    return saved ? Number(saved) : 1.0;
+    if (saved && saved !== '1.0' && saved !== '1') {
+      return Number(saved);
+    }
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const defaultZoom = isMobile ? 1.0 : 1.25;
+    localStorage.setItem('tdu_zoom', String(defaultZoom));
+    return defaultZoom;
   });
 
   const handleZoomIn = () => {
@@ -73,8 +79,10 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleResetZoom = () => {
-    setZoomLevel(1.0);
-    localStorage.setItem('tdu_zoom', '1.0');
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const defaultZoom = isMobile ? 1.0 : 1.25;
+    setZoomLevel(defaultZoom);
+    localStorage.setItem('tdu_zoom', String(defaultZoom));
   };
 
   useEffect(() => {
@@ -404,9 +412,9 @@ export const Header: React.FC<HeaderProps> = ({
               {[
                 { val: 0.8, label: '80% (Rộng rãi)' },
                 { val: 0.9, label: '90% (Gọn gàng)' },
-                { val: 1.0, label: '100% (Chuẩn)' },
+                { val: 1.0, label: '100% (Tiêu chuẩn)' },
                 { val: 1.1, label: '110% (Vừa vặn)' },
-                { val: 1.25, label: '125% (Rõ nét)' },
+                { val: 1.25, label: '125% (Mặc định - Vừa đẹp)' },
                 { val: 1.5, label: '150% (Phóng đại)' },
               ].map((item) => (
                 <button
@@ -439,7 +447,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full text-center px-2 py-1 rounded text-[11px] text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer flex items-center justify-center gap-1 font-medium"
                 >
                   <RotateCcw className="w-3 h-3 text-slate-500" />
-                  <span>Mặc định (100%)</span>
+                  <span>Mặc định (125%)</span>
                 </button>
               </div>
             </div>

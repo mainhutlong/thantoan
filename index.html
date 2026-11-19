@@ -14,6 +14,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Google Identity Services for TDU SSO Login -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('tdu_zoom');
+          var isMobile = window.innerWidth < 768;
+          var z = (saved && saved !== '1.0' && saved !== '1') ? saved : (isMobile ? '1.0' : '1.25');
+          document.documentElement.style.zoom = z;
+          document.documentElement.style.setProperty('--app-zoom', z);
+          document.documentElement.style.setProperty('--modal-zoom', String(1 / Number(z)));
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

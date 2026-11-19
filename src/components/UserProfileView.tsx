@@ -130,7 +130,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   // Zoom state synced with Header
   const [zoomLevel, setZoomLevel] = useState<number>(() => {
     const saved = localStorage.getItem('tdu_zoom');
-    return saved ? Number(saved) : 1.25;
+    if (saved && saved !== '1.0' && saved !== '1') {
+      return Number(saved);
+    }
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return isMobile ? 1.0 : 1.25;
   });
 
   const handleZoomChange = (newZoom: number) => {
@@ -765,11 +769,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 </p>
                 <div className="flex items-center flex-wrap gap-2">
                   {[
-                    { val: 1.0, label: '100%' },
-                    { val: 1.1, label: '110%' },
-                    { val: 1.25, label: '125% (Mặc định)' },
+                    { val: 1.0, label: '100% (Tiêu chuẩn)' },
+                    { val: 1.1, label: '110% (Vừa vặn)' },
+                    { val: 1.25, label: '125% (Mặc định - Vừa đẹp)' },
                     { val: 1.35, label: '135%' },
-                    { val: 1.5, label: '150%' },
+                    { val: 1.5, label: '150% (Phóng đại)' },
                   ].map((opt) => (
                     <button
                       key={opt.val}
