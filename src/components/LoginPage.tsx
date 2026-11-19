@@ -152,7 +152,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           const btnContainer = document.getElementById('google-sso-native-container');
           if (btnContainer) {
             btnContainer.innerHTML = '';
-            const btnWidth = typeof window !== 'undefined' ? Math.min(300, Math.max(250, window.innerWidth - 80)) : 280;
+            const btnWidth = typeof window !== 'undefined' ? Math.min(320, Math.max(260, window.innerWidth - 64)) : 300;
             // @ts-ignore
             window.google.accounts.id.renderButton(btnContainer, {
               theme: 'outline',
@@ -234,55 +234,55 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f8fafc] px-4 py-8 sm:py-12 select-none">
-      <div className="w-full max-w-[500px] sm:max-w-[520px] bg-white rounded-[32px] sm:rounded-[36px] shadow-2xl border border-slate-200/90 p-8 sm:p-14 flex flex-col items-center text-center animate-fadeIn">
+    <div className="h-screen max-h-[100dvh] w-full flex flex-col items-center justify-center bg-[#f8fafc] px-4 py-4 select-none overflow-hidden">
+      <div className="w-full max-w-[440px] sm:max-w-[460px] bg-white rounded-[28px] shadow-xl border border-slate-200/90 p-6 sm:p-8 flex flex-col items-center text-center animate-fadeIn">
         {/* Logo Trường Đại học Tây Đô */}
-        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-3.5 mb-6 overflow-hidden">
+        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-2 mb-3.5 overflow-hidden">
           <img src={logoTdu} alt="TDU Logo" className="w-full h-full object-contain" />
         </div>
 
         {/* Tiêu đề Đăng nhập */}
-        <h1 className="text-[30px] sm:text-[34px] font-black text-slate-900 tracking-tight">
+        <h1 className="text-[25px] sm:text-[28px] font-black text-slate-900 tracking-tight">
           Đăng nhập
         </h1>
-        <p className="text-[16px] sm:text-[17px] font-medium text-slate-500 mt-2.5 mb-8 sm:mb-10">
+        <p className="text-[14px] sm:text-[14.5px] font-medium text-slate-500 mt-1 mb-5 sm:mb-6">
           Hệ thống thanh toán giờ giảng TDU
         </p>
 
         {/* Thông báo lỗi nếu có */}
         {errorMsg && (
-          <div className="w-full mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-[13px] text-left flex items-start gap-2.5">
-            <AlertCircle className="w-4.5 h-4.5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="w-full mb-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-[13px] text-left flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Loading Spinner */}
         {isLoading && (
-          <div className="flex items-center gap-2.5 text-slate-600 text-[14px] mb-5">
-            <RefreshCw className="w-4.5 h-4.5 animate-spin text-[#005325]" />
+          <div className="flex items-center gap-2.5 text-slate-600 text-[13.5px] mb-4">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#005325]" />
             <span>Đang xác thực thông tin...</span>
           </div>
         )}
 
         {/* Nút đăng nhập Google chính thức: Tự động mở giao diện chọn tài khoản Google chuẩn */}
-        <div className="w-full flex flex-col items-center justify-center min-h-[72px] py-2 overflow-visible">
-          {/* Nút chuẩn của Google Identity Services: Tăng tỉ lệ scale để nút cao to, chữ to rõ nét */}
+        <div className="w-full flex flex-col items-center justify-center min-h-[56px] py-1 overflow-visible">
+          {/* Nút chuẩn của Google Identity Services: Vừa vặn, sắc nét */}
           <div
             id="google-sso-native-container"
-            style={{ transform: 'scale(1.25)', transformOrigin: 'center' }}
-            className="flex items-center justify-center min-h-[54px] w-full"
+            style={{ transform: 'scale(1.08)', transformOrigin: 'center' }}
+            className="flex items-center justify-center min-h-[46px] w-full"
           ></div>
 
-          {/* Nút bấm hiển thị dự phòng kích thước to rõ */}
+          {/* Nút bấm hiển thị dự phòng kích thước chuẩn đẹp */}
           {!isGsiLoaded && (
             <button
               type="button"
               disabled={isLoading}
               onClick={handleFallbackButtonClick}
-              className="w-full max-w-[400px] h-15 px-6 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-[17.5px] flex items-center justify-center gap-3.5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+              className="w-full max-w-[340px] h-12 px-5 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-bold text-[15.5px] flex items-center justify-center gap-3 shadow-xs hover:shadow-md transition-all cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" className="w-6 h-6 shrink-0">
+              <svg viewBox="0 0 24 24" className="w-5.5 h-5.5 shrink-0">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

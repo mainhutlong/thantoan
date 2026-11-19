@@ -18,8 +18,12 @@
       (function() {
         try {
           var saved = localStorage.getItem('tdu_zoom');
-          var isMobile = window.innerWidth < 768;
-          var z = (saved && saved !== '1.0' && saved !== '1') ? saved : (isMobile ? '1.0' : '1.25');
+          // Nếu trước đó bị lưu 1.25 gây khuất giao diện và thanh cuộn, reset về 1.0 chuẩn
+          if (saved === '1.25') {
+            localStorage.setItem('tdu_zoom', '1.0');
+            saved = '1.0';
+          }
+          var z = saved ? saved : '1.0';
           document.documentElement.style.zoom = z;
           document.documentElement.style.setProperty('--app-zoom', z);
           document.documentElement.style.setProperty('--modal-zoom', String(1 / Number(z)));
