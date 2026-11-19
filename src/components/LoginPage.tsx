@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, RefreshCw, Mail, CheckCircle2, X, Shield, ArrowRight, UserCheck } from 'lucide-react';
+import { AlertCircle, RefreshCw, X, Shield, UserCheck } from 'lucide-react';
 import logoTdu from '../assets/images/logo_tdu.jpg';
 import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
 
@@ -321,73 +321,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </svg>
             <span>Đăng nhập với Google</span>
           </button>
-        </div>
-
-        {/* Phân cách */}
-        <div className="relative w-full my-3 flex items-center justify-center">
-          <div className="border-t border-slate-200 w-full"></div>
-          <span className="bg-white px-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">
-            Hoặc nhập Email Cán bộ
-          </span>
-          <div className="border-t border-slate-200 w-full"></div>
-        </div>
-
-        {/* Form Đăng nhập trực tiếp cho Cán bộ / Giảng viên */}
-        <div className="w-full space-y-2.5 text-left">
-          <div className="relative">
-            <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleStaffLogin(emailInput);
-              }}
-              placeholder="mnlong@tdu.edu.vn"
-              className="w-full h-10 pl-9.5 pr-3 rounded-xl border border-slate-300 focus:border-[#005325] focus:ring-2 focus:ring-emerald-100 text-[13px] text-slate-800 placeholder-slate-400 outline-none transition-all"
-            />
-          </div>
-
-          <button
-            type="button"
-            disabled={isLoading || !emailInput.trim()}
-            onClick={() => handleStaffLogin(emailInput)}
-            className="w-full h-10 rounded-xl bg-[#005325] hover:bg-[#00401c] active:bg-[#003014] text-white font-semibold text-[13px] flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
-          >
-            <span>Đăng nhập hệ thống</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Nút chọn nhanh tài khoản quản trị & giảng viên để đăng nhập ngay trên điện thoại */}
-          <div className="pt-2">
-            <div className="text-[11px] font-medium text-slate-400 mb-1.5 text-center">
-              Tài khoản mẫu truy cập nhanh:
-            </div>
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailInput('mnlong@tdu.edu.vn');
-                  handleStaffLogin('mnlong@tdu.edu.vn');
-                }}
-                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#005325] text-[11px] font-semibold border border-emerald-200 transition-colors cursor-pointer"
-                title="Quản trị viên hệ thống (Mai Nhựt Long)"
-              >
-                👑 Mai Nhựt Long
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailInput('lvlinh@tdu.edu.vn');
-                  handleStaffLogin('lvlinh@tdu.edu.vn');
-                }}
-                className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-semibold border border-blue-200 transition-colors cursor-pointer"
-                title="Quản trị viên hệ thống (Lê Vũ Linh)"
-              >
-                👑 Lê Vũ Linh
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
