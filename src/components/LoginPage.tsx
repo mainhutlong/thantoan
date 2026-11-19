@@ -68,13 +68,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           role = 'BAN_GIAM_HIEU';
           roleName = 'Ban Giám hiệu';
         } else if (found?.donVi.toLowerCase().includes('đào tạo')) {
-          role = 'PHONG_DAO_TAO';
+          role = 'PHONG_QUAN_LY_DAO_TAO';
           roleName = 'Phòng Quản lý Đào tạo';
         } else if (found?.donVi.toLowerCase().includes('khoa học') || found?.donVi.toLowerCase().includes('qlkh')) {
-          role = 'PHONG_QLKH';
+          role = 'PHONG_QLKH_HTQT';
           roleName = 'Phòng Quản lý khoa học và Hợp tác quốc tế';
         } else if (found?.donVi.toLowerCase().includes('tài chính') || found?.donVi.toLowerCase().includes('kế hoạch')) {
-          role = 'PHONG_TAI_CHINH';
+          role = 'PHONG_TAI_CHINH_KE_HOACH';
           roleName = 'Phòng Tài chính - Kế hoạch';
         }
 

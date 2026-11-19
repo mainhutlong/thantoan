@@ -74,10 +74,58 @@ export default function App() {
         const u = JSON.parse(userStr);
         const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
         const uEmail = (u.email || '').toLowerCase().trim();
-        if (uEmail === 'mnlong@tdu.edu.vn' || roles.includes('QUAN_TRI_VIEN_HE_THONG') || roles.includes('SUPER_ADMIN')) return 'admin';
-        if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) return 'approver';
-        if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) return 'accountant_specialist';
-        if (roles.includes('PHONG_QLKH')) return 'dean_faculty';
+        const uDonVi = (u.donVi || '').toLowerCase().trim();
+        const uChucVu = (u.chucVu || '').toLowerCase().trim();
+
+        if (
+          uEmail === 'mnlong@tdu.edu.vn' ||
+          uEmail === 'lvlinh@tdu.edu.vn' ||
+          roles.includes('QUAN_TRI_VIEN_HE_THONG') ||
+          roles.includes('SUPER_ADMIN')
+        ) {
+          return 'admin';
+        }
+
+        if (
+          roles.includes('BAN_GIAM_HIEU') ||
+          roles.includes('HOI_DONG_TRUONG') ||
+          roles.includes('HOI_DONG_CO_VAN') ||
+          roles.includes('LANH_DAO_KHOA') ||
+          uDonVi.includes('ban giám hiệu') ||
+          uDonVi.includes('hội đồng')
+        ) {
+          return 'approver';
+        }
+
+        if (
+          roles.some((r) =>
+            r.includes('DAO_TAO') ||
+            r.includes('TAI_CHINH') ||
+            r.includes('KHAO_THI') ||
+            r.includes('TO_CHUC') ||
+            r.includes('DBCLGD') ||
+            r.includes('QTTB') ||
+            r.includes('CTCT') ||
+            r.includes('TUYEN_SINH')
+          ) ||
+          uDonVi.includes('đào tạo') ||
+          uDonVi.includes('tài chính') ||
+          uDonVi.includes('khảo thí') ||
+          uDonVi.includes('tổ chức') ||
+          uDonVi.includes('hành chính') ||
+          uChucVu.includes('chuyên viên')
+        ) {
+          return 'accountant_specialist';
+        }
+
+        if (
+          roles.some((r) => r.startsWith('KHOA_') || r.includes('QLKH')) ||
+          uDonVi.includes('khoa') ||
+          uDonVi.includes('qlkh')
+        ) {
+          return 'dean_faculty';
+        }
+
         return 'lecturer';
       }
     } catch {}
@@ -110,6 +158,9 @@ export default function App() {
           }
         } catch {}
 
+        const uDonVi = (u.donVi || '').toLowerCase().trim();
+        const uChucVu = (u.chucVu || '').toLowerCase().trim();
+
         let mappedRole: UserRole = 'lecturer';
         if (
           uEmail === 'mnlong@tdu.edu.vn' ||
@@ -120,10 +171,43 @@ export default function App() {
           isCustomAdmin
         ) {
           mappedRole = 'admin';
-        } else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA')) mappedRole = 'approver';
-        else if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI')) mappedRole = 'accountant_specialist';
-        else if (roles.includes('PHONG_QLKH')) mappedRole = 'dean_faculty';
-        else mappedRole = 'lecturer';
+        } else if (
+          roles.includes('BAN_GIAM_HIEU') ||
+          roles.includes('HOI_DONG_TRUONG') ||
+          roles.includes('HOI_DONG_CO_VAN') ||
+          roles.includes('LANH_DAO_KHOA') ||
+          uDonVi.includes('ban giám hiệu') ||
+          uDonVi.includes('hội đồng')
+        ) {
+          mappedRole = 'approver';
+        } else if (
+          roles.some((r) =>
+            r.includes('DAO_TAO') ||
+            r.includes('TAI_CHINH') ||
+            r.includes('KHAO_THI') ||
+            r.includes('TO_CHUC') ||
+            r.includes('DBCLGD') ||
+            r.includes('QTTB') ||
+            r.includes('CTCT') ||
+            r.includes('TUYEN_SINH')
+          ) ||
+          uDonVi.includes('đào tạo') ||
+          uDonVi.includes('tài chính') ||
+          uDonVi.includes('khảo thí') ||
+          uDonVi.includes('tổ chức') ||
+          uDonVi.includes('hành chính') ||
+          uChucVu.includes('chuyên viên')
+        ) {
+          mappedRole = 'accountant_specialist';
+        } else if (
+          roles.some((r) => r.startsWith('KHOA_') || r.includes('QLKH')) ||
+          uDonVi.includes('khoa') ||
+          uDonVi.includes('qlkh')
+        ) {
+          mappedRole = 'dean_faculty';
+        } else {
+          mappedRole = 'lecturer';
+        }
 
         return {
           id: String(u.id || '1'),

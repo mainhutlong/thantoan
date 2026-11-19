@@ -164,18 +164,51 @@ export const Header: React.FC<HeaderProps> = ({
       }
     } catch {}
 
-    // 3. Tài khoản Super Admin đặc biệt: mnlong và lvlinh
+    // 3. Đọc vai trò từ hồ sơ cán bộ matchedStaff (nếu có trong 245 nhân sự)
+    if (matchedStaff) {
+      const donViLower = (matchedStaff.donVi || '').toLowerCase().trim();
+      const chucVuLower = (matchedStaff.chucVu || '').toLowerCase().trim();
+
+      if (donViLower.includes('đào tạo')) {
+        sessionRoleCodes.add('PHONG_QUAN_LY_DAO_TAO');
+        if (!roleTitleMap.has('PHONG_QUAN_LY_DAO_TAO')) roleTitleMap.set('PHONG_QUAN_LY_DAO_TAO', 'Phòng Quản lý Đào tạo');
+      } else if (donViLower.includes('tài chính') || donViLower.includes('kế hoạch')) {
+        sessionRoleCodes.add('PHONG_TAI_CHINH_KE_HOACH');
+        if (!roleTitleMap.has('PHONG_TAI_CHINH_KE_HOACH')) roleTitleMap.set('PHONG_TAI_CHINH_KE_HOACH', 'Phòng Tài chính - Kế hoạch');
+      } else if (donViLower.includes('khảo thí') || donViLower.includes('đảm bảo chất lượng') || donViLower.includes('dbclgd')) {
+        sessionRoleCodes.add('TT_KT_DBCLGD');
+        if (!roleTitleMap.has('TT_KT_DBCLGD')) roleTitleMap.set('TT_KT_DBCLGD', 'Trung tâm Kiểm tra và ĐBCLGD');
+      } else if (donViLower.includes('công nghệ thông tin')) {
+        sessionRoleCodes.add('PHONG_CONG_NGHE_THONG_TIN');
+        if (!roleTitleMap.has('PHONG_CONG_NGHE_THONG_TIN')) roleTitleMap.set('PHONG_CONG_NGHE_THONG_TIN', 'Phòng Công nghệ thông tin');
+      } else if (donViLower.includes('tổ chức') || donViLower.includes('hành chính')) {
+        sessionRoleCodes.add('PHONG_TO_CHUC_HANH_CHINH');
+        if (!roleTitleMap.has('PHONG_TO_CHUC_HANH_CHINH')) roleTitleMap.set('PHONG_TO_CHUC_HANH_CHINH', 'Phòng Tổ chức - Hành chính');
+      } else if (donViLower.includes('khoa học') || donViLower.includes('qlkh')) {
+        sessionRoleCodes.add('PHONG_QLKH_HTQT');
+        if (!roleTitleMap.has('PHONG_QLKH_HTQT')) roleTitleMap.set('PHONG_QLKH_HTQT', 'Phòng Quản lý khoa học & HTQT');
+      } else if (donViLower.includes('ban giám hiệu') || donViLower.includes('hội đồng')) {
+        sessionRoleCodes.add('BAN_GIAM_HIEU');
+        if (!roleTitleMap.has('BAN_GIAM_HIEU')) roleTitleMap.set('BAN_GIAM_HIEU', 'Ban Giám hiệu');
+      } else if (donViLower.includes('khoa')) {
+        const fCode = 'KHOA_' + donViLower.replace(/khoa\s+/g, '').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+        sessionRoleCodes.add(fCode);
+        if (!roleTitleMap.has(fCode)) roleTitleMap.set(fCode, matchedStaff.donVi);
+      }
+
+      // Chỉ thêm vai trò Giảng viên nếu chức vụ thực tế của cán bộ có chữ "giảng viên"
+      if (chucVuLower.includes('giảng viên')) {
+        sessionRoleCodes.add('GIANG_VIEN');
+        if (!roleTitleMap.has('GIANG_VIEN')) roleTitleMap.set('GIANG_VIEN', 'Giảng viên');
+      }
+    }
+
+    // 4. Tài khoản Super Admin đặc biệt: mnlong và lvlinh
     if (email === 'mnlong@tdu.edu.vn' || email === 'lvlinh@tdu.edu.vn' || email.includes('lvlinh')) {
       sessionRoleCodes.add('QUAN_TRI_VIEN_HE_THONG');
       roleTitleMap.set('QUAN_TRI_VIEN_HE_THONG', 'Super Admin');
       sessionRoleCodes.add('PHONG_CONG_NGHE_THONG_TIN');
       roleTitleMap.set('PHONG_CONG_NGHE_THONG_TIN', 'Phòng Công nghệ thông tin');
-    }
-
-    // 4. Nếu trong hồ sơ 245 cán bộ có chức vụ Giảng viên
-    if (matchedStaff && (matchedStaff.chucVu || '').toLowerCase().includes('giảng viên')) {
-      sessionRoleCodes.add('GIANG_VIEN');
-      if (!roleTitleMap.has('GIANG_VIEN')) roleTitleMap.set('GIANG_VIEN', 'Giảng viên');
     }
 
     // 5. Tổng hợp danh sách hiển thị chỉ gồm các vai trò mà tài khoản thực sự có
@@ -202,6 +235,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (
       sessionRoleCodes.has('BAN_GIAM_HIEU') ||
       sessionRoleCodes.has('HOI_DONG_TRUONG') ||
+      sessionRoleCodes.has('HOI_DONG_CO_VAN') ||
       sessionRoleCodes.has('LANH_DAO_KHOA')
     ) {
       const customTitle = roleTitleMap.get('BAN_GIAM_HIEU') || roleTitleMap.get('HOI_DONG_TRUONG') || 'Trưởng/phó đơn vị';
@@ -214,32 +248,52 @@ export const Header: React.FC<HeaderProps> = ({
       });
     }
 
-    // Chuyên viên tổng hợp (Phòng Đào tạo, Tài chính, Khảo thí, TCHC, CNTT)
-    const specialistCodes = [
-      'PHONG_DAO_TAO',
-      'PHONG_TAI_CHINH_KE_HOACH',
-      'PHONG_TAI_CHINH',
-      'TRUNG_TAM_KHAO_THI',
-      'PHONG_TO_CHUC_HANH_CHINH',
-      'PHONG_CONG_NGHE_THONG_TIN',
+    // Chuyên viên tổng hợp các Phòng ban chức năng
+    const specialistConfigList = [
+      { code: 'PHONG_QUAN_LY_DAO_TAO', alt: 'PHONG_DAO_TAO', name: 'Phòng Quản lý Đào tạo', badge: 'PHÒNG ĐÀO TẠO' },
+      { code: 'PHONG_TAI_CHINH_KE_HOACH', alt: 'PHONG_TAI_CHINH', name: 'Phòng Tài chính - Kế hoạch', badge: 'PHÒNG TÀI CHÍNH' },
+      { code: 'TT_KT_DBCLGD', alt: 'TRUNG_TAM_KHAO_THI', name: 'Trung tâm Kiểm tra và ĐBCLGD', badge: 'TRUNG TÂM KHẢO THÍ' },
+      { code: 'PHONG_CONG_NGHE_THONG_TIN', alt: 'PHONG_CNTT', name: 'Phòng Công nghệ thông tin', badge: 'PHÒNG CNTT' },
+      { code: 'PHONG_TO_CHUC_HANH_CHINH', alt: 'PHONG_TCHC', name: 'Phòng Tổ chức - Hành chính', badge: 'PHÒNG TCHC' },
+      { code: 'PHONG_QUAN_TRI_THIET_BI', alt: 'PHONG_QTTB', name: 'Phòng Quản trị thiết bị', badge: 'PHÒNG THIẾT BỊ' },
+      { code: 'PHONG_CTCT_QLSV', alt: 'PHONG_CTCT', name: 'Phòng Công tác chính trị - QLSV', badge: 'PHÒNG QLSV' },
+      { code: 'PHONG_TUYEN_SINH_TRUYEN_THONG', alt: 'PHONG_TS_TT', name: 'Phòng Tuyển sinh và Truyền thông', badge: 'PHÒNG TUYỂN SINH' },
+      { code: 'TT_NGOAI_NGU_TIN_HOC', alt: 'TT_NN_TH', name: 'Trung tâm Ngoại ngữ - Tin học', badge: 'TT NGOẠI NGỮ' },
+      { code: 'TT_KHOI_NGHIEP_DOANH_NGHIEP', alt: 'TT_KHOI_NGHIEP', name: 'Trung tâm Khởi nghiệp & Hợp tác DN', badge: 'TT KHỞI NGHIỆP' },
+      { code: 'THU_VIEN', alt: 'THU_VIEN', name: 'Thư viện', badge: 'THƯ VIỆN' },
+      { code: 'VAN_PHONG_DANG', alt: 'VAN_PHONG_DANG', name: 'Văn phòng Đảng', badge: 'VĂN PHÒNG ĐẢNG' },
+      { code: 'BAN_PHAP_CHE_KIEM_TRA', alt: 'BAN_PHAP_CHE', name: 'Ban Pháp chế - Kiểm tra', badge: 'PHÁP CHẾ' },
+      { code: 'TAP_CHI_NCKH_PTKT', alt: 'TAP_CHI', name: 'Tạp chí NCKH&PTKT', badge: 'TẠP CHÍ NCKH' },
     ];
-    for (const sc of specialistCodes) {
-      if (sessionRoleCodes.has(sc)) {
-        const sName = roleTitleMap.get(sc) || (sc === 'PHONG_CONG_NGHE_THONG_TIN' ? 'Phòng Công nghệ thông tin' : 'Chuyên viên');
+
+    for (const spec of specialistConfigList) {
+      if (sessionRoleCodes.has(spec.code) || sessionRoleCodes.has(spec.alt)) {
+        const sName = roleTitleMap.get(spec.code) || roleTitleMap.get(spec.alt) || spec.name;
         result.push({
-          id: `spec_${sc.toLowerCase()}`,
-          code: sc,
-          title: sc === 'PHONG_CONG_NGHE_THONG_TIN' ? sName : `Chuyên viên (${sName})`,
-          badgeText: sName.toUpperCase(),
-          userRole: sc === 'PHONG_CONG_NGHE_THONG_TIN' ? 'admin' : 'accountant_specialist',
+          id: `spec_${spec.code.toLowerCase()}`,
+          code: spec.code,
+          title: `Chuyên viên (${sName})`,
+          badgeText: spec.badge,
+          userRole: spec.code === 'PHONG_CONG_NGHE_THONG_TIN' && result.some((r) => r.userRole === 'admin') ? 'admin' : 'accountant_specialist',
         });
       }
     }
 
     // Đơn vị kê khai (Khoa cơ bản, Khoa luật, Khoa dược..., Phòng QLKH)
+    if (sessionRoleCodes.has('PHONG_QLKH_HTQT') || sessionRoleCodes.has('PHONG_QLKH')) {
+      const qlkhName = roleTitleMap.get('PHONG_QLKH_HTQT') || roleTitleMap.get('PHONG_QLKH') || 'Phòng Quản lý khoa học & HTQT';
+      result.push({
+        id: 'faculty_phong_qlkh_htqt',
+        code: 'PHONG_QLKH_HTQT',
+        title: `Đơn vị kê khai (${qlkhName})`,
+        badgeText: 'PHÒNG QLKH',
+        userRole: 'dean_faculty',
+      });
+    }
+
     Array.from(sessionRoleCodes).forEach((c) => {
-      if (c.startsWith('KHOA_') || c === 'PHONG_QLKH') {
-        const kName = roleTitleMap.get(c) || 'Đơn vị kê khai';
+      if (c.startsWith('KHOA_')) {
+        const kName = roleTitleMap.get(c) || 'Khoa chuyên môn';
         result.push({
           id: `faculty_${c.toLowerCase()}`,
           code: c,
@@ -250,8 +304,12 @@ export const Header: React.FC<HeaderProps> = ({
       }
     });
 
-    // Giảng viên
-    if (sessionRoleCodes.has('GIANG_VIEN') || result.length === 0) {
+    // Giảng viên: CHỈ THÊM NẾU TÀI KHOẢN THỰC SỰ LÀ GIẢNG VIÊN HOẶC CHƯA CÓ VAI TRÒ NÀO
+    const isActuallyLecturer =
+      sessionRoleCodes.has('GIANG_VIEN') ||
+      (matchedStaff && (matchedStaff.chucVu || '').toLowerCase().includes('giảng viên'));
+
+    if (isActuallyLecturer || result.length === 0) {
       result.push({
         id: 'giang_vien',
         code: 'GIANG_VIEN',
@@ -275,7 +333,7 @@ export const Header: React.FC<HeaderProps> = ({
     };
 
   return (
-    <header className="bg-white border-b border-slate-200/90 h-[72px] px-4 sm:px-6 flex items-center justify-between select-none z-30 shrink-0 shadow-2xs">
+    <header className="bg-white border-b border-slate-200/90 h-[72px] px-4 sm:px-6 flex items-center justify-between select-none z-50 relative shrink-0 shadow-2xs">
       {/* LEFT: Sidebar Toggle button & Mobile Brand Indicator */}
       <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
         <button
@@ -476,7 +534,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Popover Hồ sơ & Chuyển đổi vai trò */}
           {showUserMenu && (
-            <div className="absolute right-0 top-14 w-[335px] max-w-[calc(100vw-24px)] bg-[#eef3f8] rounded-[26px] shadow-2xl border border-slate-200/80 p-3.5 z-50 animate-fadeIn">
+            <div className="absolute right-0 top-14 w-[335px] max-w-[calc(100vw-24px)] bg-[#eef3f8] rounded-[26px] shadow-2xl border border-slate-200/80 p-3.5 z-[9999] animate-fadeIn">
               {/* Top close button */}
               <div className="flex justify-end mb-1.5 pr-1">
                 <button
