@@ -341,7 +341,18 @@ export default function App() {
       mappedRole = 'admin';
     } else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA') || user.vaiTroCode === 'truong_khoa' || user.vaiTroCode === 'truong_phong') {
       mappedRole = 'approver';
-    } else if (roles.includes('PHONG_TAI_CHINH') || roles.includes('PHONG_DAO_TAO') || roles.includes('TRUNG_TAM_KHAO_THI') || user.vaiTroCode === 'chuyen_vien') {
+    } else if (
+      roles.some((r) =>
+        r.includes('DAO_TAO') ||
+        r.includes('TAI_CHINH') ||
+        r.includes('KHAO_THI') ||
+        r.includes('TO_CHUC') ||
+        r.includes('DBCLGD')
+      ) ||
+      (user.donVi || '').toLowerCase().includes('đào tạo') ||
+      (user.donVi || '').toLowerCase().includes('tài chính') ||
+      user.vaiTroCode === 'chuyen_vien'
+    ) {
       mappedRole = 'accountant_specialist';
     } else if (roles.includes('PHONG_QLKH') || user.vaiTroCode === 'tro_ly') {
       mappedRole = 'dean_faculty';

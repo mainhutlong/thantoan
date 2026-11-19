@@ -208,10 +208,10 @@ export const Header: React.FC<HeaderProps> = ({
       }
     }
 
-    // 4. Tài khoản Super Admin đặc biệt: mnlong và lvlinh
+    // 4. Tài khoản Quản trị viên hệ thống: mnlong và lvlinh
     if (email === 'mnlong@tdu.edu.vn' || email === 'lvlinh@tdu.edu.vn' || email.includes('lvlinh')) {
       sessionRoleCodes.add('QUAN_TRI_VIEN_HE_THONG');
-      roleTitleMap.set('QUAN_TRI_VIEN_HE_THONG', 'Super Admin');
+      roleTitleMap.set('QUAN_TRI_VIEN_HE_THONG', 'Quản trị viên hệ thống');
       sessionRoleCodes.add('PHONG_CONG_NGHE_THONG_TIN');
       roleTitleMap.set('PHONG_CONG_NGHE_THONG_TIN', 'Phòng Công nghệ thông tin');
     }
@@ -225,13 +225,13 @@ export const Header: React.FC<HeaderProps> = ({
       userRole: UserRole;
     }[] = [];
 
-    // Quản trị viên hệ thống (Super Admin)
+    // Quản trị viên hệ thống
     if (sessionRoleCodes.has('QUAN_TRI_VIEN_HE_THONG') || sessionRoleCodes.has('SUPER_ADMIN')) {
       result.push({
         id: 'quan_tri_vien_he_thong',
         code: 'QUAN_TRI_VIEN_HE_THONG',
-        title: 'Super Admin',
-        badgeText: 'SUPER ADMIN',
+        title: 'Quản trị viên hệ thống',
+        badgeText: 'QUẢN TRỊ VIÊN HỆ THỐNG',
         userRole: 'admin',
       });
     }
@@ -309,10 +309,10 @@ export const Header: React.FC<HeaderProps> = ({
       }
     });
 
-    // Giảng viên: CHỈ THÊM NẾU TÀI KHOẢN THỰC SỰ LÀ GIẢNG VIÊN HOẶC CHƯA CÓ VAI TRÒ NÀO
+    // Giảng viên: CHỈ THÊM NẾU CHỨC VỤ THỰC TẾ LÀ GIẢNG VIÊN HOẶC CHƯA CÓ BẤT KỲ VAI TRÒ NÀO
     const isActuallyLecturer =
-      sessionRoleCodes.has('GIANG_VIEN') ||
-      (matchedStaff && (matchedStaff.chucVu || '').toLowerCase().includes('giảng viên'));
+      (matchedStaff && (matchedStaff.chucVu || '').toLowerCase().includes('giảng viên')) ||
+      (!matchedStaff && sessionRoleCodes.has('GIANG_VIEN'));
 
     if (isActuallyLecturer || result.length === 0) {
       result.push({

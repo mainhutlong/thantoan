@@ -86,8 +86,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           chucVu: found ? found.chucVu : 'Giảng viên',
           donVi: found ? found.donVi : 'Trường Đại học Tây Đô',
           avatar: profile.picture || '',
-          roles: role === 'SUPER_ADMIN' ? ['QUAN_TRI_VIEN_HE_THONG', 'PHONG_CONG_NGHE_THONG_TIN', 'GIANG_VIEN'] : [role],
-          roleNames: role === 'SUPER_ADMIN' ? ['Quản trị viên hệ thống', 'Phòng Công nghệ thông tin', 'Giảng viên'] : [roleName],
+          roles: role === 'SUPER_ADMIN' ? ['QUAN_TRI_VIEN_HE_THONG', 'PHONG_CONG_NGHE_THONG_TIN'] : [role],
+          roleNames: role === 'SUPER_ADMIN' ? ['Quản trị viên hệ thống', 'Phòng Công nghệ thông tin'] : [roleName],
           permissions: ['SYSTEM_MANAGE', 'FINANCE_VIEW'],
         };
 
