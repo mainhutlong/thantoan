@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -273,6 +273,60 @@ export default function App() {
 
   // Data lists
   const [teachingList, setTeachingList] = useState<TeachingRecord[]>(INITIAL_TEACHING_DATA);
+
+  // Sync NCKH data from MySQL DB API
+  const fetchNckhFromDb = useCallback(async () => {
+    try {
+      const res = await fetch('/api/nckh');
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        const dbRecords: TeachingRecord[] = json.data.map((row: any) => ({
+          id: `nckh-${(row.loai_hoat_dong || 'bb').toLowerCase()}-${row.ban_ghi_id}`,
+          tt: row.ban_ghi_id,
+          maGV: row.ma_giang_vien,
+          hoTen: row.ho_ten,
+          ngaySinh: '01/01/1980',
+          soCCCD: '',
+          hocHamHocVi: row.hoc_vi || 'ThS',
+          khoaBoMon: row.don_vi || 'Trường Đại học Tây Đô',
+          phongBanQuanLy: 'nckh',
+          loaiHoatDong:
+            row.loai_hoat_dong === 'BAI_BAO'
+              ? 'Bài báo khoa học'
+              : row.loai_hoat_dong === 'SEMINAR'
+              ? 'Báo cáo Seminar'
+              : 'Đề tài NCKH',
+          tenHocPhan: row.ten_cong_trinh,
+          maLopHocPhan: `NCKH_${row.ban_ghi_id}`,
+          noiDungNCKH: row.ten_cong_trinh,
+          theLoaiNCKH: row.phan_loai,
+          soGioQCNCKH: Number(row.gio_quy_doi) || 0,
+          tongTietQC: Number(row.gio_quy_doi) || 0,
+          donGiaTiet: Number(row.don_gia) || 180000,
+          tongTienThuLao: Number(row.thanh_tien) || Number(row.gio_quy_doi) * Number(row.don_gia),
+          thueTNCN: Math.round((Number(row.thanh_tien) || 0) * 0.1),
+          thucNhan: Math.round((Number(row.thanh_tien) || 0) * 0.9),
+          trangThai: 'da_so_hoa',
+          dotThanhToan: currentPeriodName,
+          fileMinhChungUrl: row.file_minh_chung_url,
+          tenFileMinhChung: row.ten_file_minh_chung,
+          dungLuongFile: row.dung_luong_file,
+          ngayUploadMinhChung: row.ngay_upload_minh_chung,
+        }));
+
+        setTeachingList((prev) => {
+          const nonNckh = prev.filter((r) => r.phongBanQuanLy !== 'nckh');
+          return [...nonNckh, ...dbRecords];
+        });
+      }
+    } catch (err) {
+      console.warn('Chưa thể kết nối API /api/nckh (chế độ offline mock):', err);
+    }
+  }, [currentPeriodName]);
+
+  useEffect(() => {
+    fetchNckhFromDb();
+  }, [fetchNckhFromDb]);
 
   // Selected row IDs for bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -720,12 +774,23 @@ export default function App() {
   };
 
   // CRUD actions
-  const handleSaveTeaching = (record: TeachingRecord) => {
+  const handleSaveTeaching = async (record: TeachingRecord) => {
     const currentPeriod = periods.find((p) => p.id === currentPeriodId);
     const withPeriod = {
       ...record,
       dotThanhToan: record.dotThanhToan || currentPeriod?.name || 'Học kỳ 1 2026-2027',
     };
+    if (withPeriod.phongBanQuanLy === 'nckh') {
+      try {
+        await fetch('/api/nckh/batch-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records: [withPeriod] }),
+        });
+      } catch (err) {
+        console.warn('Lỗi lưu NCKH đơn lẻ lên DB:', err);
+      }
+    }
     const exists = teachingList.some((r) => r.id === withPeriod.id);
     if (exists) {
       setTeachingList((prev) => prev.map((r) => (r.id === withPeriod.id ? withPeriod : r)));
@@ -741,17 +806,37 @@ export default function App() {
     setIsAddModalOpen(true);
   };
 
-  const handleDeleteRecord = (id: string) => {
+  const handleDeleteRecord = async (id: string) => {
     const target = teachingList.find((item) => item.id === id);
     if (!target) return;
+    const deptName =
+      selectedDepartment === 'nckh'
+        ? 'Nghiên cứu khoa học'
+        : selectedDepartment === 'khao_thi'
+        ? 'Khảo thí'
+        : selectedDepartment === 'dao_tao'
+        ? 'Giờ giảng'
+        : 'nhiệm vụ này';
     if (
       window.confirm(
-        `Bạn có chắc chắn muốn xóa toàn bộ dữ liệu giảng dạy của giảng viên ${target.hoTen} (${target.maGV}) khỏi hệ thống?`
+        `Bạn có chắc chắn muốn xóa dữ liệu ${deptName} của giảng viên ${target.hoTen} (${target.maGV}) khỏi hệ thống?`
       )
     ) {
       const maGV = target.maGV;
+      if (selectedDepartment === 'nckh' && maGV) {
+        try {
+          await fetch(`/api/nckh/lecturer/${maGV}`, { method: 'DELETE' });
+        } catch (err) {
+          console.warn('Lỗi khi xóa dữ liệu NCKH của GV trên DB:', err);
+        }
+      }
       setTeachingList((prev) =>
-        prev.filter((item) => (maGV ? item.maGV !== maGV : item.id !== id))
+        prev.filter((item) => {
+          if (selectedDepartment !== 'all') {
+            return !(item.maGV === maGV && item.phongBanQuanLy === selectedDepartment);
+          }
+          return maGV ? item.maGV !== maGV : item.id !== id;
+        })
       );
       setSelectedIds((prev) =>
         prev.filter((item) => (maGV ? item !== maGV : item !== id))
@@ -847,9 +932,37 @@ export default function App() {
   };
 
   // Clear data back to empty state
-  const handleClearData = () => {
-    setTeachingList([]);
-    setSelectedIds([]);
+  const handleClearData = async () => {
+    if (selectedDepartment !== 'all') {
+      const deptName =
+        selectedDepartment === 'nckh'
+          ? 'Nghiên cứu khoa học'
+          : selectedDepartment === 'khao_thi'
+          ? 'Khảo thí'
+          : selectedDepartment === 'dao_tao'
+          ? 'Đào tạo'
+          : selectedDepartment;
+      if (
+        window.confirm(
+          `Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của chuyên mục [${deptName}] trong đợt này để nhập lại từ đầu?`
+        )
+      ) {
+        if (selectedDepartment === 'nckh') {
+          try {
+            await fetch('/api/nckh/clear', { method: 'DELETE' });
+          } catch (err) {
+            console.warn('Lỗi khi xóa bảng NCKH DB:', err);
+          }
+        }
+        setTeachingList((prev) => prev.filter((r) => r.phongBanQuanLy !== selectedDepartment));
+        setSelectedIds([]);
+      }
+    } else {
+      if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của tất cả các khối để làm lại từ đầu?')) {
+        setTeachingList([]);
+        setSelectedIds([]);
+      }
+    }
   };
 
   // Excel Template Download per Department
@@ -866,11 +979,34 @@ export default function App() {
     }
   };
 
-  const handleImportTeaching = (records: TeachingRecord[], isAppend: boolean) => {
+  const handleImportTeaching = async (records: TeachingRecord[], isAppend: boolean) => {
+    if (selectedDepartment === 'nckh') {
+      try {
+        if (!isAppend) {
+          await fetch('/api/nckh/clear', { method: 'DELETE' });
+        }
+        await fetch('/api/nckh/batch-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records }),
+        });
+      } catch (err) {
+        console.warn('Lỗi đồng bộ DB NCKH khi import:', err);
+      }
+    }
+
     if (isAppend) {
       setTeachingList((prev) => [...prev, ...records]);
     } else {
-      setTeachingList(records);
+      if (selectedDepartment !== 'all') {
+        // Thay thế chuyên biệt cho chuyên mục/phòng ban đang chọn (ví dụ NCKH), bảo lưu các chuyên mục khác
+        setTeachingList((prev) => {
+          const keepOtherDepts = prev.filter((r) => r.phongBanQuanLy !== selectedDepartment);
+          return [...keepOtherDepts, ...records];
+        });
+      } else {
+        setTeachingList(records);
+      }
     }
   };
 
@@ -1074,7 +1210,21 @@ export default function App() {
                   nckhTab={nckhTab}
                   onSelectNckhTab={setNckhTab}
                   onClose={() => setSelectedResearchScheduleMaGV(null)}
-                  onSaveRecords={(updated) => {
+                  onSaveRecords={async (updated) => {
+                    if (selectedResearchScheduleMaGV) {
+                      try {
+                        await fetch('/api/nckh/save-lecturer', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            ma_giang_vien: selectedResearchScheduleMaGV,
+                            records: updated,
+                          }),
+                        });
+                      } catch (err) {
+                        console.warn('Lỗi đồng bộ DB ResearchScheduleReport:', err);
+                      }
+                    }
                     setTeachingList((prev) => {
                       const filtered = prev.filter(
                         (r) => r.maGV !== selectedResearchScheduleMaGV || r.phongBanQuanLy !== 'nckh'
