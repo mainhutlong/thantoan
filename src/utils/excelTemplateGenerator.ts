@@ -409,12 +409,17 @@ export const createStyledWorksheet = (
   return ws;
 };
 
-export const getDepartmentTemplateFileName = (dept: DepartmentUnit): string => {
+export const getDepartmentTemplateFileName = (
+  dept: DepartmentUnit,
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai'
+): string => {
   switch (dept) {
     case 'khao_thi':
       return 'Mau_Khao_Thi_Coi_Cham_Thi_TDU_2026_2027.xlsx';
     case 'nckh':
-      return 'Mau_NCKH_Sau_Dai_Hoc_TDU_2026_2027.xlsx';
+      if (nckhTab === 'bai_bao') return 'Mau_NCKH_Bai_Bao_Khoa_Hoc_TDU_2026_2027.xlsx';
+      if (nckhTab === 'seminar') return 'Mau_NCKH_Seminar_Chuyen_De_TDU_2026_2027.xlsx';
+      return 'Mau_NCKH_De_Tai_Nghien_Cuu_TDU_2026_2027.xlsx';
     case 'do_an':
       return 'Mau_Do_An_Khoa_Luan_Tot_Nghiep_TDU_2026_2027.xlsx';
     case 'co_van_hoc_tap':
@@ -499,7 +504,11 @@ export const saveWorkbookToFile = (wb: XLSX.WorkBook, fileName: string) => {
   }
 };
 
-export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPeriodName: string = 'Học kỳ 1 2026-2027') => {
+export const generateDepartmentExcelTemplate = (
+  dept: DepartmentUnit,
+  currentPeriodName: string = 'Học kỳ 1 2026-2027',
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai'
+) => {
   const periodLabel = currentPeriodName || 'Học kỳ 1 2026-2027';
   const wb = XLSX.utils.book_new();
 
@@ -535,36 +544,84 @@ export const generateDepartmentExcelTemplate = (dept: DepartmentUnit, currentPer
     XLSX.utils.book_append_sheet(wb, ws, 'Mau_Khao_Thi');
     saveWorkbookToFile(wb, 'Mau_Khao_Thi_Coi_Cham_Thi_TDU_2026_2027.xlsx');
   } else if (dept === 'nckh') {
-    // 2. PHÒNG QL NCKH & SAU ĐẠI HỌC
-    const columns: TemplateColumn[] = [
-      { header: 'STT', key: 'stt', width: 6, align: 'center' },
-      { header: 'Mã giảng viên (*)', key: 'ma_giang_vien', width: 15, isYellow: true, align: 'center' },
-      { header: 'Họ tên giảng viên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
-      { header: 'Học vị (*)', key: 'hoc_vi', width: 12, isYellow: true, align: 'center' },
-      { header: 'Khoa / Bộ môn (*)', key: 'khoa_bo_mon', width: 26, isYellow: true, align: 'left' },
-      { header: 'Tên đề tài / Bài báo ISI / Luận văn (*)', key: 'ten_de_tai_bai_bao', width: 48, isYellow: true, align: 'left' },
-      { header: 'Thể loại NCKH', key: 'the_loai_nckh', width: 28, align: 'left' },
-      { header: 'Mã đề tài / Số ISSN', key: 'ma_de_tai_issn', width: 20, align: 'center' },
-      { header: 'Số giờ quy đổi (*)', key: 'so_gio_quy_doi', width: 18, isYellow: true, align: 'center' },
-      { header: 'Mức độ hoàn thành (*)', key: 'muc_do_hoan_thanh', width: 20, isYellow: true, align: 'center' },
-      { header: 'Ghi chú / Vai trò', key: 'ghi_chu_vai_tro', width: 34, align: 'left' },
-    ];
+    // 2. PHÒNG QL NCKH & SAU ĐẠI HỌC (3 biểu mẫu rút gọn: Bài báo, Seminar, Đề tài NCKH)
+    if (nckhTab === 'bai_bao') {
+      const columns: TemplateColumn[] = [
+        { header: 'STT', key: 'stt', width: 6, align: 'center' },
+        { header: 'Mã giảng viên (*)', key: 'ma_giang_vien', width: 16, isYellow: true, align: 'center' },
+        { header: 'Họ tên giảng viên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
+        { header: 'Học vị (*)', key: 'hoc_vi', width: 14, isYellow: true, align: 'center' },
+        { header: 'Đơn vị (*)', key: 'don_vi', width: 28, isYellow: true, align: 'left' },
+        { header: 'Tên bài báo khoa học (*)', key: 'ten_bai_bao', width: 52, isYellow: true, align: 'left' },
+        { header: 'Số giờ quy đổi (*)', key: 'so_gio_quy_doi', width: 18, isYellow: true, align: 'center' },
+        { header: 'Ghi chú', key: 'ghi_chu', width: 34, align: 'left' },
+      ];
 
-    const sampleRows: any[][] = [
-      [1, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Chủ nhiệm đề tài NCKH cấp Bộ: "Khảo sát và chiết xuất hoạt chất thảo dược"', 'Đề tài NCKH cấp Bộ', 'NCKH_DUOC_01', 220, 'Hoàn thành', 'Chủ nhiệm đề tài (Nghiệm thu Đạt)'],
-      [2, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Bài báo khoa học ISI/Scopus: "Bioactive compounds from Mekong Delta medicinal plants"', 'Bài báo quốc tế ISI/Scopus (Q1)', 'ISSN 1872-2040', 180, 'Hoàn thành', 'Tác giả chính (First Author)'],
-      [3, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Bài báo khoa học quốc tế: "AI and Cloud Architectures in Modern University Management"', 'Bài báo quốc tế ISI/Scopus (Q1)', 'NCKH_SCOPUS_01', 180, 'Hoàn thành', 'Tác giả chính (Q1)'],
-      [4, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Hướng dẫn 02 Học viên cao học bảo vệ thành công Luận văn Thạc sĩ ngành HTTT', 'Hướng dẫn luận văn Thạc sĩ', 'SDH_CH_HTTT12', 40, 'Hoàn thành', 'Cán bộ hướng dẫn chính'],
-      [5, 'TDU00318', 'Nguyễn Thị Cẩm Tú', 'ThS', 'Khoa Quản trị kinh doanh', 'Bài báo: "Nghiên cứu các yếu tố ảnh hưởng đến quyết định mua sắm trực tuyến"', 'Bài báo tạp chí chuyên ngành', 'NCKH_KTE_02', 60, 'Hoàn thành', 'Tác giả'],
-    ];
+      const sampleRows: any[][] = [
+        [1, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Bioactive compounds from Mekong Delta medicinal plants (Scopus Q1)', 180, 'Tác giả chính (First Author)'],
+        [2, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'AI and Cloud Architectures in Modern University Management (ISI Q1)', 180, 'Tác giả chính (Q1)'],
+        [3, 'TDU00318', 'Nguyễn Thị Cẩm Tú', 'ThS', 'Khoa Quản trị kinh doanh', 'Nghiên cứu các yếu tố ảnh hưởng đến quyết định mua sắm trực tuyến của Gen Z', 60, 'Tác giả liên hệ'],
+      ];
 
-    const ws = createStyledWorksheet(
-      `MẪU THÊM HOẠT ĐỘNG NGHIÊN CỨU KHOA HỌC & ĐỀ TÀI (${periodLabel.toUpperCase()})`,
-      columns,
-      sampleRows
-    );
-    XLSX.utils.book_append_sheet(wb, ws, 'Mau_NCKH');
-    saveWorkbookToFile(wb, 'Mau_NCKH_Sau_Dai_Hoc_TDU_2026_2027.xlsx');
+      const ws = createStyledWorksheet(
+        `MẪU NHẬP LIỆU BÀI BÁO KHOA HỌC (SCOPUS/ISI/TẠP CHÍ) (${periodLabel.toUpperCase()})`,
+        columns,
+        sampleRows
+      );
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Bai_Bao_NCKH');
+      saveWorkbookToFile(wb, 'Mau_NCKH_Bai_Bao_Khoa_Hoc_TDU_2026_2027.xlsx');
+    } else if (nckhTab === 'seminar') {
+      const columns: TemplateColumn[] = [
+        { header: 'STT', key: 'stt', width: 6, align: 'center' },
+        { header: 'Mã giảng viên (*)', key: 'ma_giang_vien', width: 16, isYellow: true, align: 'center' },
+        { header: 'Họ tên giảng viên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
+        { header: 'Học vị (*)', key: 'hoc_vi', width: 14, isYellow: true, align: 'center' },
+        { header: 'Đơn vị (*)', key: 'don_vi', width: 28, isYellow: true, align: 'left' },
+        { header: 'Tên bài báo cáo Seminar (*)', key: 'ten_bai_seminar', width: 52, isYellow: true, align: 'left' },
+        { header: 'Số giờ quy đổi (*)', key: 'so_gio_quy_doi', width: 18, isYellow: true, align: 'center' },
+        { header: 'Ghi chú', key: 'ghi_chu', width: 34, align: 'left' },
+      ];
+
+      const sampleRows: any[][] = [
+        [1, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Ứng dụng Trí tuệ Nhân tạo và Dữ liệu lớn trong Giáo dục đại học', 30, 'Báo cáo viên chính cấp Khoa'],
+        [2, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Phương pháp nghiên cứu phát triển thuốc mới từ dược liệu Tây Nam Bộ', 30, 'Báo cáo viên chuyên đề'],
+        [3, 'TDU00215', 'Nguyễn Văn Hải', 'ThS', 'Khoa Công nghệ thông tin', 'Xu hướng phát triển ứng dụng di động đa nền tảng với Flutter & React Native', 20, 'Báo cáo viên Seminar'],
+      ];
+
+      const ws = createStyledWorksheet(
+        `MẪU NHẬP LIỆU BÁO CÁO SEMINAR & HỘI THẢO CHUYÊN ĐỀ (${periodLabel.toUpperCase()})`,
+        columns,
+        sampleRows
+      );
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_Seminar_NCKH');
+      saveWorkbookToFile(wb, 'Mau_NCKH_Seminar_Chuyen_De_TDU_2026_2027.xlsx');
+    } else {
+      // Default: Đề tài NCKH
+      const columns: TemplateColumn[] = [
+        { header: 'STT', key: 'stt', width: 6, align: 'center' },
+        { header: 'Mã giảng viên (*)', key: 'ma_giang_vien', width: 16, isYellow: true, align: 'center' },
+        { header: 'Họ tên giảng viên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
+        { header: 'Học vị (*)', key: 'hoc_vi', width: 14, isYellow: true, align: 'center' },
+        { header: 'Đơn vị (*)', key: 'don_vi', width: 28, isYellow: true, align: 'left' },
+        { header: 'Tên đề tài NCKH (*)', key: 'ten_de_tai_nckh', width: 52, isYellow: true, align: 'left' },
+        { header: 'Số giờ quy đổi (*)', key: 'so_gio_quy_doi', width: 18, isYellow: true, align: 'center' },
+        { header: 'Ghi chú', key: 'ghi_chu', width: 34, align: 'left' },
+      ];
+
+      const sampleRows: any[][] = [
+        [1, 'TDU00089', 'Trần Thanh Dũng', 'PGS.TS', 'Khoa Dược - Điều dưỡng', 'Khảo sát và chiết xuất hoạt chất thảo dược phòng chống oxy hóa tại ĐBSCL', 220, 'Chủ nhiệm đề tài cấp Bộ (Nghiệm thu Đạt)'],
+        [2, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Xây dựng hệ thống quản lý đào tạo và đối soát thanh toán thù lao TDU', 160, 'Chủ nhiệm đề tài cấp Trường'],
+        [3, 'TDU00128', 'Mai Như Long', 'TS', 'Khoa Công nghệ thông tin', 'Hướng dẫn 02 Học viên cao học bảo vệ thành công Luận văn Thạc sĩ ngành HTTT', 40, 'Cán bộ hướng dẫn chính (20 giờ/HV)'],
+      ];
+
+      const ws = createStyledWorksheet(
+        `MẪU NHẬP LIỆU ĐỀ TÀI NGHIÊN CỨU KHOA HỌC & CÔNG TRÌNH (${periodLabel.toUpperCase()})`,
+        columns,
+        sampleRows
+      );
+      XLSX.utils.book_append_sheet(wb, ws, 'Mau_De_Tai_NCKH');
+      saveWorkbookToFile(wb, 'Mau_NCKH_De_Tai_Nghien_Cuu_TDU_2026_2027.xlsx');
+    }
   } else if (dept === 'do_an') {
     // 3. ĐỒ ÁN & KHÓA LUẬN
     const columns: TemplateColumn[] = [

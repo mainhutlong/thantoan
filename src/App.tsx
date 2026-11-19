@@ -854,7 +854,7 @@ export default function App() {
 
   // Excel Template Download per Department
   const handleDownloadTemplate = () => {
-    generateDepartmentExcelTemplate(selectedDepartment, currentPeriodName);
+    generateDepartmentExcelTemplate(selectedDepartment, currentPeriodName, nckhTab);
   };
 
   const handleExportDataTemplate = () => {
@@ -1310,6 +1310,7 @@ export default function App() {
                   onLoadSampleData={handleLoadSampleData}
                   onClearData={handleClearData}
                   selectedDepartment={selectedDepartment}
+                  nckhTab={nckhTab}
                 />
               </div>
 
@@ -1425,6 +1426,7 @@ export default function App() {
         onDepartmentChange={setSelectedDepartment}
         currentPeriodName={currentPeriodName}
         onDownloadTemplate={handleDownloadTemplate}
+        nckhTab={nckhTab}
       />
 
       {/* Official Acceptance & Payment Minutes Modal */}

@@ -34,6 +34,7 @@ interface ActionBarProps {
   onLoadSampleData: () => void;
   onClearData: () => void;
   selectedDepartment: DepartmentUnit;
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai';
 }
 
 export const ActionBar: React.FC<ActionBarProps> = ({
@@ -54,6 +55,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   onLoadSampleData,
   onClearData,
   selectedDepartment,
+  nckhTab = 'all',
 }) => {
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
@@ -84,10 +86,24 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           templateName: 'Tuyển sinh',
         };
       case 'nckh':
+        if (nckhTab === 'bai_bao') {
+          return {
+            title: 'Bài báo khoa học (Bài báo quốc tế Scopus/ISI, Tạp chí chuyên ngành, Kỷ yếu)',
+            badge: 'Bài báo khoa học',
+            templateName: 'Bài báo NCKH',
+          };
+        }
+        if (nckhTab === 'seminar') {
+          return {
+            title: 'Báo cáo Seminar & Hội thảo chuyên đề (Báo cáo cấp Khoa, cấp Trường)',
+            badge: 'Báo cáo Seminar',
+            templateName: 'Seminar NCKH',
+          };
+        }
         return {
-          title: 'Nghiên cứu khoa học (Bài báo ISI/Scopus, đề tài NCKH, hướng dẫn ThS)',
-          badge: 'Nghiên cứu khoa học',
-          templateName: 'NCKH',
+          title: 'Đề tài Nghiên cứu khoa học (Đề tài cấp Trường, cấp Bộ, Luận văn Thạc sĩ)',
+          badge: 'Đề tài NCKH',
+          templateName: 'Đề tài NCKH',
         };
       case 'co_van_hoc_tap':
         return {
@@ -111,7 +127,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   };
 
   const deptInfo = getDepartmentInfo();
-  const templateFileName = getDepartmentTemplateFileName(selectedDepartment);
+  const templateFileName = getDepartmentTemplateFileName(selectedDepartment, nckhTab);
 
   return (
     <div className="bg-white border-b border-[#e2e8f0] px-3 py-1.5 select-none sticky top-0 z-20 shadow-2xs">

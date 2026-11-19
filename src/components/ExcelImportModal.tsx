@@ -44,6 +44,7 @@ interface ExcelImportModalProps {
   onDepartmentChange: (dept: DepartmentUnit) => void;
   currentPeriodName?: string;
   onDownloadTemplate?: () => void;
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai';
 }
 
 export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
@@ -56,6 +57,8 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
   departmentUnit,
   onDepartmentChange,
   currentPeriodName = 'Học kỳ 1 2026-2027',
+  onDownloadTemplate,
+  nckhTab = 'all',
 }) => {
   // 1. Quản lý Đơn vị đang stick chọn theo 4 Khối
   const [selectedUnitId, setSelectedUnitId] = useState<string>('pb_dao_tao');
@@ -158,7 +161,12 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     nckh: {
       name: 'Phòng Quản lý khoa học – Hợp tác quốc tế',
       task: 'Nghiên cứu khoa học, bài báo quốc tế, đề tài khoa học',
-      sample: 'Mau_NCKH_Sau_Dai_Hoc_TDU.xlsx',
+      sample:
+        nckhTab === 'bai_bao'
+          ? 'Mau_NCKH_Bai_Bao_Khoa_Hoc_TDU_2026_2027.xlsx'
+          : nckhTab === 'seminar'
+          ? 'Mau_NCKH_Seminar_Chuyen_De_TDU_2026_2027.xlsx'
+          : 'Mau_NCKH_De_Tai_Nghien_Cuu_TDU_2026_2027.xlsx',
     },
     co_van_hoc_tap: {
       name: 'Phòng Công tác Chính trị - Quản lý Sinh viên',
@@ -206,7 +214,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       const colTH = getCol(['tietthuchanh', 'tietth', 'thuchanh', 'th'], -1);
       const colMaCV = getCol(['macv', 'macongviec', 'manhiemvu'], -1);
       const colSoLuong = getCol(['soluong', 'soluongsv', 'sosinhvien', 'songay', 'soluot', 'sobai', 'sode'], -1);
-      const colKhoa = getCol(['khoabomon', 'khoa', 'bomon', 'donvi', 'phongban'], 13);
+      const colKhoa = getCol(['donvi', 'khoabomon', 'khoa', 'bomon', 'phongban'], 13);
 
       const unitErrors: PersonnelRowValidationResult[] = [];
       const generalErrors: ValidationError[] = [];
@@ -252,9 +260,11 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
           });
         }
 
-        const isDuplicate = currentRecords.some(
-          (cr) => cr.maLopHocPhan.toLowerCase() === maLop.toLowerCase() && maLop !== ''
-        );
+        const isDuplicate = mappedDepartmentUnit === 'dao_tao'
+          ? currentRecords.some(
+              (cr) => cr.maLopHocPhan.toLowerCase() === maLop.toLowerCase() && maLop !== ''
+            )
+          : false;
         if (isDuplicate) {
           generalErrors.push({
             row: rowNum,
@@ -421,13 +431,16 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
   };
 
   // Tải file mẫu chuẩn
-  const handleDownloadTemplateClick = (e?: React.MouseEvent) => {
+  const handleDownloadTemplateClick = (
+    e?: React.MouseEvent,
+    specificNckhTab?: 'bai_bao' | 'seminar' | 'de_tai'
+  ) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     try {
-      generateDepartmentExcelTemplate(mappedDepartmentUnit, currentPeriodName);
+      generateDepartmentExcelTemplate(mappedDepartmentUnit, currentPeriodName, specificNckhTab || nckhTab);
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 4000);
     } catch (err) {
@@ -512,27 +525,41 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     };
 
     const colMaGV = getCol(['magv', 'manhansu', 'magiangvien', 'ma', 'manhanvien'], 1);
-    const colHoTen = getCol(['hoten', 'hovaten', 'giangvien', 'tengiangvien'], 2);
+    const colHoTen = getCol(['hoten', 'hovaten', 'giangvien', 'tengiangvien', 'hotengiangvien'], 2);
+    const colHocVi = getCol(['hocvi', 'hocham', 'chucdanh', 'hochocvi', 'hochamhocvi'], mappedDepartmentUnit === 'nckh' ? 3 : 12);
+    const colKhoa = getCol(['donvi', 'khoabomon', 'khoa', 'bomon', 'phongban'], mappedDepartmentUnit === 'nckh' ? 4 : 13);
     const colHocPhan = getCol(
       [
+        'tenbaibaokhoahoc',
+        'tenbaibao',
+        'tenbaibaocaoseminar',
+        'tenbaiseminar',
+        'tendetainckh',
+        'tendetai',
+        'tenbai',
+        'baibao',
+        'seminar',
+        'detai',
+        'tencongtrinh',
         'mongiangday',
         'tenhocphan',
         'hocphan',
         'tenmon',
         'monhoc',
         'nhiemvu',
-        'tendetai',
-        'baibao',
         'luanvan',
         'noidungnckh',
         'noidung',
-        'tencongtrinh',
       ],
-      3
+      mappedDepartmentUnit === 'nckh' ? 5 : 3
     );
     const colMaLop = getCol(['lop', 'malophocphan', 'malop', 'lophp', 'madetai', 'soissn'], 4);
     const colTheLoaiNCKH = getCol(['theloainckh', 'theloai', 'loaihinhnckh', 'loaihoatdong', 'loai'], -1);
-    const colGioQCNCKH = getCol(['sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogioqcnckh', 'soqc', 'sotietqcquydoi'], -1);
+    const colGioQCNCKH = getCol(
+      ['sogioquydoi', 'gioquydoi', 'sotietquydoi', 'tietquydoi', 'sogioqcnckh', 'soqc', 'sotietqcquydoi', 'sogio', 'sotiet'],
+      mappedDepartmentUnit === 'nckh' ? 6 : -1
+    );
+    const colGhiChu = getCol(['ghichu', 'ghichuvaitro', 'vaitro', 'note', 'chuthich'], mappedDepartmentUnit === 'nckh' ? 7 : -1);
     const colMucDoHoanThanh = getCol(['mucdohoanthanh', 'hoanthanh', 'mucdo'], -1);
     const colMaCV = getCol(['macv', 'macongviec', 'manhiemvu'], -1);
     const colSoLuong = getCol(['soluong', 'soluongsv', 'sosinhvien', 'songay', 'soluot', 'sobai', 'sode'], -1);
@@ -545,8 +572,6 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     const colHsLop = getCol(['hesolopnhom', 'hesolop', 'hesonhom', 'hslop'], 9);
     const colHsTC = getCol(['hesotinchi', 'hesotc', 'hstc'], 10);
     const colPhanLoai = getCol(['phanloaigiangday', 'phanloai', 'loaihinh', 'hinhthuc'], 11);
-    const colHocVi = getCol(['hocvi', 'hocham', 'chucdanh'], 12);
-    const colKhoa = getCol(['khoabomon', 'khoa', 'bomon', 'donvi', 'phongban'], 13);
     const colSTK = getCol(['sotaikhoan', 'sotk', 'stk', 'taikhoan'], 14);
     const colNganHang = getCol(['nganhang'], 15);
     const colDot = getCol(['dotthanhtoan', 'dot', 'hocky'], 16);
@@ -642,7 +667,31 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       const dotThanhToan = String(vals[colDot] || currentPeriodName || 'Học kỳ 1 2026-2027').trim();
 
       const rawTheLoai = colTheLoaiNCKH !== -1 && vals[colTheLoaiNCKH] ? String(vals[colTheLoaiNCKH]).trim() : '';
-      const theLoaiNCKH = rawTheLoai || (mappedDepartmentUnit === 'nckh' ? 'Bài báo khoa học / Đề tài' : undefined);
+      let theLoaiNCKH = rawTheLoai;
+      if (mappedDepartmentUnit === 'nckh') {
+        if (!theLoaiNCKH) {
+          const searchContext = (
+            (file?.name || '') +
+            ' ' +
+            (colHocPhan !== -1 ? rawHeaders[colHocPhan] : '')
+          ).toLowerCase();
+          if (searchContext.includes('seminar') || nckhTab === 'seminar') {
+            theLoaiNCKH = 'Báo cáo Seminar';
+          } else if (
+            searchContext.includes('de_tai') ||
+            searchContext.includes('detai') ||
+            searchContext.includes('cong_trinh') ||
+            searchContext.includes('congtrinh') ||
+            searchContext.includes('luanvan') ||
+            nckhTab === 'de_tai'
+          ) {
+            theLoaiNCKH = 'Đề tài NCKH';
+          } else {
+            theLoaiNCKH = 'Bài báo khoa học';
+          }
+        }
+      }
+      const rawGhiChu = colGhiChu !== -1 && vals[colGhiChu] ? String(vals[colGhiChu]).trim() : '';
       const rawHoanThanh = colMucDoHoanThanh !== -1 && vals[colMucDoHoanThanh] ? String(vals[colMucDoHoanThanh]).toLowerCase() : '';
       const mucDoHoanThanhNCKH =
         mappedDepartmentUnit === 'nckh'
@@ -705,7 +754,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         soLuong: rawSoLuong,
         dieuKien: rawDieuKien || dutyCatalogItem?.dieuKien,
         nhiemVuKiemNhiem: mappedDepartmentUnit === 'cong_tac_khac' ? hocPhan : undefined,
-        ghiChu: rawCanCu || (mappedDepartmentUnit === 'cong_tac_khac' ? dutyCatalogItem?.ghiChu : undefined),
+        ghiChu: rawGhiChu || rawCanCu || (mappedDepartmentUnit === 'cong_tac_khac' ? dutyCatalogItem?.ghiChu : undefined),
       };
     });
 
@@ -772,16 +821,49 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                 </span>
 
                 {/* Nút tải file mẫu */}
-                <a
-                  href={`/templates/${currentDeptMeta.sample}`}
-                  download={currentDeptMeta.sample}
-                  onClick={handleDownloadTemplateClick}
-                  className="text-[11.5px] font-semibold text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1 cursor-pointer no-underline"
-                  title="Tải biểu mẫu Excel chuẩn"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{downloadSuccess ? 'Đã tải mẫu xong!' : 'Tải file mẫu chuẩn'}</span>
-                </a>
+                {mappedDepartmentUnit === 'nckh' ? (
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">Tải mẫu rút gọn:</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDownloadTemplateClick(e, 'bai_bao')}
+                      className="text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Tải biểu mẫu Bài báo khoa học (8 cột rút gọn)"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>1. Bài báo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDownloadTemplateClick(e, 'seminar')}
+                      className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Tải biểu mẫu Báo cáo Seminar (8 cột rút gọn)"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>2. Seminar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDownloadTemplateClick(e, 'de_tai')}
+                      className="text-[11px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Tải biểu mẫu Đề tài NCKH (8 cột rút gọn)"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>3. Đề tài NCKH</span>
+                    </button>
+                  </div>
+                ) : (
+                  <a
+                    href={`/templates/${currentDeptMeta.sample}`}
+                    download={currentDeptMeta.sample}
+                    onClick={(e) => handleDownloadTemplateClick(e)}
+                    className="text-[11.5px] font-semibold text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1 cursor-pointer no-underline"
+                    title="Tải biểu mẫu Excel chuẩn"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{downloadSuccess ? 'Đã tải mẫu xong!' : 'Tải file mẫu chuẩn'}</span>
+                  </a>
+                )}
               </div>
 
               {/* Khung kéo thả: Viền nét đứt trung tính (KHÔNG CÓ VIỀN XANH) */}
