@@ -152,13 +152,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           const btnContainer = document.getElementById('google-sso-native-container');
           if (btnContainer) {
             btnContainer.innerHTML = '';
+            const btnWidth = typeof window !== 'undefined' ? Math.min(380, Math.max(280, window.innerWidth - 64)) : 360;
             // @ts-ignore
             window.google.accounts.id.renderButton(btnContainer, {
               theme: 'outline',
               size: 'large',
               type: 'standard',
               shape: 'pill',
-              width: 320,
+              width: btnWidth,
               text: 'signin_with',
               logo_alignment: 'left',
               locale: 'vi',
@@ -232,43 +233,43 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-start pt-16 sm:pt-24 md:pt-28 pb-12 bg-[#f8fafc] px-4 select-none">
-      <div className="w-full max-w-[380px] bg-white rounded-[28px] shadow-xl border border-slate-200/90 p-8 sm:p-9 flex flex-col items-center text-center animate-fadeIn">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f8fafc] px-4 py-8 sm:py-12 select-none">
+      <div className="w-full max-w-[480px] bg-white rounded-[32px] shadow-2xl border border-slate-200/90 p-8 sm:p-12 flex flex-col items-center text-center animate-fadeIn">
         {/* Logo Trường Đại học Tây Đô */}
-        <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center p-2 mb-4 overflow-hidden">
+        <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-3 mb-5 overflow-hidden">
           <img src={logoTdu} alt="TDU Logo" className="w-full h-full object-contain" />
         </div>
 
         {/* Tiêu đề Đăng nhập */}
-        <h1 className="text-[24px] font-bold text-slate-900 tracking-tight">
+        <h1 className="text-[28px] sm:text-[32px] font-extrabold text-slate-900 tracking-tight">
           Đăng nhập
         </h1>
-        <p className="text-[13.5px] font-medium text-slate-500 mt-1 mb-6">
+        <p className="text-[15px] sm:text-[16px] font-medium text-slate-500 mt-2 mb-8">
           Hệ thống thanh toán giờ giảng TDU
         </p>
 
         {/* Thông báo lỗi nếu có */}
         {errorMsg && (
-          <div className="w-full mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[12px] text-left flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <div className="w-full mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-[13px] text-left flex items-start gap-2.5">
+            <AlertCircle className="w-4.5 h-4.5 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Loading Spinner */}
         {isLoading && (
-          <div className="flex items-center gap-2 text-slate-600 text-[13px] mb-4">
-            <RefreshCw className="w-4 h-4 animate-spin text-[#005325]" />
+          <div className="flex items-center gap-2.5 text-slate-600 text-[14px] mb-5">
+            <RefreshCw className="w-4.5 h-4.5 animate-spin text-[#005325]" />
             <span>Đang xác thực thông tin...</span>
           </div>
         )}
 
         {/* Nút đăng nhập Google chính thức: Tự động mở giao diện chọn tài khoản Google chuẩn */}
-        <div className="w-full flex flex-col items-center justify-center min-h-[46px]">
+        <div className="w-full flex flex-col items-center justify-center min-h-[50px]">
           {/* Nút chuẩn của Google Identity Services */}
           <div
             id="google-sso-native-container"
-            className="flex items-center justify-center min-h-[46px] w-full"
+            className="flex items-center justify-center min-h-[50px] w-full"
           ></div>
 
           {/* Nút bấm hiển thị dự phòng trong tích tắc trước khi Google iframe render */}
@@ -277,9 +278,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               type="button"
               disabled={isLoading}
               onClick={handleFallbackButtonClick}
-              className="w-full h-11 px-4 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[13.5px] flex items-center justify-center gap-3 shadow-2xs transition-all cursor-pointer"
+              className="w-full max-w-[380px] h-12.5 px-6 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[14.5px] flex items-center justify-center gap-3 shadow-xs hover:shadow-md transition-all cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
+              <svg viewBox="0 0 24 24" className="w-5.5 h-5.5 shrink-0">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
