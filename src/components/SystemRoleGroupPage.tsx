@@ -13,7 +13,14 @@ import {
   UserPlus,
   X,
   Building2,
+  Upload,
+  Download,
+  Palette,
+  AlertCircle,
+  FileSpreadsheet,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { createStyledWorksheet, saveWorkbookToFile, TemplateColumn } from '../utils/excelTemplateGenerator';
 import { RoleGroupPermission } from '../types';
 import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
 import {
@@ -723,6 +730,13 @@ export const SystemRoleGroupPage: React.FC = () => {
   const [isAddRoleOpen, setIsAddRoleOpen] = useState<boolean>(false);
   const [newRoleName, setNewRoleName] = useState<string>('');
 
+  // State cho Modal Import vai trò từ Excel
+  const [isImportRoleModalOpen, setIsImportRoleModalOpen] = useState<boolean>(false);
+  const [importRoleFile, setImportRoleFile] = useState<File | null>(null);
+  const [parsedImportRoles, setParsedImportRoles] = useState<any[]>([]);
+  const [importRoleError, setImportRoleError] = useState<string | null>(null);
+  const [isProcessingRoleFile, setIsProcessingRoleFile] = useState<boolean>(false);
+
   // State cho Popup Modal thêm thành viên vào vai trò
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState<boolean>(false);
   const [memberUnitFilter, setMemberUnitFilter] = useState<string>('ALL');
@@ -824,30 +838,357 @@ export const SystemRoleGroupPage: React.FC = () => {
     );
   };
 
-  const handleSave = () => {
+  // 1. Lưu thay đổi phân quyền vào CSDL MySQL (bảng vai_tro_quyen)
+  const handleSavePermissions = async () => {
+    const enabledPermissions = ALL_PERMISSION_IDS.filter(
+      (id) => !selectedRole.disabledPermissions.includes(id)
+    );
+
+    try {
+      await fetch(`/api/roles/${selectedRole.id}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabledPermissions }),
+      });
+    } catch (err) {
+      console.warn('Could not save permissions to MySQL:', err);
+    }
+
+    try {
+      localStorage.setItem('tdu_roles_state_v3', JSON.stringify(roles));
+    } catch {}
+
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2500);
   };
 
-  const handleAddRole = (e: React.FormEvent) => {
+  // Alias tương thích cho các chỗ gọi handleSave
+  const handleSave = handleSavePermissions;
+
+  // 2. Thêm vai trò mới (lưu vào MySQL bảng vai_tro)
+  const handleAddRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoleName.trim()) return;
-    const id = `role_${Date.now()}`;
+
+    const cleanCode = newRoleName
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/Đ/g, 'D')
+      .replace(/[^A-Z0-9]/g, '_')
+      .replace(/_+/g, '_');
+
+    let createdId = `role_${Date.now()}`;
+
+    try {
+      const res = await fetch('/api/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newRoleName.trim(),
+          code: cleanCode,
+          description: `Nhóm vai trò ${newRoleName.trim()} trên hệ thống Thanh toán giờ giảng TDU.`,
+          dotColor: '#2563eb',
+        }),
+      });
+      const data = await res.json();
+      if (data && data.success && data.id) {
+        createdId = String(data.id);
+      }
+    } catch (err) {
+      console.warn('Lỗi tạo vai trò trong MySQL:', err);
+    }
+
     const created: RoleItem = {
-      id,
+      id: createdId,
       name: newRoleName.trim(),
-      code: newRoleName.trim().toUpperCase(),
+      code: cleanCode,
       dotColor: '#2563eb',
-      badgeBg: '#f3e8ff',
-      badgeText: '#9333ea',
+      badgeBg: '#eff6ff',
+      badgeText: '#2563eb',
       description: `Nhóm vai trò ${newRoleName.trim()} trên hệ thống Thanh toán giờ giảng TDU.`,
       members: [],
       disabledPermissions: [],
     };
-    setRoles((prev) => [...prev, created]);
-    setSelectedRoleId(id);
+
+    setRoles((prev) => {
+      const next = [...prev, created];
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    setSelectedRoleId(createdId);
     setNewRoleName('');
     setIsAddRoleOpen(false);
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2500);
+  };
+
+  // 3. Cập nhật thông tin vai trò (Tên, Mã, Mô tả, Màu sắc) vào MySQL
+  const handleSaveRoleInfo = async () => {
+    try {
+      await fetch(`/api/roles/${selectedRole.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: selectedRole.name,
+          code: selectedRole.code,
+          description: selectedRole.description,
+          dotColor: selectedRole.dotColor,
+        }),
+      });
+    } catch (err) {
+      console.warn('Lỗi cập nhật vai trò vào MySQL:', err);
+    }
+
+    try {
+      localStorage.setItem('tdu_roles_state_v3', JSON.stringify(roles));
+    } catch {}
+
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2500);
+  };
+
+  // 4. Xóa vai trò khỏi CSDL MySQL
+  const handleDeleteRole = async (roleId: string) => {
+    if (roleId === 'quan_tri_vien_he_thong' || selectedRole.code === 'QUAN_TRI_VIEN_HE_THONG') {
+      alert('Không thể xóa vai trò Quản trị viên hệ thống!');
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xóa vai trò "${selectedRole.name}" không? Thao tác này sẽ xóa vai trò cùng liên kết phân quyền và thành viên trong CSDL MySQL.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await fetch(`/api/roles/${roleId}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.warn('Lỗi xóa vai trò khỏi MySQL:', err);
+    }
+
+    const nextRoles = roles.filter((r) => r.id !== roleId);
+    setRoles(nextRoles);
+    setSelectedRoleId('quan_tri_vien_he_thong');
+    try {
+      localStorage.setItem('tdu_roles_state_v3', JSON.stringify(nextRoles));
+    } catch {}
+
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2000);
+  };
+
+  // 5. Tải file mẫu Import vai trò chuẩn hóa
+  const handleDownloadRoleTemplate = () => {
+    const columns: TemplateColumn[] = [
+      { header: 'STT', key: 'stt', width: 6, align: 'center' },
+      { header: 'Tên vai trò (*)', key: 'ten_vai_tro', width: 28, isYellow: true, align: 'left' },
+      { header: 'Mã vai trò (*)', key: 'ma_vai_tro', width: 22, isYellow: true, align: 'center' },
+      { header: 'Mô tả vai trò', key: 'mo_ta', width: 45, align: 'left' },
+      { header: 'Màu sắc (Mã Hex)', key: 'mau_sac', width: 18, align: 'center' },
+    ];
+
+    const sampleRows = [
+      [1, 'Ban Đảm bảo chất lượng', 'BAN_DBCL', 'Ban Kiểm tra và Đảm bảo chất lượng giáo dục TDU', '#7c3aed'],
+      [2, 'Bộ môn Giáo dục thể chất', 'BM_GDTC', 'Giảng viên bộ môn GDTC tra cứu thù lao và kê khai giờ dạy', '#0284c7'],
+      [3, 'Thanh tra nội bộ', 'THANH_TRA_NOI_BO', 'Ban Thanh tra nội bộ giám sát giờ giảng và chi trả', '#dc2626'],
+    ];
+
+    const ws = createStyledWorksheet(
+      'MẪU NHẬP DỮ LIỆU NHÓM VAI TRÒ & PHÂN QUYỀN HỆ THỐNG - TRƯỜNG ĐH TÂY ĐÔ',
+      columns,
+      sampleRows,
+      undefined,
+      {
+        unitName: 'PHÒNG CÔNG NGHỆ THÔNG TIN',
+        subTitle: 'Năm học 2026 - 2027 (Cột màu vàng là thông tin bắt buộc)',
+        documentNo: 'BM-TDU-VT-01-IMPORT',
+      }
+    );
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Mau_Import_Vai_Tro');
+    saveWorkbookToFile(wb, 'TDU_Mau_Import_Vai_Tro.xlsx');
+  };
+
+  // 6. Xuất danh sách toàn bộ vai trò ra Excel chuẩn TDU
+  const handleExportRolesExcel = () => {
+    const columns: TemplateColumn[] = [
+      { header: 'STT', key: 'stt', width: 6, align: 'center' },
+      { header: 'Mã vai trò (*)', key: 'ma_vai_tro', width: 22, isYellow: true, align: 'center' },
+      { header: 'Tên nhóm vai trò (*)', key: 'ten_vai_tro', width: 30, isYellow: true, align: 'left' },
+      { header: 'Số lượng thành viên', key: 'so_luong_thanh_vien', width: 20, align: 'center' },
+      { header: 'Số quyền được kích hoạt', key: 'so_quyen_kich_hoat', width: 22, align: 'center' },
+      { header: 'Màu sắc đại diện', key: 'mau_sac', width: 18, align: 'center' },
+      { header: 'Mô tả chức năng & phạm vi', key: 'mo_ta', width: 50, align: 'left' },
+    ];
+
+    const dataRows = roles.map((r, idx) => {
+      const activePermCount = ALL_PERMISSION_IDS.filter((id) => !r.disabledPermissions.includes(id)).length;
+      return [
+        idx + 1,
+        r.code,
+        r.name,
+        r.members.length,
+        `${activePermCount}/${ALL_PERMISSION_IDS.length} quyền`,
+        r.dotColor,
+        r.description,
+      ];
+    });
+
+    const summaryRow = [
+      `TỔNG CỘNG (${roles.length} vai trò)`,
+      '', '',
+      roles.reduce((s, r) => s + r.members.length, 0),
+      '', '', ''
+    ];
+
+    const ws = createStyledWorksheet(
+      'BẢNG TỔNG HỢP DANH SÁCH VAI TRÒ & PHÂN QUYỀN HỆ THỐNG - TRƯỜNG ĐH TÂY ĐÔ',
+      columns,
+      dataRows,
+      summaryRow,
+      {
+        unitName: 'PHÒNG CÔNG NGHỆ THÔNG TIN',
+        subTitle: `Năm học 2026 - 2027 (Cập nhật ngày ${new Date().toLocaleDateString('vi-VN')})`,
+        documentNo: 'BM-TDU-VT-01',
+      }
+    );
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Danh_Sach_Vai_Tro');
+    saveWorkbookToFile(wb, `TDU_Danh_Sach_Vai_Tro_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  // 7. Xử lý đọc file Excel Import vai trò
+  const handleProcessRoleExcelFile = (file: File) => {
+    setImportRoleFile(file);
+    setImportRoleError(null);
+    setIsProcessingRoleFile(true);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rawJson: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!rawJson || rawJson.length < 2) {
+          setImportRoleError('File Excel không có dữ liệu hoặc chỉ có dòng tiêu đề.');
+          setIsProcessingRoleFile(false);
+          return;
+        }
+
+        let headerRowIdx = -1;
+        for (let i = 0; i < Math.min(rawJson.length, 12); i++) {
+          const rowStr = rawJson[i].map((c) => String(c).toLowerCase()).join(' ');
+          if (rowStr.includes('tên vai trò') || rowStr.includes('mã vai trò') || rowStr.includes('vai trò')) {
+            headerRowIdx = i;
+            break;
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          headerRowIdx = 0;
+        }
+
+        const parsed: any[] = [];
+        for (let r = headerRowIdx + 1; r < rawJson.length; r++) {
+          const row = rawJson[r];
+          if (!row || row.length === 0) continue;
+
+          const firstCell = String(row[0] || '').trim();
+          if (firstCell.startsWith('stt') || firstCell.startsWith('ten_') || firstCell.startsWith('ma_')) continue;
+
+          const name = String(row[1] || row[0] || '').trim();
+          if (!name || name.toLowerCase().includes('tổng cộng') || name.startsWith('(')) continue;
+
+          const code = String(row[2] || name)
+            .trim()
+            .toUpperCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/Đ/g, 'D')
+            .replace(/[^A-Z0-9]/g, '_')
+            .replace(/_+/g, '_');
+
+          const desc = String(row[3] || `Nhóm vai trò ${name}`).trim();
+          const color = String(row[4] || '#2563eb').trim();
+
+          parsed.push({
+            name,
+            code,
+            description: desc,
+            dotColor: color.startsWith('#') ? color : '#2563eb',
+          });
+        }
+
+        if (parsed.length === 0) {
+          setImportRoleError('Không tìm thấy dòng dữ liệu vai trò hợp lệ. Vui lòng tải file mẫu để kiểm tra.');
+        } else {
+          setParsedImportRoles(parsed);
+        }
+      } catch (err: any) {
+        setImportRoleError('Lỗi đọc file Excel: ' + (err.message || 'Lỗi không xác định'));
+      } finally {
+        setIsProcessingRoleFile(false);
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  // 8. Xác nhận nạp danh sách vai trò vào MySQL
+  const handleConfirmImportRoles = async () => {
+    if (parsedImportRoles.length === 0) return;
+
+    try {
+      await fetch('/api/roles/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roles: parsedImportRoles }),
+      });
+    } catch (err) {
+      console.warn('Lỗi gửi import vai trò tới MySQL:', err);
+    }
+
+    const newItems: RoleItem[] = parsedImportRoles.map((p, idx) => ({
+      id: `role_imp_${Date.now()}_${idx}`,
+      name: p.name,
+      code: p.code,
+      dotColor: p.dotColor,
+      badgeBg: '#eff6ff',
+      badgeText: p.dotColor,
+      description: p.description,
+      members: [],
+      disabledPermissions: [],
+    }));
+
+    setRoles((prev) => {
+      const existingCodes = new Set(prev.map((r) => r.code.toUpperCase()));
+      const toAdd = newItems.filter((item) => !existingCodes.has(item.code.toUpperCase()));
+      const next = [...prev, ...toAdd];
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    const count = parsedImportRoles.length;
+    setIsImportRoleModalOpen(false);
+    setImportRoleFile(null);
+    setParsedImportRoles([]);
+    setImportRoleError(null);
+    alert(`Import thành công! Đã nạp ${count} vai trò vào CSDL MySQL.`);
   };
 
   // Aggregate available staff (from localStorage + defaults)
@@ -1091,13 +1432,32 @@ export const SystemRoleGroupPage: React.FC = () => {
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               DANH SÁCH VAI TRÒ ({roles.length})
             </span>
-            <button
-              onClick={() => setIsAddRoleOpen(true)}
-              className="w-6 h-6 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-colors cursor-pointer"
-              title="Thêm vai trò mới"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsImportRoleModalOpen(true)}
+                className="w-6 h-6 rounded-md hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                title="Nhập danh sách vai trò từ Excel"
+              >
+                <Upload className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleExportRolesExcel}
+                className="w-6 h-6 rounded-md hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                title="Xuất danh sách vai trò ra Excel"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddRoleOpen(true)}
+                className="w-6 h-6 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-colors cursor-pointer"
+                title="Thêm vai trò mới"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
+            </div>
           </div>
 
           {/* Quick search among 26 unit roles */}
@@ -1435,8 +1795,52 @@ export const SystemRoleGroupPage: React.FC = () => {
                         prev.map((r) => (r.id === selectedRole.id ? { ...r, code: val } : r))
                       );
                     }}
-                    className="w-full h-[36px] px-3 rounded-lg border border-slate-300 bg-white text-[13px] text-slate-800 focus:outline-none focus:border-blue-500"
+                    className="w-full h-[36px] px-3 rounded-lg border border-slate-300 bg-white text-[13px] text-slate-800 focus:outline-none focus:border-blue-500 font-mono text-[12.5px]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[12px] text-slate-500 mb-1.5 flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Màu sắc nhận diện</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {[
+                      '#2563eb', // Blue
+                      '#16a34a', // Green
+                      '#9333ea', // Purple
+                      '#dc2626', // Red
+                      '#ea580c', // Orange
+                      '#0891b2', // Cyan
+                      '#0d9488', // Teal
+                      '#64748b', // Slate
+                      '#d97706', // Amber
+                    ].map((color) => {
+                      const isSelected = selectedRole.dotColor === color;
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => {
+                            setRoles((prev) =>
+                              prev.map((r) =>
+                                r.id === selectedRole.id
+                                  ? { ...r, dotColor: color, badgeText: color }
+                                  : r
+                              )
+                            );
+                          }}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                            isSelected ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={`Chọn màu ${color}`}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div>
@@ -1454,13 +1858,30 @@ export const SystemRoleGroupPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="pt-2 flex justify-end">
+                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                  {selectedRole.code === 'QUAN_TRI_VIEN_HE_THONG' || selectedRole.id === 'quan_tri_vien_he_thong' ? (
+                    <span className="text-[11.5px] text-slate-400 italic flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Vai trò quản trị mặc định (không được xóa)</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRole(selectedRole.id)}
+                      className="h-[34px] px-3.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Xóa vai trò</span>
+                    </button>
+                  )}
+
                   <button
-                    onClick={handleSave}
-                    className="h-[34px] px-4 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer"
+                    type="button"
+                    onClick={handleSaveRoleInfo}
+                    className="h-[34px] px-4 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    <span>Lưu thông tin</span>
+                    <span>Lưu thông tin vai trò</span>
                   </button>
                 </div>
               </div>
@@ -1904,6 +2325,133 @@ export const SystemRoleGroupPage: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Import Roles Modal */}
+      {isImportRoleModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[700px] max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-200">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-[16px] font-bold text-slate-800">Nhập danh sách vai trò từ Excel</h3>
+                  <p className="text-[12px] text-slate-500">Cập nhật và nạp nhóm vai trò trực tiếp vào CSDL MySQL</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportRoleModalOpen(false);
+                  setImportRoleFile(null);
+                  setParsedImportRoles([]);
+                  setImportRoleError(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto space-y-4">
+              {/* Template Download Banner */}
+              <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-[13px] font-semibold text-blue-900">Chưa có file mẫu chuẩn?</h4>
+                  <p className="text-[12px] text-blue-700 mt-0.5">Tải file mẫu Excel chuẩn Trường Đại học Tây Đô để chuẩn bị dữ liệu vai trò.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadRoleTemplate}
+                  className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải file mẫu</span>
+                </button>
+              </div>
+
+              {/* Upload Dropzone */}
+              <div className="border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl p-6 text-center cursor-pointer transition-colors bg-slate-50/50 relative">
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleProcessRoleExcelFile(f);
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <Upload className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <p className="text-[13px] font-medium text-slate-700">
+                  {importRoleFile ? importRoleFile.name : 'Kéo thả hoặc nhấp để chọn file Excel (.xlsx, .xls)'}
+                </p>
+                <p className="text-[11.5px] text-slate-400 mt-1">Hỗ trợ các cột: Tên vai trò, Mã vai trò, Mô tả, Màu sắc</p>
+              </div>
+
+              {importRoleError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[12.5px] flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{importRoleError}</span>
+                </div>
+              )}
+
+              {/* Preview table of parsed roles */}
+              {parsedImportRoles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12.5px] font-semibold text-slate-700">
+                      Tìm thấy {parsedImportRoles.length} vai trò hợp lệ:
+                    </span>
+                  </div>
+                  <div className="max-h-[220px] overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+                    {parsedImportRoles.map((r, i) => (
+                      <div key={i} className="px-3.5 py-2 flex items-center justify-between text-[12px]">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: r.dotColor }} />
+                          <div>
+                            <span className="font-semibold text-slate-800">{r.name}</span>
+                            <span className="text-slate-400 font-mono ml-2">({r.code})</span>
+                          </div>
+                        </div>
+                        <span className="text-slate-500 truncate max-w-[240px]">{r.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+              <span className="text-[12px] text-slate-500">
+                {parsedImportRoles.length > 0 ? `Sẵn sàng nạp ${parsedImportRoles.length} vai trò` : 'Chọn file để bắt đầu'}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsImportRoleModalOpen(false);
+                    setImportRoleFile(null);
+                    setParsedImportRoles([]);
+                    setImportRoleError(null);
+                  }}
+                  className="px-4 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-[12.5px] hover:bg-white cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={parsedImportRoles.length === 0 || isProcessingRoleFile}
+                  onClick={handleConfirmImportRoles}
+                  className="px-5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12.5px] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs transition-colors"
+                >
+                  Xác nhận nạp vào MySQL
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

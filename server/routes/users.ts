@@ -94,6 +94,18 @@ router.put('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const data = req.body;
 
+    const cleanId = String(id).replace(/^(user-|u-|staff-)/, '');
+    let targetUserId: number | null = /^\d+$/.test(cleanId) ? parseInt(cleanId, 10) : null;
+
+    if (!targetUserId) {
+      const [uRows]: any = await pool.query('SELECT id FROM nguoi_dung WHERE ma_nhan_su = ? OR email = ? LIMIT 1', [id, id]);
+      if (uRows && uRows.length > 0) targetUserId = uRows[0].id;
+    }
+
+    if (!targetUserId) {
+      return res.status(404).json({ success: false, message: `Không tìm thấy cán bộ có mã ${id}` });
+    }
+
     let donViId = null;
     if (data.donVi) {
       const [dRows]: any = await pool.query('SELECT id FROM don_vi WHERE ten_don_vi = ? LIMIT 1', [data.donVi]);
@@ -102,11 +114,26 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     const updateSql = `
       UPDATE nguoi_dung SET
-        ma_nhan_su = ?, ho_ten = ?, chuc_vu = ?, don_vi_id = COALESCE(?, don_vi_id),
-        gioi_tinh = ?, ngay_sinh = ?, hoc_ham = ?, hoc_vi = ?, chuyen_mon = ?,
-        nam_tuyen_dung = ?, ngay_ky_hdld = ?, nam_tot_nghiep = ?,
-        nam_cong_nhan_pgs = ?, nam_cong_nhan_gs = ?, ccsp = ?,
-        anh_van = ?, tin_hoc = ?, kiem_nhiem = ?, don_vi_kiem_nhiem = ?
+        ma_nhan_su = COALESCE(?, ma_nhan_su),
+        ho_ten = COALESCE(?, ho_ten),
+        chuc_vu = COALESCE(?, chuc_vu),
+        don_vi_id = COALESCE(?, don_vi_id),
+        gioi_tinh = COALESCE(?, gioi_tinh),
+        ngay_sinh = COALESCE(?, ngay_sinh),
+        hoc_ham = COALESCE(?, hoc_ham),
+        hoc_vi = COALESCE(?, hoc_vi),
+        chuyen_mon = COALESCE(?, chuyen_mon),
+        nam_tuyen_dung = COALESCE(?, nam_tuyen_dung),
+        ngay_ky_hdld = COALESCE(?, ngay_ky_hdld),
+        nam_tot_nghiep = COALESCE(?, nam_tot_nghiep),
+        nam_cong_nhan_pgs = COALESCE(?, nam_cong_nhan_pgs),
+        nam_cong_nhan_gs = COALESCE(?, nam_cong_nhan_gs),
+        ccsp = COALESCE(?, ccsp),
+        anh_van = COALESCE(?, anh_van),
+        tin_hoc = COALESCE(?, tin_hoc),
+        kiem_nhiem = COALESCE(?, kiem_nhiem),
+        don_vi_kiem_nhiem = COALESCE(?, don_vi_kiem_nhiem),
+        trang_thai = COALESCE(?, trang_thai)
       WHERE id = ?
     `;
 
@@ -130,11 +157,12 @@ router.put('/:id', async (req: Request, res: Response) => {
       data.tinHoc,
       data.kiemNhiem || '',
       data.donViKiemNhiem || '',
-      id,
+      data.trangThai || 'hoat_dong',
+      targetUserId,
     ];
 
     await pool.query(updateSql, values);
-    return res.json({ success: true, message: 'Cập nhật cán bộ thành công!' });
+    return res.json({ success: true, message: 'Cập nhật hồ sơ cán bộ vào CSDL thành công!' });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Lỗi cập nhật CSDL', error: error.message });
   }
@@ -144,8 +172,21 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM nguoi_dung WHERE id = ?', [id]);
-    return res.json({ success: true, message: 'Đã xóa cán bộ khỏi CSDL!' });
+    const cleanId = String(id).replace(/^(user-|u-|staff-)/, '');
+    let targetUserId: number | null = /^\d+$/.test(cleanId) ? parseInt(cleanId, 10) : null;
+
+    if (!targetUserId) {
+      const [uRows]: any = await pool.query('SELECT id FROM nguoi_dung WHERE ma_nhan_su = ? OR email = ? LIMIT 1', [id, id]);
+      if (uRows && uRows.length > 0) targetUserId = uRows[0].id;
+    }
+
+    if (targetUserId) {
+      await pool.query('DELETE FROM nguoi_dung WHERE id = ?', [targetUserId]);
+    } else {
+      await pool.query('DELETE FROM nguoi_dung WHERE ma_nhan_su = ?', [id]);
+    }
+
+    return res.json({ success: true, message: 'Đã xóa cán bộ khỏi CSDL thành công!' });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Lỗi xóa cán bộ', error: error.message });
   }

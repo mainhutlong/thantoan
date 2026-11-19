@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const xlsxModule: any = XLSX.default || XLSX;
+const xlsxModule: any = (XLSX as any).default || XLSX;
 
 function removeAccents(str: string): string {
   return str

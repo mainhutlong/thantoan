@@ -250,9 +250,9 @@ export interface SystemUserProfile {
   hocHam: string; // 'Giáo sư' | 'Phó Giáo sư' | ''
   hocVi: string; // 'Tiến sĩ' | 'Thạc sĩ' | 'Đại học' | 'Bác sĩ CKII'...
   chuyenMon: string;
-  namTuyenDung: number | string;
+  namTuyenDung?: number | string;
   ngayKyHDLD: string;
-  namTotNghiep: number | string;
+  namTotNghiep?: number | string;
   namCongNhanPGS?: number | string;
   namCongNhanGS?: number | string;
   ccsp: string; // Chứng chỉ sư phạm

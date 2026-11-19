@@ -29,6 +29,7 @@ import {
   ChevronsRight
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { createStyledWorksheet, saveWorkbookToFile, TemplateColumn } from '../utils/excelTemplateGenerator';
 import { SystemUserProfile } from '../types';
 import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
 
@@ -299,7 +300,7 @@ export const SystemUsersPage: React.FC = () => {
     setDrawerUser(null);
   };
 
-  const handleSaveDrawer = (e?: React.FormEvent) => {
+  const handleSaveDrawer = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!drawerUser) return;
     if (!drawerFormData.hoTen || !drawerFormData.maNhanSu) {
@@ -311,6 +312,17 @@ export const SystemUsersPage: React.FC = () => {
       prev.map((u) => (u.id === drawerUser.id ? ({ ...u, ...drawerFormData } as SystemUserProfile) : u))
     );
     setDrawerUser((prev) => (prev ? ({ ...prev, ...drawerFormData } as SystemUserProfile) : null));
+
+    try {
+      await fetch(`/api/users/${drawerUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(drawerFormData),
+      });
+    } catch (err) {
+      console.warn('Lỗi đồng bộ MySQL:', err);
+    }
+
     alert('Đã cập nhật thông tin hồ sơ cán bộ thành công!');
     setIsDrawerOpen(false);
   };
@@ -352,15 +364,22 @@ export const SystemUsersPage: React.FC = () => {
 
   // Open Detail modal
   const handleOpenDetail = (user: SystemUserProfile) => {
-    setViewingUser(user);
-    setIsDetailModalOpen(true);
+    setDrawerUser(user);
+    setDrawerFormData({ ...user });
+    setIsDrawerOpen(true);
   };
 
   // Delete user
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa hồ sơ nhân sự này khỏi hệ thống?')) {
       setUsers((prev) => prev.filter((u) => u.id !== id));
       setSelectedUserIds((prev) => prev.filter((uid) => uid !== id));
+
+      try {
+        await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Lỗi xóa MySQL:', err);
+      }
     }
   };
 
@@ -383,11 +402,22 @@ export const SystemUsersPage: React.FC = () => {
   };
 
   // Delete batch of selected users
-  const handleDeleteBatch = () => {
+  const handleDeleteBatch = async () => {
     if (selectedUserIds.length === 0) return;
     if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedUserIds.length} cán bộ đã chọn không?`)) {
+      const idsToDelete = [...selectedUserIds];
       setUsers((prev) => prev.filter((u) => !selectedUserIds.includes(u.id)));
       setSelectedUserIds([]);
+
+      try {
+        await fetch('/api/users/batch-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: idsToDelete }),
+        });
+      } catch (err) {
+        console.warn('Lỗi xóa batch MySQL:', err);
+      }
     }
   };
 
@@ -419,7 +449,7 @@ export const SystemUsersPage: React.FC = () => {
   };
 
   // Save inline new user row
-  const handleSaveNewRow = () => {
+  const handleSaveNewRow = async () => {
     if (!newRowData.hoTen || !newRowData.hoTen.trim()) {
       alert('Vui lòng nhập Họ và tên cán bộ!');
       return;
@@ -440,8 +470,8 @@ export const SystemUsersPage: React.FC = () => {
       namTuyenDung: Number(newRowData.namTuyenDung) || new Date().getFullYear(),
       ngayKyHDLD: newRowData.ngayKyHDLD?.trim() || '',
       namTotNghiep: Number(newRowData.namTotNghiep) || 2015,
-      namCongNhanPGS: newRowData.namCongNhanPGS?.trim() || '',
-      namCongNhanGS: newRowData.namCongNhanGS?.trim() || '',
+      namCongNhanPGS: String(newRowData.namCongNhanPGS || '').trim(),
+      namCongNhanGS: String(newRowData.namCongNhanGS || '').trim(),
       ccsp: newRowData.ccsp?.trim() || 'Đã có',
       anhVan: newRowData.anhVan?.trim() || 'B2',
       tinHoc: newRowData.tinHoc?.trim() || 'Ứng dụng CNTT Cơ bản',
@@ -452,10 +482,24 @@ export const SystemUsersPage: React.FC = () => {
 
     setUsers((prev) => [created, ...prev]);
     setIsAddingRow(false);
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(created),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.id) created.id = String(d.id);
+      }
+    } catch (err) {
+      console.warn('Lỗi lưu cán bộ vào MySQL:', err);
+    }
   };
 
   // Save form
-  const handleSaveForm = (e: React.FormEvent) => {
+  const handleSaveForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.hoTen || !formData.maNhanSu) {
       alert('Vui lòng điền đầy đủ Họ tên và Mã nhân sự!');
@@ -468,105 +512,171 @@ export const SystemUsersPage: React.FC = () => {
           u.id === editingUser.id ? ({ ...u, ...formData } as SystemUserProfile) : u
         )
       );
+
+      try {
+        await fetch(`/api/users/${editingUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+      } catch (err) {
+        console.warn('Lỗi cập nhật MySQL:', err);
+      }
     } else {
       const newUser: SystemUserProfile = {
         ...(formData as SystemUserProfile),
         id: `user-${Date.now()}`,
         stt: users.length + 1,
       };
-      setUsers((prev) => [...prev, newUser]);
+      setUsers((prev) => [newUser, ...prev]);
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.id) newUser.id = String(d.id);
+        }
+      } catch (err) {
+        console.warn('Lỗi tạo mới MySQL:', err);
+      }
     }
     setIsFormModalOpen(false);
   };
 
-  // Export to Excel with all 20 columns
+  // Export to Excel with all 20 columns formatted according to TDU administrative standards
   const handleExportExcel = () => {
     if (filteredUsers.length === 0) {
       alert('Không có dữ liệu người dùng để xuất!');
       return;
     }
-    const dataToExport = filteredUsers.map((u, idx) => ({
-      Stt: idx + 1,
-      'Họ tên': u.hoTen,
-      'Chức vụ': u.chucVu,
-      'Đơn vị': u.donVi,
-      'Mã nhân sự': u.maNhanSu,
-      'Giới tính': u.gioiTinh,
-      'Ngày, tháng năm sinh': u.ngaySinh,
-      'Học hàm': u.hocHam || '',
-      'Học vị': u.hocVi,
-      'Chuyên môn': u.chuyenMon,
-      'Năm tuyển dụng': u.namTuyenDung,
-      'Ngày ký HĐLĐ chính thức': u.ngayKyHDLD,
-      'Năm tốt nghiệp': u.namTotNghiep,
-      'Năm công nhận học hàm PGS': u.namCongNhanPGS || '',
-      'Năm công nhận học hàm Giáo sư': u.namCongNhanGS || '',
-      CCSP: u.ccsp,
-      'Anh văn': u.anhVan,
-      'Tin học': u.tinHoc,
-      'Kiêm nhiệm': u.kiemNhiem || '',
-      'Đơn vị kiêm nhiệm': u.donViKiemNhiem || '',
-    }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ho_so_Nhan_su_TDU');
-    XLSX.writeFile(workbook, `TDU_Danh_Sach_Nhan_Su_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  };
-
-  // Download standard Excel template with 18-20 columns
-  const handleDownloadTemplate = () => {
-    const templateData = [
-      {
-        'STT': 1,
-        'Họ tên': 'Nguyễn Văn An',
-        'Chức vụ': 'Giảng viên cơ hữu',
-        'Đơn vị': 'Khoa Công nghệ thông tin',
-        'Mã nhân sự': 'TDU00123',
-        'Giới tính': 'Nam',
-        'Ngày tháng năm sinh': '15/08/1985',
-        'Học hàm': '',
-        'Học vị': 'Tiến sĩ',
-        'Chuyên môn': 'Khoa học máy tính & HTTT',
-        'Năm tuyển dụng': 2018,
-        'Ngày ký HĐLĐ chính thức': '01/09/2019',
-        'Năm tốt nghiệp': 2007,
-        'Năm công nhận học hàm PGS': '',
-        'Năm công nhận học hàm Giáo sư': '',
-        'CCSP': 'Đã có',
-        'Anh văn': 'IELTS 6.5',
-        'Tin học': 'Ứng dụng CNTT Nâng cao',
-        'Kiêm nhiệm': 'Cố vấn học tập K16 CNTT',
-        'Đơn vị kiêm nhiệm': 'Khoa Công nghệ thông tin',
-      },
-      {
-        'STT': 2,
-        'Họ tên': 'Trần Thị Mai',
-        'Chức vụ': 'Phó Trưởng Khoa',
-        'Đơn vị': 'Khoa Dược - Điều dưỡng',
-        'Mã nhân sự': 'TDU00245',
-        'Giới tính': 'Nữ',
-        'Ngày tháng năm sinh': '20/11/1980',
-        'Học hàm': 'Phó Giáo sư',
-        'Học vị': 'Tiến sĩ',
-        'Chuyên môn': 'Dược lý & Dược lâm sàng',
-        'Năm tuyển dụng': 2014,
-        'Ngày ký HĐLĐ chính thức': '01/10/2015',
-        'Năm tốt nghiệp': 2002,
-        'Năm công nhận học hàm PGS': 2021,
-        'Năm công nhận học hàm Giáo sư': '',
-        'CCSP': 'Đã có',
-        'Anh văn': 'B2 Châu Âu',
-        'Tin học': 'MOS Excel Expert',
-        'Kiêm nhiệm': 'Chủ tịch HĐ Khoa học Khoa',
-        'Đơn vị kiêm nhiệm': 'Khoa Dược - Điều dưỡng',
-      }
+    const columns: TemplateColumn[] = [
+      { header: 'STT', key: 'stt', width: 6, align: 'center' },
+      { header: 'Họ tên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
+      { header: 'Chức vụ (*)', key: 'chuc_vu', width: 22, isYellow: true, align: 'left' },
+      { header: 'Đơn vị (*)', key: 'don_vi', width: 28, isYellow: true, align: 'left' },
+      { header: 'Mã nhân sự (*)', key: 'ma_nhan_su', width: 16, isYellow: true, align: 'center' },
+      { header: 'Giới tính', key: 'gioi_tinh', width: 12, align: 'center' },
+      { header: 'Ngày tháng năm sinh', key: 'ngay_sinh', width: 16, align: 'center' },
+      { header: 'Học hàm', key: 'hoc_ham', width: 14, align: 'center' },
+      { header: 'Học vị (*)', key: 'hoc_vi', width: 14, isYellow: true, align: 'center' },
+      { header: 'Chuyên môn', key: 'chuyen_mon', width: 30, align: 'left' },
+      { header: 'Năm tuyển dụng', key: 'nam_tuyen_dung', width: 16, align: 'center' },
+      { header: 'Ngày ký HĐLĐ', key: 'ngay_ky_hdld', width: 18, align: 'center' },
+      { header: 'Năm tốt nghiệp', key: 'nam_tot_nghiep', width: 16, align: 'center' },
+      { header: 'Năm CN PGS', key: 'nam_cn_pgs', width: 14, align: 'center' },
+      { header: 'Năm CN Giáo sư', key: 'nam_cn_gs', width: 14, align: 'center' },
+      { header: 'CCSP', key: 'ccsp', width: 14, align: 'center' },
+      { header: 'Anh văn', key: 'anh_van', width: 16, align: 'center' },
+      { header: 'Tin học', key: 'tin_hoc', width: 24, align: 'left' },
+      { header: 'Kiêm nhiệm', key: 'kiem_nhiem', width: 28, align: 'left' },
+      { header: 'Đơn vị kiêm nhiệm', key: 'don_vi_kiem_nhiem', width: 28, align: 'left' },
     ];
 
-    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const dataRows = filteredUsers.map((u, idx) => [
+      idx + 1,
+      u.hoTen,
+      u.chucVu,
+      u.donVi,
+      u.maNhanSu,
+      u.gioiTinh,
+      u.ngaySinh,
+      u.hocHam || '—',
+      u.hocVi,
+      u.chuyenMon,
+      u.namTuyenDung,
+      u.ngayKyHDLD,
+      u.namTotNghiep,
+      u.namCongNhanPGS || '—',
+      u.namCongNhanGS || '—',
+      u.ccsp,
+      u.anhVan,
+      u.tinHoc,
+      u.kiemNhiem || '—',
+      u.donViKiemNhiem || '—',
+    ]);
+
+    const summaryRow = [
+      `TỔNG CỘNG (${filteredUsers.length} cán bộ)`,
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+    ];
+
+    const ws = createStyledWorksheet(
+      'BẢNG TỔNG HỢP HỒ SƠ NHÂN SỰ CÁN BỘ GIẢNG VIÊN VÀ HỢP ĐỒNG LAO ĐỘNG (20 CỘT CHUẨN TDU)',
+      columns,
+      dataRows,
+      summaryRow,
+      {
+        unitName: 'PHÒNG TỔ CHỨC - HÀNH CHÍNH',
+        subTitle: `Năm học 2026 - 2027 (Cập nhật ngày ${new Date().toLocaleDateString('vi-VN')})`,
+        documentNo: 'BM-TDU-NS-01',
+      }
+    );
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Mau_Import_Nhan_Su');
-    XLSX.writeFile(workbook, 'TDU_Mau_Import_Nhan_Su_18_Cot.xlsx');
+    XLSX.utils.book_append_sheet(workbook, ws, 'Ho_so_Nhan_su_TDU');
+    saveWorkbookToFile(workbook, `TDU_Danh_Sach_Nhan_Su_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  // Download standard Excel template with 20 columns formatted according to TDU administrative standards
+  const handleDownloadTemplate = () => {
+    const columns: TemplateColumn[] = [
+      { header: 'STT', key: 'stt', width: 6, align: 'center' },
+      { header: 'Họ tên (*)', key: 'ho_va_ten', width: 28, isYellow: true, align: 'left' },
+      { header: 'Chức vụ (*)', key: 'chuc_vu', width: 22, isYellow: true, align: 'left' },
+      { header: 'Đơn vị (*)', key: 'don_vi', width: 28, isYellow: true, align: 'left' },
+      { header: 'Mã nhân sự (*)', key: 'ma_nhan_su', width: 16, isYellow: true, align: 'center' },
+      { header: 'Giới tính', key: 'gioi_tinh', width: 12, align: 'center' },
+      { header: 'Ngày tháng năm sinh', key: 'ngay_sinh', width: 16, align: 'center' },
+      { header: 'Học hàm', key: 'hoc_ham', width: 14, align: 'center' },
+      { header: 'Học vị (*)', key: 'hoc_vi', width: 14, isYellow: true, align: 'center' },
+      { header: 'Chuyên môn', key: 'chuyen_mon', width: 30, align: 'left' },
+      { header: 'Năm tuyển dụng', key: 'nam_tuyen_dung', width: 16, align: 'center' },
+      { header: 'Ngày ký HĐLĐ', key: 'ngay_ky_hdld', width: 18, align: 'center' },
+      { header: 'Năm tốt nghiệp', key: 'nam_tot_nghiep', width: 16, align: 'center' },
+      { header: 'Năm CN PGS', key: 'nam_cn_pgs', width: 14, align: 'center' },
+      { header: 'Năm CN Giáo sư', key: 'nam_cn_gs', width: 14, align: 'center' },
+      { header: 'CCSP', key: 'ccsp', width: 14, align: 'center' },
+      { header: 'Anh văn', key: 'anh_van', width: 16, align: 'center' },
+      { header: 'Tin học', key: 'tin_hoc', width: 24, align: 'left' },
+      { header: 'Kiêm nhiệm', key: 'kiem_nhiem', width: 28, align: 'left' },
+      { header: 'Đơn vị kiêm nhiệm', key: 'don_vi_kiem_nhiem', width: 28, align: 'left' },
+    ];
+
+    const sampleRows = [
+      [
+        1, 'Nguyễn Văn An', 'Giảng viên cơ hữu', 'Khoa Công nghệ thông tin', 'TDU00123',
+        'Nam', '15/08/1985', '', 'Tiến sĩ', 'Khoa học máy tính & HTTT',
+        2018, '01/09/2019', 2007, '', '', 'Đã có', 'IELTS 6.5', 'Ứng dụng CNTT Nâng cao',
+        'Cố vấn học tập K16 CNTT', 'Khoa Công nghệ thông tin'
+      ],
+      [
+        2, 'Trần Thị Mai', 'Phó Trưởng Khoa', 'Khoa Dược - Điều dưỡng', 'TDU00245',
+        'Nữ', '20/11/1980', 'Phó Giáo sư', 'Tiến sĩ', 'Dược lý & Dược lâm sàng',
+        2014, '01/10/2015', 2002, 2021, '', 'Đã có', 'B2 Châu Âu', 'MOS Excel Expert',
+        'Chủ tịch HĐ Khoa học Khoa', 'Khoa Dược - Điều dưỡng'
+      ]
+    ];
+
+    const ws = createStyledWorksheet(
+      'MẪU NHẬP DỮ LIỆU DANH SÁCH CÁN BỘ GIẢNG VIÊN VÀ HỒ SƠ HỢP ĐỒNG (20 CỘT CHUẨN TDU)',
+      columns,
+      sampleRows,
+      undefined,
+      {
+        unitName: 'PHÒNG TỔ CHỨC - HÀNH CHÍNH',
+        subTitle: 'Năm học 2026 - 2027 (Cột màu vàng là thông tin bắt buộc)',
+        documentNo: 'BM-TDU-NS-01-IMPORT',
+      }
+    );
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, ws, 'Mau_Import_Nhan_Su');
+    saveWorkbookToFile(workbook, 'TDU_Mau_Import_Nhan_Su_20_Cot.xlsx');
   };
 
   // Clear all users from state and storage

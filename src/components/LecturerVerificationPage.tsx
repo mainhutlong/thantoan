@@ -470,14 +470,15 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
   const handleConfirmAll = () => {
     if (!selectedLecturer) return;
     const nowConfirmed = !areAllDetailsConfirmed;
+    const nowConfirmedStatus: 'confirmed' | 'pending' = nowConfirmed ? 'confirmed' : 'pending';
     const dateStr = new Date().toLocaleDateString('vi-VN');
     setCategoryStates((prev) => {
       const lecturerMap = prev[selectedLecturer.maGV] || ({} as Record<TabKey, CategoryApprovalStatus>);
-      const updated = {
+      const updated: Record<TabKey, CategoryApprovalStatus> = {
         ...lecturerMap,
-        dao_tao: { status: nowConfirmed ? 'confirmed' : 'pending', confirmedAt: nowConfirmed ? dateStr : undefined },
-        nckh: { status: nowConfirmed ? 'confirmed' : 'pending', confirmedAt: nowConfirmed ? dateStr : undefined },
-        cong_tac_khac: { status: nowConfirmed ? 'confirmed' : 'pending', confirmedAt: nowConfirmed ? dateStr : undefined },
+        dao_tao: { status: nowConfirmedStatus, confirmedAt: nowConfirmed ? dateStr : undefined },
+        nckh: { status: nowConfirmedStatus, confirmedAt: nowConfirmed ? dateStr : undefined },
+        cong_tac_khac: { status: nowConfirmedStatus, confirmedAt: nowConfirmed ? dateStr : undefined },
       };
       return {
         ...prev,

@@ -471,7 +471,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                           type="text"
                           value={profileData.gender}
                           onChange={(e) =>
-                            setProfileData({ ...profileData, gender: e.target.value })
+                            setProfileData({ ...profileData, gender: e.target.value as any })
                           }
                           className="w-full h-[30px] px-2.5 border border-slate-300 rounded-md text-[12.5px] text-slate-800 focus:outline-none focus:border-[#007b6e]"
                         />
