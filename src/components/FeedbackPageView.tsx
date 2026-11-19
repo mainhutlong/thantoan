@@ -91,9 +91,9 @@ export const FeedbackPageView: React.FC<FeedbackPageViewProps> = ({
   ];
 
   return (
-    <div className="flex-1 flex flex-col bg-[#f8fafc] text-slate-800 overflow-y-auto min-w-0">
+    <div className="flex-1 flex flex-col bg-[#f8fafc] text-slate-800 min-w-0 h-full overflow-hidden">
       {/* 1. Compact Toolbar: Filter Tabs + Search */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
         <div className="flex items-center flex-wrap gap-1.5">
           {statusTabs.map((tab) => {
             const isActive = filterStatus === tab.id;
@@ -136,7 +136,7 @@ export const FeedbackPageView: React.FC<FeedbackPageViewProps> = ({
 
       {/* 2. Inline Resolution Panel (Hiển thị trực tiếp khi bấm Xử lý, không dùng popup) */}
       {selectedFeedback && (
-        <div className="px-4 pt-3 pb-1">
+        <div className="px-4 pt-3 pb-1 shrink-0 max-h-[42vh] overflow-y-auto">
           <div className="bg-white rounded-xl border border-slate-200 border-l-4 border-l-[#005325] shadow-xs overflow-hidden">
             <div className="bg-slate-50/80 border-b border-slate-200/80 px-4 py-2 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12.5px]">
@@ -228,21 +228,21 @@ export const FeedbackPageView: React.FC<FeedbackPageViewProps> = ({
         </div>
       )}
 
-      {/* 3. Main Feedback Table */}
-      <div className="p-4 flex-1 overflow-x-auto">
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#f8fafc] text-[#1e293b] border-b border-slate-200 text-[12px] font-semibold h-[36px]">
-                <th className="w-[42px] px-2 text-center border-r border-slate-200">TT</th>
-                <th className="w-[86px] px-2.5 border-r border-slate-200">Mã GV</th>
-                <th className="px-3 border-r border-slate-200 min-w-[155px]">Họ tên giảng viên</th>
-                <th className="px-2.5 border-r border-slate-200 min-w-[165px]">Học phần / hoạt động</th>
-                <th className="px-2.5 border-r border-slate-200 w-[135px]">Loại phản hồi</th>
-                <th className="px-3 border-r border-slate-200 min-w-[240px]">Nội dung phản hồi</th>
-                <th className="px-2 text-center border-r border-slate-200 w-[115px]">Ngày gửi</th>
-                <th className="px-2.5 text-center border-r border-slate-200 w-[105px]">Trạng thái</th>
-                <th className="w-[88px] px-2 text-center">Thao tác</th>
+      {/* 3. Main Feedback Table: Thanh cuộn ngang luôn nằm ở đáy khung nhìn khi zoom */}
+      <div className="p-3 sm:p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 overflow-auto shadow-2xs">
+          <table className="w-full text-left border-collapse min-w-[1100px]">
+            <thead className="sticky top-0 z-10 bg-[#f8fafc] shadow-xs">
+              <tr className="bg-[#f8fafc] text-[#1e293b] border-b border-slate-200 text-[12px] font-semibold h-[38px]">
+                <th className="w-[48px] min-w-[48px] px-2 text-center border-r border-slate-200">TT</th>
+                <th className="w-[90px] min-w-[90px] px-2.5 border-r border-slate-200">Mã GV</th>
+                <th className="px-3 border-r border-slate-200 min-w-[160px]">Họ tên giảng viên</th>
+                <th className="px-2.5 border-r border-slate-200 min-w-[180px]">Học phần / hoạt động</th>
+                <th className="px-2.5 border-r border-slate-200 w-[140px] min-w-[140px]">Loại phản hồi</th>
+                <th className="px-3 border-r border-slate-200 min-w-[280px]">Nội dung phản hồi</th>
+                <th className="px-2 text-center border-r border-slate-200 w-[115px] min-w-[115px]">Ngày gửi</th>
+                <th className="px-2.5 text-center border-r border-slate-200 w-[110px] min-w-[110px]">Trạng thái</th>
+                <th className="w-[92px] min-w-[92px] px-2 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80 text-[12px] text-[#475569] font-normal">

@@ -1531,7 +1531,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
             <div className="flex-1 w-full max-w-full min-w-0 overflow-x-auto">
               {/* Tab 2: Giờ giảng (BẢNG THỐNG KÊ CÔNG TÁC GIẢNG DẠY - Theo mẫu hình ảnh chuẩn) */}
               {activeTab === 'dao_tao' && (
-                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-auto">
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <TeachingScheduleReport
                       maGV={selectedLecturer?.maGV}
@@ -1931,7 +1931,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
               {/* Tab 2: NCKH (BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC - Theo mẫu hình ảnh chuẩn) */}
               {activeTab === 'nckh' && (
-                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-auto">
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <ResearchScheduleReport
                       maGV={selectedLecturer?.maGV}
@@ -2081,7 +2081,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
 
               {/* Tab 3: Công tác khác */}
               {activeTab === 'cong_tac_khac' && (
-                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-hidden">
+                <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-auto">
                   <div className="w-full max-w-full min-w-0 p-2 sm:p-4 bg-slate-100/50">
                     <OtherDutiesScheduleReport
                       maGV={selectedLecturer?.maGV}

@@ -304,9 +304,9 @@ export const FinanceDisbursementPage: React.FC<FinanceDisbursementPageProps> = (
   }, [selectedVoucherItem, lecturerList]);
 
   return (
-    <div className="flex-1 bg-[#f8fafc] flex flex-col min-h-0 overflow-y-auto min-w-0">
+    <div className="flex-1 bg-[#f8fafc] flex flex-col min-h-0 h-full overflow-hidden min-w-0">
       {/* 1. Compact Toolbar: Summary Strip + Status Tabs + Actions */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2.5 space-y-2">
+      <div className="bg-white border-b border-slate-200 px-4 py-2.5 space-y-2 shrink-0">
         {/* Row 1: Summary Metrics + Action Buttons */}
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
           <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[12px]">
@@ -492,11 +492,11 @@ export const FinanceDisbursementPage: React.FC<FinanceDisbursementPageProps> = (
         </div>
       )}
 
-      {/* 3. Main Table */}
-      <div className="flex-1 p-3.5 overflow-x-auto">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-          <table className="w-full text-[12px] border-collapse">
-            <thead>
+      {/* 3. Main Table: Thanh cuộn ngang luôn ghim ở đáy khung nhìn khi zoom */}
+      <div className="flex-1 min-h-0 p-3 sm:p-3.5 flex flex-col overflow-hidden min-w-0">
+        <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-2xs overflow-auto">
+          <table className="w-full min-w-[1150px] text-[12px] border-collapse">
+            <thead className="sticky top-0 z-10 bg-[#f8fafc] shadow-xs">
               <tr className="bg-[#f8fafc] text-[#1e293b] font-semibold text-left border-b border-slate-200 h-[36px]">
                 <th className="w-[36px] px-2 text-center border-r border-slate-200">
                   <input
