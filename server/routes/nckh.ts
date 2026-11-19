@@ -312,7 +312,7 @@ router.post('/de-tai', async (req, res) => {
 router.post('/batch-import', async (req, res) => {
   const connection = await pool.getConnection();
   try {
-    const { dot_id = 1, records = [] } = req.body;
+    const { dot_id = 1, records = [], nckh_tab } = req.body;
     if (!Array.isArray(records) || records.length === 0) {
       return res.status(400).json({ success: false, message: 'Danh sách records trống' });
     }
@@ -338,23 +338,11 @@ router.post('/batch-import', async (req, res) => {
       const donGia = Number(r.donGiaTiet) || 180000;
       const thanhTien = Number(r.tongTienThuLao) || (gioQC * donGia);
 
-      if (text.includes('seminar') || text.includes('hội thảo') || text.includes('tọa đàm')) {
-        await connection.query(
-          `INSERT INTO nckh_seminar
-           (dot_id, stt_file, ma_giang_vien, ho_ten, hoc_vi, don_vi, ten_seminar, cap_to_chuc, gio_quy_doi, don_gia, thanh_tien, file_minh_chung_url, ten_file_minh_chung, dung_luong_file)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [dot_id, stt, maGV, hoTen, hocVi, donVi, ten, theLoai || 'Cấp Khoa', gioQC, donGia, thanhTien, r.fileMinhChungUrl || null, r.tenFileMinhChung || null, r.dungLuongFile || null]
-        );
-        insertedSM++;
-      } else if (text.includes('đề tài') || text.includes('luận văn') || text.includes('thạc sĩ') || (!text.includes('bài báo') && !text.includes('scopus'))) {
-        await connection.query(
-          `INSERT INTO nckh_de_tai
-           (dot_id, stt_file, ma_giang_vien, ho_ten, hoc_vi, don_vi, ten_de_tai, cap_de_tai, vai_tro_de_tai, gio_quy_doi, don_gia, thanh_tien, file_minh_chung_url, ten_file_minh_chung, dung_luong_file)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [dot_id, stt, maGV, hoTen, hocVi, donVi, ten, theLoai || 'Cấp Cơ sở', 'Chủ nhiệm', gioQC, donGia, thanhTien, r.fileMinhChungUrl || null, r.tenFileMinhChung || null, r.dungLuongFile || null]
-        );
-        insertedDT++;
-      } else {
+      const isSeminar = nckh_tab === 'seminar' || text.includes('seminar') || text.includes('hội thảo') || text.includes('tọa đàm');
+      const isDeTai = nckh_tab === 'de_tai' || text.includes('đề tài') || text.includes('luận văn') || text.includes('thạc sĩ') || text.includes('dự án nckh');
+      const isBaiBao = nckh_tab === 'bai_bao' || text.includes('bài báo') || text.includes('scopus') || text.includes('isi') || (!isSeminar && !isDeTai);
+
+      if (nckh_tab === 'bai_bao' || (isBaiBao && nckh_tab !== 'seminar' && nckh_tab !== 'de_tai')) {
         await connection.query(
           `INSERT INTO nckh_bai_bao
            (dot_id, stt_file, ma_giang_vien, ho_ten, hoc_vi, don_vi, ten_bai_bao, loai_tap_chi, gio_quy_doi, don_gia, thanh_tien, file_minh_chung_url, ten_file_minh_chung, dung_luong_file)
@@ -362,6 +350,22 @@ router.post('/batch-import', async (req, res) => {
           [dot_id, stt, maGV, hoTen, hocVi, donVi, ten, theLoai || 'Tạp chí Khoa học', gioQC, donGia, thanhTien, r.fileMinhChungUrl || null, r.tenFileMinhChung || null, r.dungLuongFile || null]
         );
         insertedBB++;
+      } else if (nckh_tab === 'seminar' || isSeminar) {
+        await connection.query(
+          `INSERT INTO nckh_seminar
+           (dot_id, stt_file, ma_giang_vien, ho_ten, hoc_vi, don_vi, ten_seminar, cap_to_chuc, gio_quy_doi, don_gia, thanh_tien, file_minh_chung_url, ten_file_minh_chung, dung_luong_file)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [dot_id, stt, maGV, hoTen, hocVi, donVi, ten, theLoai || 'Cấp Khoa', gioQC, donGia, thanhTien, r.fileMinhChungUrl || null, r.tenFileMinhChung || null, r.dungLuongFile || null]
+        );
+        insertedSM++;
+      } else {
+        await connection.query(
+          `INSERT INTO nckh_de_tai
+           (dot_id, stt_file, ma_giang_vien, ho_ten, hoc_vi, don_vi, ten_de_tai, cap_de_tai, vai_tro_de_tai, gio_quy_doi, don_gia, thanh_tien, file_minh_chung_url, ten_file_minh_chung, dung_luong_file)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [dot_id, stt, maGV, hoTen, hocVi, donVi, ten, theLoai || 'Cấp Cơ sở', 'Chủ nhiệm', gioQC, donGia, thanhTien, r.fileMinhChungUrl || null, r.tenFileMinhChung || null, r.dungLuongFile || null]
+        );
+        insertedDT++;
       }
     }
 
@@ -384,18 +388,27 @@ router.post('/batch-import', async (req, res) => {
  * DELETE /api/nckh/clear
  * Xóa sạch toàn bộ dữ liệu 3 bảng NCKH để chuẩn bị import mới
  */
-router.delete('/clear', async (_req, res) => {
+router.delete('/clear', async (req, res) => {
   const connection = await pool.getConnection();
   try {
+    const { category } = req.query;
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
-    await connection.query('TRUNCATE TABLE nckh_bai_bao');
-    await connection.query('TRUNCATE TABLE nckh_seminar');
-    await connection.query('TRUNCATE TABLE nckh_de_tai');
+    if (category === 'bai_bao' || category === 'bai-bao') {
+      await connection.query('TRUNCATE TABLE nckh_bai_bao');
+    } else if (category === 'seminar') {
+      await connection.query('TRUNCATE TABLE nckh_seminar');
+    } else if (category === 'de_tai' || category === 'de-tai') {
+      await connection.query('TRUNCATE TABLE nckh_de_tai');
+    } else {
+      await connection.query('TRUNCATE TABLE nckh_bai_bao');
+      await connection.query('TRUNCATE TABLE nckh_seminar');
+      await connection.query('TRUNCATE TABLE nckh_de_tai');
+    }
     await connection.query('SET FOREIGN_KEY_CHECKS = 1');
 
     res.json({
       success: true,
-      message: 'Đã xóa sạch toàn bộ dữ liệu 3 bảng NCKH (nckh_bai_bao, nckh_seminar, nckh_de_tai) trong MySQL.',
+      message: 'Đã xóa dữ liệu bảng NCKH thành công trong MySQL.',
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });

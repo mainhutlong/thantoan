@@ -851,6 +851,35 @@ export const validatePersonnelBySelectedUnit = (
   // 2. Tra cứu nhân sự trong danh bạ chuẩn TDU
   const personnel = findPersonnelByCode(cleanMa);
 
+  // 3. Nếu đơn vị quản lý là Khối Phòng ban / Khối Trung tâm chức năng quản lý toàn trường
+  // (ví dụ: Phòng QLKH quản lý NCKH, Phòng Đào tạo quản lý giờ giảng, TT Khảo thí quản lý thi cử, Phòng Tuyển sinh...)
+  // Các giảng viên thuộc các Khoa tham gia hoạt động do phòng ban chức năng này quản lý là HOÀN TOÀN HỢP LỆ!
+  const isManagingFunctionalDept =
+    selectedUnit.category === 'khoi_phong_ban' ||
+    selectedUnit.category === 'khoi_tt_ban' ||
+    selectedUnit.category === 'toan_truong' ||
+    Boolean(selectedUnit.mappedDeptUnit && selectedUnit.mappedDeptUnit !== 'all') ||
+    ['pb_qlkh_htqt', 'pb_dao_tao', 'tt_khao_thi_dbcl', 'pb_tuyen_sinh_truyen_thong', 'pb_ctct_qlsv'].includes(selectedUnit.id);
+
+  if (isManagingFunctionalDept) {
+    return {
+      isValid: true,
+      rowNumber,
+      maNhanSu: cleanMa,
+      hoTen: personnel?.hoTen || cleanName,
+      donViTrongFile: cleanFileUnit || personnel?.donVi || 'Toàn trường',
+      donViThucTe: personnel?.donVi || cleanFileUnit || 'Đơn vị TDU',
+      selectedUnitName,
+      reason: `Hợp lệ (Nhân sự thuộc ${personnel?.donVi || cleanFileUnit || 'TDU'} do ${selectedUnitName} quản lý)`,
+      personnel: personnel || {
+        maNhanSu: cleanMa,
+        hoTen: cleanName,
+        donViId: 'tdu',
+        donVi: cleanFileUnit || 'Trường Đại học Tây Đô',
+      },
+    };
+  }
+
   const normSelected = normalizeOrgString(selectedUnit.name);
   const normSelectedId = normalizeOrgString(selectedUnit.id);
   const normFileUnit = normalizeOrgString(cleanFileUnit);

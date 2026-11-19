@@ -949,12 +949,21 @@ export default function App() {
       ) {
         if (selectedDepartment === 'nckh') {
           try {
-            await fetch('/api/nckh/clear', { method: 'DELETE' });
+            const clearUrl = nckhTab !== 'all' ? `/api/nckh/clear?category=${nckhTab}` : '/api/nckh/clear';
+            await fetch(clearUrl, { method: 'DELETE' });
           } catch (err) {
             console.warn('Lỗi khi xóa bảng NCKH DB:', err);
           }
         }
-        setTeachingList((prev) => prev.filter((r) => r.phongBanQuanLy !== selectedDepartment));
+        setTeachingList((prev) => {
+          if (selectedDepartment === 'nckh' && nckhTab !== 'all') {
+            return prev.filter((r) => {
+              if (r.phongBanQuanLy !== 'nckh') return true;
+              return !matchesNckhCategory(r, nckhTab);
+            });
+          }
+          return prev.filter((r) => r.phongBanQuanLy !== selectedDepartment);
+        });
         setSelectedIds([]);
       }
     } else {
@@ -983,12 +992,13 @@ export default function App() {
     if (selectedDepartment === 'nckh') {
       try {
         if (!isAppend) {
-          await fetch('/api/nckh/clear', { method: 'DELETE' });
+          const clearUrl = nckhTab !== 'all' ? `/api/nckh/clear?category=${nckhTab}` : '/api/nckh/clear';
+          await fetch(clearUrl, { method: 'DELETE' });
         }
         await fetch('/api/nckh/batch-import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ records }),
+          body: JSON.stringify({ records, nckh_tab: nckhTab }),
         });
       } catch (err) {
         console.warn('Lỗi đồng bộ DB NCKH khi import:', err);

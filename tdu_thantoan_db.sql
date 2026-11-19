@@ -1462,7 +1462,7 @@ CREATE TABLE IF NOT EXISTS `thanh_toan_cong_tac_khac` (
 -- 6.1. View hợp nhất toàn bộ Nghiên cứu khoa học theo đợt
 CREATE OR REPLACE VIEW `v_nckh_tong_hop` AS
 SELECT 
-  'BAI_BAO' AS `loai_hoat_dong`,
+  _utf8mb4'BAI_BAO' COLLATE utf8mb4_unicode_ci AS `loai_hoat_dong`,
   `id` AS `ban_ghi_id`,
   `dot_id`,
   `import_id`,
@@ -1486,7 +1486,7 @@ SELECT
 FROM `nckh_bai_bao`
 UNION ALL
 SELECT 
-  'SEMINAR' AS `loai_hoat_dong`,
+  _utf8mb4'SEMINAR' COLLATE utf8mb4_unicode_ci AS `loai_hoat_dong`,
   `id` AS `ban_ghi_id`,
   `dot_id`,
   `import_id`,
@@ -1510,7 +1510,7 @@ SELECT
 FROM `nckh_seminar`
 UNION ALL
 SELECT 
-  'DE_TAI' AS `loai_hoat_dong`,
+  _utf8mb4'DE_TAI' COLLATE utf8mb4_unicode_ci AS `loai_hoat_dong`,
   `id` AS `ban_ghi_id`,
   `dot_id`,
   `import_id`,

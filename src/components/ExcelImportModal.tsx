@@ -205,16 +205,16 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
 
       const colMaGV = getCol(['magv', 'manhansu', 'magiangvien', 'ma', 'manhanvien'], 1);
       const colHoTen = getCol(['hoten', 'hovaten', 'giangvien', 'tengiangvien'], 2);
-      const colMaLop = getCol(['lop', 'malophocphan', 'malop', 'lophp', 'madetai', 'soissn'], 4);
+      const colMaLop = getCol(['lop', 'malophocphan', 'malop', 'lophp', 'madetai', 'soissn', 'mabaibao', 'maseminar'], -1);
       const colThucGiang = getCol(
         ['sogiothucgiang', 'thucgiang', 'giothucgiang', 'sogioquydoi', 'gioquydoi', 'tietquydoi', 'sogio', 'sotietqcquydoi'],
-        8
+        mappedDepartmentUnit === 'nckh' ? 6 : 8
       );
       const colLT = getCol(['tietlythuyet', 'tietlt', 'lythuyet', 'lt'], -1);
       const colTH = getCol(['tietthuchanh', 'tietth', 'thuchanh', 'th'], -1);
       const colMaCV = getCol(['macv', 'macongviec', 'manhiemvu'], -1);
       const colSoLuong = getCol(['soluong', 'soluongsv', 'sosinhvien', 'songay', 'soluot', 'sobai', 'sode'], -1);
-      const colKhoa = getCol(['donvi', 'khoabomon', 'khoa', 'bomon', 'phongban'], 13);
+      const colKhoa = getCol(['donvi', 'khoabomon', 'khoa', 'bomon', 'phongban'], mappedDepartmentUnit === 'nckh' ? 4 : 13);
 
       const unitErrors: PersonnelRowValidationResult[] = [];
       const generalErrors: ValidationError[] = [];
@@ -225,7 +225,10 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         const rawMaGV = String(row[colMaGV] || '').trim();
         const rawHoTen = stripAcademicTitle(String(row[colHoTen] || '').trim());
         const rawKhoa = colKhoa !== -1 && row[colKhoa] ? String(row[colKhoa]).trim() : '';
-        const maLop = String(row[colMaLop] || `HP_${idx + 1}`).trim();
+        const maLop = String(
+          (colMaLop !== -1 && row[colMaLop]) ||
+            (mappedDepartmentUnit === 'nckh' ? `NCKH_${idx + 1}` : `HP_${idx + 1}`)
+        ).trim();
         const thucGiang = Number(row[colThucGiang]) || 0;
         const lt = Number(colLT !== -1 ? row[colLT] : 0) || 0;
         const th = Number(colTH !== -1 ? row[colTH] : 0) || 0;
@@ -553,7 +556,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       ],
       mappedDepartmentUnit === 'nckh' ? 5 : 3
     );
-    const colMaLop = getCol(['lop', 'malophocphan', 'malop', 'lophp', 'madetai', 'soissn'], 4);
+    const colMaLop = getCol(['lop', 'malophocphan', 'malop', 'lophp', 'madetai', 'soissn', 'mabaibao', 'maseminar'], -1);
     const colTheLoaiNCKH = getCol(['theloainckh', 'theloai', 'loaihinhnckh', 'loaihoatdong', 'loai'], -1);
     const colGioQCNCKH = getCol(
       ['sogioquydoi', 'gioquydoi', 'sotietquydoi', 'tietquydoi', 'sogioqcnckh', 'soqc', 'sotietqcquydoi', 'sogio', 'sotiet'],
@@ -612,7 +615,18 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
 
       const hocPhan = finalTenHocPhan;
       const maLop = String(
-        vals[colMaLop] || (rawMaCV ? `${rawMaCV}_${index + 1}` : `${mappedDepartmentUnit.toUpperCase()}_${100 + index}_TDU`)
+        (colMaLop !== -1 && vals[colMaLop]) ||
+          (mappedDepartmentUnit === 'nckh'
+            ? nckhTab === 'bai_bao'
+              ? `BB_${index + 1}`
+              : nckhTab === 'seminar'
+              ? `SM_${index + 1}`
+              : nckhTab === 'de_tai'
+              ? `DT_${index + 1}`
+              : `NCKH_${index + 1}`
+            : rawMaCV
+            ? `${rawMaCV}_${index + 1}`
+            : `${mappedDepartmentUnit.toUpperCase()}_${100 + index}_TDU`)
       ).trim();
 
       const rawPhanLoai = normalizeStr(vals[colPhanLoai]);
