@@ -835,7 +835,7 @@ export const DataTable: React.FC<DataTableProps> = ({
       {/* Scrollable table container */}
       <div
         id="main-datatable-scroll-container"
-        className="w-full min-w-0 overflow-auto relative border-t border-b border-slate-200 max-h-full"
+        className="w-full min-w-0 flex-1 min-h-0 overflow-auto relative border-t border-b border-slate-200"
       >
         <table className="w-max min-w-full text-left border-separate border-spacing-0 font-sans">
           {/* Table Header: 3 cột cố định (TT, Mã GV, Họ và tên) + Các cột số liệu tùy theo Chuyên mục */}

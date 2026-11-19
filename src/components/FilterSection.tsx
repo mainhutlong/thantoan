@@ -52,12 +52,12 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   };
 
   return (
-    <div className="bg-white border-b border-[#e2e8f0] px-4 py-3 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      {/* Exactly 5 requested filter fields: Khoa, Năm học, Học kỳ, Tên, Môn giảng dạy + Nút Tìm kiếm */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-12 gap-3 text-[12.5px] items-end font-normal">
+    <div className="bg-white border-b border-[#e2e8f0] px-3 sm:px-4 py-2.5 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      {/* Exactly 5 requested filter fields: Khoa, Năm học, Học kỳ, Tên, Môn giảng dạy + Nút Tìm kiếm & Đặt lại */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-2.5 text-[12.5px] items-end font-normal">
         {/* 1. Khoa / Bộ môn */}
-        <div className="flex flex-col gap-1 xl:col-span-3">
-          <label className="text-slate-700 text-[12px] font-medium">
+        <div className="flex flex-col gap-1 xl:col-span-3 min-w-0">
+          <label className="text-slate-700 text-[12px] font-medium truncate">
             Khoa / Bộ môn
           </label>
           <div className="relative">
@@ -85,15 +85,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 2. Năm học */}
-        <div className="flex flex-col gap-1 xl:col-span-2">
-          <label className="text-slate-700 text-[12px] font-medium">
+        <div className="flex flex-col gap-1 xl:col-span-2 min-w-0">
+          <label className="text-slate-700 text-[12px] font-medium truncate">
             Năm học
           </label>
           <div className="relative">
             <select
               value={filters.academicYear}
               onChange={(e) => handleChange('academicYear', e.target.value)}
-              className="w-full h-[34px] px-2.5 pr-7 border border-[#cbd5e1] rounded-lg bg-white text-slate-800 text-[12.5px] appearance-none focus:outline-none focus:border-[#005325] focus:ring-1 focus:ring-[#005325] transition-colors font-normal"
+              className="w-full h-[34px] px-2.5 pr-7 border border-[#cbd5e1] rounded-lg bg-white text-slate-800 text-[12.5px] appearance-none focus:outline-none focus:border-[#005325] focus:ring-1 focus:ring-[#005325] transition-colors font-normal truncate"
             >
               <option value="all">-- Tất cả năm học --</option>
               <option value="2026 - 2027">2026 - 2027 (Hiện hành)</option>
@@ -111,17 +111,17 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 3. Học kỳ */}
-        <div className="flex flex-col gap-1 xl:col-span-2">
-          <label className="text-slate-700 text-[12px] font-medium">
+        <div className="flex flex-col gap-1 xl:col-span-1 min-w-0">
+          <label className="text-slate-700 text-[12px] font-medium truncate">
             Học kỳ
           </label>
           <div className="relative">
             <select
               value={filters.semester}
               onChange={(e) => handleChange('semester', e.target.value)}
-              className="w-full h-[34px] px-2.5 pr-7 border border-[#cbd5e1] rounded-lg bg-white text-slate-800 text-[12.5px] appearance-none focus:outline-none focus:border-[#005325] focus:ring-1 focus:ring-[#005325] transition-colors font-normal"
+              className="w-full h-[34px] px-2.5 pr-7 border border-[#cbd5e1] rounded-lg bg-white text-slate-800 text-[12.5px] appearance-none focus:outline-none focus:border-[#005325] focus:ring-1 focus:ring-[#005325] transition-colors font-normal truncate"
             >
-              <option value="all">-- Tất cả học kỳ --</option>
+              <option value="all">-- Tất cả --</option>
               <option value="Học kỳ 1">Học kỳ 1</option>
               <option value="Học kỳ 2">Học kỳ 2</option>
               <option value="Học kỳ Hè">Học kỳ Hè</option>
@@ -135,8 +135,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 4. Tên Giảng viên */}
-        <div className="flex flex-col gap-1 xl:col-span-2">
-          <label className="text-slate-700 text-[12px] font-medium">
+        <div className="flex flex-col gap-1 xl:col-span-2 min-w-0">
+          <label className="text-slate-700 text-[12px] font-medium truncate">
             Họ tên Giảng viên
           </label>
           <input
@@ -150,8 +150,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 5. Môn giảng dạy */}
-        <div className="flex flex-col gap-1 xl:col-span-2">
-          <label className="text-slate-700 text-[12px] font-medium">
+        <div className="flex flex-col gap-1 xl:col-span-2 min-w-0">
+          <label className="text-slate-700 text-[12px] font-medium truncate">
             Môn giảng dạy
           </label>
           <input
@@ -165,13 +165,13 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* Action Buttons: Tìm kiếm & Đặt lại */}
-        <div className="flex items-center gap-1.5 xl:col-span-1 min-w-[110px]">
+        <div className="flex items-center gap-1.5 xl:col-span-2 min-w-0 w-full">
           <button
             onClick={onSearch}
-            className="flex-1 h-[34px] bg-[#005325] hover:bg-[#00421e] text-white font-medium text-[12.5px] rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer px-2"
+            className="flex-1 h-[34px] bg-[#005325] hover:bg-[#00421e] text-white font-medium text-[12.5px] rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer px-2 min-w-0"
             title="Tìm kiếm"
           >
-            <Search className="w-3.5 h-3.5" />
+            <Search className="w-3.5 h-3.5 shrink-0" />
             <span className="whitespace-nowrap">Tìm kiếm</span>
           </button>
           <button
@@ -179,7 +179,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             className="h-[34px] w-[34px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Đặt lại bộ lọc"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
           </button>
         </div>
       </div>

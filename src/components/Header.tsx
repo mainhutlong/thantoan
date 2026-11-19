@@ -367,7 +367,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* RIGHT: 1. Phóng to / Thu nhỏ - 2. Icon Chấm hỏi - 3. Icon Thông báo - 4. Hồ sơ cá nhân */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Bộ điều khiển Phóng to / Thu nhỏ giao diện */}
         <div className="relative" ref={zoomMenuRef}>
           <div className="flex items-center bg-slate-100 hover:bg-slate-200/80 rounded-xl p-1 border border-slate-200 text-slate-700 transition-colors">

@@ -1363,7 +1363,7 @@ export const LecturerVerificationPage: React.FC<LecturerVerificationPageProps> =
       {/* ========================================================================= */}
       <div className="flex-1 w-full max-w-full min-w-0 flex flex-col min-h-0 bg-white">
           <div className="flex-1 w-full max-w-full min-w-0 flex flex-col overflow-hidden">
-            <div className="flex-1 w-full max-w-full min-w-0 overflow-x-auto">
+            <div className="flex-1 w-full max-w-full min-w-0 overflow-auto">
               {/* Tab 2: Giờ giảng (BẢNG THỐNG KÊ CÔNG TÁC GIẢNG DẠY - Theo mẫu hình ảnh chuẩn) */}
               {activeTab === 'dao_tao' && (
                 <div className="w-full max-w-full min-w-0 flex flex-col overflow-x-auto">

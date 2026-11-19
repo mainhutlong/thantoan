@@ -1066,7 +1066,7 @@ export default function App() {
                   Chi tiết bảng kê Nghiên cứu Khoa học — Mã GV: {selectedResearchScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <ResearchScheduleReport
                   maGV={selectedResearchScheduleMaGV}
                   records={teachingList}
@@ -1097,7 +1097,7 @@ export default function App() {
                   Chi tiết bảng kê Coi thi - Chấm thi - Ra đề — Mã GV: {selectedExamScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <ExamScheduleReport
                   maGV={selectedExamScheduleMaGV}
                   records={teachingList}
@@ -1128,7 +1128,7 @@ export default function App() {
                   Chi tiết bảng kê Hướng dẫn & Chấm Đồ án / KLTN — Mã GV: {selectedThesisScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <ThesisScheduleReport
                   maGV={selectedThesisScheduleMaGV}
                   records={teachingList}
@@ -1159,7 +1159,7 @@ export default function App() {
                   Chi tiết bảng kê Cố vấn học tập & Quản lý lớp — Mã GV: {selectedAdvisorScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <AdvisorScheduleReport
                   maGV={selectedAdvisorScheduleMaGV}
                   records={teachingList}
@@ -1190,7 +1190,7 @@ export default function App() {
                   Chi tiết bảng kê Tư vấn Tuyển sinh & Hướng nghiệp — Mã GV: {selectedAdmissionScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <AdmissionScheduleReport
                   maGV={selectedAdmissionScheduleMaGV}
                   records={teachingList}
@@ -1221,7 +1221,7 @@ export default function App() {
                   Chi tiết bảng kê Công tác khác (40 mục) — Mã GV: {selectedOtherDutiesScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <OtherDutiesScheduleReport
                   maGV={selectedOtherDutiesScheduleMaGV}
                   records={teachingList}
@@ -1244,7 +1244,7 @@ export default function App() {
                   Chi tiết bảng kê Giờ giảng dạy — Mã GV: {selectedScheduleMaGV}
                 </span>
               </div>
-              <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden p-2">
+              <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
                 <TeachingScheduleReport
                   maGV={selectedScheduleMaGV}
                   records={teachingList}
