@@ -54,9 +54,9 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   return (
     <div className="bg-white border-b border-[#e2e8f0] px-3 sm:px-4 py-2.5 select-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
       {/* Exactly 5 requested filter fields: Khoa, Năm học, Học kỳ, Tên, Môn giảng dạy + Nút Tìm kiếm & Đặt lại */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-2.5 text-[12.5px] items-end font-normal">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-12 gap-2.5 text-[12.5px] items-end font-normal">
         {/* 1. Khoa / Bộ môn */}
-        <div className="flex flex-col gap-1 xl:col-span-3 min-w-0">
+        <div className="flex flex-col gap-1 2xl:col-span-3 min-w-0">
           <label className="text-slate-700 text-[12px] font-medium truncate">
             Khoa / Bộ môn
           </label>
@@ -85,7 +85,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 2. Năm học */}
-        <div className="flex flex-col gap-1 xl:col-span-2 min-w-0">
+        <div className="flex flex-col gap-1 2xl:col-span-2 min-w-0">
           <label className="text-slate-700 text-[12px] font-medium truncate">
             Năm học
           </label>
@@ -111,7 +111,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 3. Học kỳ */}
-        <div className="flex flex-col gap-1 xl:col-span-1 min-w-0">
+        <div className="flex flex-col gap-1 2xl:col-span-1 min-w-0">
           <label className="text-slate-700 text-[12px] font-medium truncate">
             Học kỳ
           </label>
@@ -135,7 +135,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 4. Tên Giảng viên */}
-        <div className="flex flex-col gap-1 xl:col-span-2 min-w-0">
+        <div className="flex flex-col gap-1 2xl:col-span-2 min-w-0">
           <label className="text-slate-700 text-[12px] font-medium truncate">
             Họ tên Giảng viên
           </label>
@@ -150,7 +150,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* 5. Môn giảng dạy */}
-        <div className="flex flex-col gap-1 xl:col-span-2 min-w-0">
+        <div className="flex flex-col gap-1 2xl:col-span-2 min-w-0">
           <label className="text-slate-700 text-[12px] font-medium truncate">
             Môn giảng dạy
           </label>
@@ -165,7 +165,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
 
         {/* Action Buttons: Tìm kiếm & Đặt lại */}
-        <div className="flex items-center gap-1.5 xl:col-span-2 min-w-0 w-full">
+        <div className="flex items-center gap-1.5 2xl:col-span-2 min-w-0 w-full">
           <button
             onClick={onSearch}
             className="flex-1 h-[34px] bg-[#005325] hover:bg-[#00421e] text-white font-medium text-[12.5px] rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer px-2 min-w-0"
