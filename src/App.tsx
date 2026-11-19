@@ -1063,7 +1063,7 @@ export default function App() {
                   <span>Quay lại danh sách</span>
                 </button>
                 <span className="text-[12.5px] font-bold text-[#005325]">
-                  Chi tiết bảng kê Nghiên cứu Khoa học — Mã GV: {selectedResearchScheduleMaGV}
+                  Chi tiết bảng kê {nckhTab === 'bai_bao' ? 'Bài báo khoa học' : nckhTab === 'seminar' ? 'Báo cáo Seminar & Hội thảo' : nckhTab === 'de_tai' ? 'Đề tài Nghiên cứu khoa học' : 'Nghiên cứu Khoa học'} — Mã GV: {selectedResearchScheduleMaGV}
                 </span>
               </div>
               <div className="flex-1 w-full max-w-full min-w-0 overflow-auto p-2">
@@ -1071,6 +1071,8 @@ export default function App() {
                   maGV={selectedResearchScheduleMaGV}
                   records={teachingList}
                   academicYear={filters.academicYear}
+                  nckhTab={nckhTab}
+                  onSelectNckhTab={setNckhTab}
                   onClose={() => setSelectedResearchScheduleMaGV(null)}
                   onSaveRecords={(updated) => {
                     setTeachingList((prev) => {

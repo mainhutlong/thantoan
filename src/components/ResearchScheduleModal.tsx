@@ -13,6 +13,8 @@ interface ResearchScheduleModalProps {
   onSelectLecturer?: (maGV: string) => void;
   onSaveRecords?: (updatedRecords: TeachingRecord[]) => void;
   academicYear?: string;
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai';
+  onSelectNckhTab?: (tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => void;
 }
 
 export const ResearchScheduleModal: React.FC<ResearchScheduleModalProps> = ({
@@ -24,6 +26,8 @@ export const ResearchScheduleModal: React.FC<ResearchScheduleModalProps> = ({
   onSelectLecturer,
   onSaveRecords,
   academicYear = '2025 - 2026',
+  nckhTab = 'all',
+  onSelectNckhTab,
 }) => {
   if (!isOpen) return null;
 
@@ -64,6 +68,8 @@ export const ResearchScheduleModal: React.FC<ResearchScheduleModalProps> = ({
               isModal={true}
               onClose={onClose}
               academicYear={academicYear}
+              nckhTab={nckhTab}
+              onSelectNckhTab={onSelectNckhTab}
             />
           </div>
         </div>

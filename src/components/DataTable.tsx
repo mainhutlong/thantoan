@@ -886,7 +886,15 @@ export const DataTable: React.FC<DataTableProps> = ({
                     className="sticky top-0 z-10 min-w-[150px] px-3 text-center border-b border-r border-[#cbd5e1] bg-[#f8fafc] cursor-pointer hover:bg-slate-200/60 transition-colors text-[#1e293b] font-semibold whitespace-nowrap"
                   >
                     <div className="flex items-center justify-center gap-1">
-                      <span>Tổng số bài</span>
+                      <span>
+                        {nckhTab === 'bai_bao'
+                          ? 'Số bài báo'
+                          : nckhTab === 'seminar'
+                          ? 'Số báo cáo Seminar'
+                          : nckhTab === 'de_tai'
+                          ? 'Số đề tài NCKH'
+                          : 'Tổng số công trình'}
+                      </span>
                       <ArrowUpDown className="w-3 h-3 text-[#1e293b] shrink-0" />
                     </div>
                   </th>
@@ -1616,7 +1624,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                         {/* Col 4 (NCKH): Tổng số bài */}
                         <td className="px-3 text-center border-b border-r border-[#f1f5f9] whitespace-nowrap">
                           <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-mono text-[12.5px] font-semibold min-w-[36px]">
-                            {lecturer.tongSoBaiNCKH} bài
+                            {lecturer.tongSoBaiNCKH} {nckhTab === 'bai_bao' ? 'bài báo' : nckhTab === 'seminar' ? 'báo cáo' : nckhTab === 'de_tai' ? 'đề tài' : 'công trình'}
                           </span>
                         </td>
 
@@ -1846,7 +1854,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                 {isResearch ? (
                   <>
                     <td className="px-3 text-center font-mono font-bold text-blue-700 border-r border-[#cbd5e1] whitespace-nowrap text-[12.5px]">
-                      {grandTotals.tongSoBaiNCKH} bài
+                      {grandTotals.tongSoBaiNCKH} {nckhTab === 'bai_bao' ? 'bài báo' : nckhTab === 'seminar' ? 'báo cáo' : nckhTab === 'de_tai' ? 'đề tài' : 'công trình'}
                     </td>
                     <td className="px-3 text-right font-mono font-bold text-[#005325] border-r border-[#cbd5e1] whitespace-nowrap tabular-nums text-[13px]">
                       {grandTotals.tongSoTietQuyDoiNCKH.toFixed(1)} tiết

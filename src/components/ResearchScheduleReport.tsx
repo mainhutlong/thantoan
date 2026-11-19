@@ -24,6 +24,8 @@ export interface ResearchScheduleRow {
   tt: number;
   noiDung: string;
   theLoai: string;
+  loaiHoatDong?: string;
+  maLopHocPhan?: string;
   soGioQuyChuan: string | number;
   xacNhanQLKH: string;
   fileMinhChungUrl?: string;
@@ -47,6 +49,8 @@ interface ResearchScheduleReportProps {
   selectedRowIds?: string[];
   onToggleSelectRow?: (row: FeedbackRowInfo) => void;
   onSelectAllRows?: (rows: FeedbackRowInfo[], selectAll: boolean) => void;
+  nckhTab?: 'all' | 'bai_bao' | 'seminar' | 'de_tai';
+  onSelectNckhTab?: (tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => void;
 }
 
 export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
@@ -65,6 +69,8 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   selectedRowIds = [],
   onToggleSelectRow,
   onSelectAllRows,
+  nckhTab = 'all',
+  onSelectNckhTab,
 }) => {
   // Find lecturer info
   const lecturerRecords = useMemo(() => {
@@ -91,22 +97,61 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const [internalViewMode, setInternalViewMode] = useState<'excel_sheet' | 'compact_table'>('excel_sheet');
-  const [activeNckhTab, setActiveNckhTab] = useState<'all' | 'bai_bao' | 'seminar' | 'de_tai'>('all');
+  const [activeNckhTab, setActiveNckhTab] = useState<'all' | 'bai_bao' | 'seminar' | 'de_tai'>(nckhTab || 'all');
+
+  useEffect(() => {
+    if (nckhTab) {
+      setActiveNckhTab(nckhTab);
+    }
+  }, [nckhTab]);
 
   const isRowMatchingCategory = (row: ResearchScheduleRow, tab: 'all' | 'bai_bao' | 'seminar' | 'de_tai') => {
     if (tab === 'all') return true;
-    const text = `${row.noiDung} ${row.theLoai}`.toLowerCase();
+    const text = `${row.noiDung} ${row.theLoai} ${row.loaiHoatDong || ''} ${row.maLopHocPhan || ''}`.toLowerCase();
     if (tab === 'bai_bao') {
-      return text.includes('bài báo') || text.includes('scopus') || text.includes('isi') || text.includes('tạp chí');
+      return text.includes('bài báo') || text.includes('scopus') || text.includes('isi') || text.includes('tạp chí') || text.includes('paper');
     }
     if (tab === 'seminar') {
       return text.includes('seminar') || text.includes('hội thảo') || text.includes('tọa đàm') || text.includes('chuyên đề');
     }
     if (tab === 'de_tai') {
-      return text.includes('đề tài') || text.includes('luận văn') || text.includes('thạc sĩ') || (!text.includes('bài báo') && !text.includes('seminar'));
+      return text.includes('đề tài') || text.includes('luận văn') || text.includes('thạc sĩ') || text.includes('tiến sĩ') || text.includes('sáng kiến') || (!text.includes('bài báo') && !text.includes('seminar') && !text.includes('hội thảo'));
     }
     return true;
   };
+
+  const tabInfo = useMemo(() => {
+    switch (activeNckhTab) {
+      case 'bai_bao':
+        return {
+          title: 'BẢNG THỐNG KÊ BÀI BÁO KHOA HỌC',
+          badgeTitle: 'Bài báo khoa học (Scopus / ISI / Tạp chí)',
+          sectionTitle: 'B.1. BÀI BÁO KHOA HỌC (SCOPUS / ISI / TẠP CHÍ CHUYÊN NGÀNH)',
+          totalLabel: 'Tổng số giờ bài báo khoa học',
+        };
+      case 'seminar':
+        return {
+          title: 'BẢNG THỐNG KÊ BÁO CÁO SEMINAR & CHUYÊN ĐỀ',
+          badgeTitle: 'Báo cáo Seminar & Hội thảo học thuật',
+          sectionTitle: 'B.2. BÁO CÁO SEMINAR & HỘI THẢO HỌC THUẬT',
+          totalLabel: 'Tổng số giờ Seminar & Hội thảo',
+        };
+      case 'de_tai':
+        return {
+          title: 'BẢNG THỐNG KÊ ĐỀ TÀI NGHIÊN CỨU KHOA HỌC',
+          badgeTitle: 'Đề tài NCKH & Luận văn Thạc sĩ',
+          sectionTitle: 'B.3. ĐỀ TÀI NGHIÊN CỨU KHOA HỌC & LUẬN VĂN THẠC SĨ',
+          totalLabel: 'Tổng số giờ đề tài NCKH',
+        };
+      default:
+        return {
+          title: 'BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC',
+          badgeTitle: 'Tất cả công trình NCKH',
+          sectionTitle: 'B. NGHIÊN CỨU KHOA HỌC (NCKH)',
+          totalLabel: 'Tổng số giờ nghiên cứu khoa học',
+        };
+    }
+  }, [activeNckhTab]);
 
   const activeViewMode = viewMode || internalViewMode;
   const handleSetViewMode = (mode: 'excel_sheet' | 'compact_table') => {
@@ -154,6 +199,8 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           tt: i + 1,
           noiDung: match.noiDungNCKH || match.tenHocPhan || '',
           theLoai: match.theLoaiNCKH || match.loaiHoatDong || '',
+          loaiHoatDong: match.loaiHoatDong,
+          maLopHocPhan: match.maLopHocPhan,
           soGioQuyChuan: match.soGioQCNCKH || match.tongTietQC || '',
           xacNhanQLKH: 'Đã xác nhận',
           fileMinhChungUrl: match.fileMinhChungUrl,
@@ -181,8 +228,47 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
     setNckhRows(initRows());
   }, [maGV, records]);
 
+  // Rows strictly displayed for the active tab (Filtering only the selected tab's data)
+  const displayedRows = useMemo(() => {
+    if (activeNckhTab === 'all') {
+      return nckhRows;
+    }
+    // Only rows matching the active tab category
+    const matched = nckhRows.filter(
+      (r) => isRowMatchingCategory(r, activeNckhTab) && Boolean(r.noiDung.trim())
+    );
+    // Pad with empty rows matching the category so user can view/input if needed
+    const count = Math.max(3, matched.length);
+    const result: ResearchScheduleRow[] = [];
+    for (let i = 0; i < count; i++) {
+      if (i < matched.length) {
+        result.push({
+          ...matched[i],
+          tt: i + 1,
+        });
+      } else {
+        result.push({
+          id: `nckh-empty-${activeNckhTab}-${i + 1}`,
+          tt: i + 1,
+          noiDung: '',
+          theLoai:
+            activeNckhTab === 'bai_bao'
+              ? 'Bài báo khoa học'
+              : activeNckhTab === 'seminar'
+              ? 'Báo cáo Seminar'
+              : 'Đề tài NCKH',
+          soGioQuyChuan: '',
+          xacNhanQLKH: '',
+        });
+      }
+    }
+    return result;
+  }, [nckhRows, activeNckhTab]);
+
   // Handle file upload for proof
-  const handleFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (displayedIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const target = displayedRows[displayedIndex];
+    if (!target) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -193,53 +279,86 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
     const reader = new FileReader();
     reader.onload = () => {
-      const updated = [...nckhRows];
-      updated[index] = {
-        ...updated[index],
-        fileMinhChungUrl: reader.result as string,
-        tenFileMinhChung: file.name,
-        dungLuongFile: file.size,
-      };
-      setNckhRows(updated);
+      setNckhRows((prev) => {
+        const idx = prev.findIndex((r) => r.id === target.id);
+        if (idx !== -1) {
+          const copy = [...prev];
+          copy[idx] = {
+            ...copy[idx],
+            fileMinhChungUrl: reader.result as string,
+            tenFileMinhChung: file.name,
+            dungLuongFile: file.size,
+          };
+          return copy;
+        } else {
+          return [
+            ...prev,
+            {
+              ...target,
+              fileMinhChungUrl: reader.result as string,
+              tenFileMinhChung: file.name,
+              dungLuongFile: file.size,
+            },
+          ];
+        }
+      });
     };
     reader.readAsDataURL(file);
     e.target.value = '';
   };
 
   // Handle remove file proof
-  const handleRemoveFile = (index: number) => {
-    const updated = [...nckhRows];
-    updated[index] = {
-      ...updated[index],
-      fileMinhChungUrl: undefined,
-      tenFileMinhChung: undefined,
-      dungLuongFile: undefined,
-    };
-    setNckhRows(updated);
+  const handleRemoveFile = (displayedIndex: number) => {
+    const target = displayedRows[displayedIndex];
+    if (!target) return;
+    setNckhRows((prev) => {
+      const idx = prev.findIndex((r) => r.id === target.id);
+      if (idx === -1) return prev;
+      const copy = [...prev];
+      copy[idx] = {
+        ...copy[idx],
+        fileMinhChungUrl: undefined,
+        tenFileMinhChung: undefined,
+        dungLuongFile: undefined,
+      };
+      return copy;
+    });
   };
 
   // Handle cell change
-  const handleCellChange = (index: number, field: keyof ResearchScheduleRow, value: string) => {
-    const updated = [...nckhRows];
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
-    setNckhRows(updated);
+  const handleCellChange = (displayedIndex: number, field: keyof ResearchScheduleRow, value: string) => {
+    const target = displayedRows[displayedIndex];
+    if (!target) return;
+    setNckhRows((prev) => {
+      const idx = prev.findIndex((r) => r.id === target.id);
+      if (idx !== -1) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], [field]: value };
+        return copy;
+      } else {
+        return [
+          ...prev,
+          {
+            ...target,
+            [field]: value,
+          },
+        ];
+      }
+    });
   };
 
-  // Calculate total hours
+  // Calculate total hours strictly for displayed rows
   const totalQC = useMemo(() => {
-    return nckhRows.reduce((sum, r) => {
+    return displayedRows.reduce((sum, r) => {
       const val = typeof r.soGioQuyChuan === 'number'
         ? r.soGioQuyChuan
         : parseFloat(String(r.soGioQuyChuan).replace(',', '.'));
       return !isNaN(val) && val > 0 ? sum + val : sum;
     }, 0);
-  }, [nckhRows]);
+  }, [displayedRows]);
 
   const allSelectableRows = useMemo(() => {
-    return nckhRows
+    return displayedRows
       .filter((r) => r.noiDung || r.theLoai || r.soGioQuyChuan)
       .map((r) => ({
         rowId: r.id,
@@ -248,7 +367,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
         subtitle: r.theLoai ? `Thể loại: ${r.theLoai}` : undefined,
         khoiLuong: r.soGioQuyChuan ? `${r.soGioQuyChuan} giờ QC` : undefined,
       }));
-  }, [nckhRows]);
+  }, [displayedRows]);
 
   const areAllSelected =
     allSelectableRows.length > 0 &&
@@ -269,7 +388,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
     const wb = XLSX.utils.book_new();
 
     const headerRows: (string | number)[][] = [
-      ['BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC'],
+      [tabInfo.title],
       [`NĂM HỌC ${namHoc}`],
       [],
       ['Đơn vị:', donVi, '', '', 'Lưu ý: Quý thầy cô nhập thống kê của mình tại những ô màu vàng có ghi chú,'],
@@ -278,11 +397,11 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
       ['Ngạch giảng viên:', ngachGV],
       ['Năm học:', namHoc],
       [],
-      ['B. NGHIÊN CỨU KHOA HỌC (NCKH)'],
+      [tabInfo.sectionTitle],
       ['TT', 'Nội dung', 'Thể loại', 'Số giờ quy chuẩn', 'Xác nhận của P.QLKH'],
     ];
 
-    nckhRows.forEach((r) => {
+    displayedRows.forEach((r) => {
       const val = typeof r.soGioQuyChuan === 'number'
         ? r.soGioQuyChuan
         : parseFloat(String(r.soGioQuyChuan).replace(',', '.'));
@@ -297,15 +416,24 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
     headerRows.push([
       '',
-      'Tổng số giờ nghiên cứu khoa học',
+      tabInfo.totalLabel,
       '',
       totalQC > 0 ? totalQC : '-',
       '',
     ]);
 
+    const completionLabel =
+      activeNckhTab === 'bai_bao'
+        ? 'Mức độ hoàn thành bài báo quốc tế'
+        : activeNckhTab === 'seminar'
+        ? 'Mức độ hoàn thành báo cáo Seminar'
+        : activeNckhTab === 'de_tai'
+        ? 'Mức độ hoàn thành đề tài NCKH'
+        : 'Mức độ hoàn thành nhiệm vụ NCKH';
+
     headerRows.push([
       '',
-      'Mức độ hoàn thành bài báo quốc tế',
+      completionLabel,
       '',
       mucDoHoanThanh,
       '',
@@ -392,8 +520,9 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
       }
     }
 
-    XLSX.utils.book_append_sheet(wb, ws, 'ThongKeNCKH');
-    saveWorkbookToFile(wb, `Bang_Thong_Ke_NCKH_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
+    const tabSuffix = activeNckhTab === 'bai_bao' ? 'Bai_Bao' : activeNckhTab === 'seminar' ? 'Seminar' : activeNckhTab === 'de_tai' ? 'De_Tai' : 'NCKH';
+    XLSX.utils.book_append_sheet(wb, ws, `ThongKe_${tabSuffix}`);
+    saveWorkbookToFile(wb, `Bang_Thong_Ke_${tabSuffix}_${hoTen.replace(/\s+/g, '_')}_${namHoc.replace(/\s+/g, '')}.xlsx`);
   };
 
   // Print handler
@@ -649,7 +778,10 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => setActiveNckhTab('all')}
+            onClick={() => {
+              setActiveNckhTab('all');
+              onSelectNckhTab?.('all');
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
               activeNckhTab === 'all'
                 ? 'bg-slate-800 text-white shadow-xs'
@@ -660,7 +792,10 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveNckhTab('bai_bao')}
+            onClick={() => {
+              setActiveNckhTab('bai_bao');
+              onSelectNckhTab?.('bai_bao');
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
               activeNckhTab === 'bai_bao'
                 ? 'bg-blue-600 text-white shadow-xs'
@@ -672,7 +807,10 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveNckhTab('seminar')}
+            onClick={() => {
+              setActiveNckhTab('seminar');
+              onSelectNckhTab?.('seminar');
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
               activeNckhTab === 'seminar'
                 ? 'bg-emerald-600 text-white shadow-xs'
@@ -684,7 +822,10 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setActiveNckhTab('de_tai')}
+            onClick={() => {
+              setActiveNckhTab('de_tai');
+              onSelectNckhTab?.('de_tai');
+            }}
             className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
               activeNckhTab === 'de_tai'
                 ? 'bg-purple-600 text-white shadow-xs'
@@ -699,10 +840,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
         <div className="text-[11.5px] text-slate-500 font-medium">
           Chế độ lọc:{' '}
           <span className="font-bold text-slate-700">
-            {activeNckhTab === 'all' && 'Tất cả công trình'}
-            {activeNckhTab === 'bai_bao' && '1. Bài báo khoa học'}
-            {activeNckhTab === 'seminar' && '2. Seminar & Hội thảo'}
-            {activeNckhTab === 'de_tai' && '3. Đề tài & Nghiên cứu khoa học'}
+            {tabInfo.badgeTitle}
           </span>
         </div>
       </div>
@@ -718,7 +856,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           {/* TITLE CENTERED */}
           <div className="text-center mb-4 pb-2.5 border-b border-slate-200">
             <h1 className="text-[18px] sm:text-[20px] font-bold tracking-wide uppercase text-slate-900 font-sans">
-              BẢNG THỐNG KÊ CÔNG TÁC NGHIÊN CỨU KHOA HỌC
+              {tabInfo.title}
             </h1>
             <h2 className="text-[13.5px] sm:text-[14px] font-semibold text-slate-700 font-sans mt-0.5">
               NĂM HỌC {namHoc}
@@ -731,13 +869,21 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
           {/* INSTRUCTION NOTE */}
           <div className="flex items-center gap-2 px-3 py-2 mb-3 bg-amber-50/90 border border-amber-200/80 rounded text-[12px] text-amber-900 print:hidden">
             <span className="font-bold text-amber-800 shrink-0">Lưu ý:</span>
-            <span>Quý thầy cô nhập thống kê tại các ô màu vàng nhạt; khi hoàn tất ô sẽ tự động đổi màu và hệ thống tính quy chuẩn số giờ.</span>
+            <span>
+              {activeNckhTab === 'bai_bao'
+                ? 'Hệ thống đang hiển thị chuyên biệt các Bài báo khoa học đã công bố. Quý Thầy/Cô có thể đính kèm file minh chứng PDF/ảnh.'
+                : activeNckhTab === 'seminar'
+                ? 'Hệ thống đang hiển thị chuyên biệt các Báo cáo Seminar & Hội thảo học thuật.'
+                : activeNckhTab === 'de_tai'
+                ? 'Hệ thống đang hiển thị chuyên biệt Đề tài Nghiên cứu khoa học các cấp & Luận văn Thạc sĩ.'
+                : 'Quý thầy cô nhập thống kê tại các ô màu vàng nhạt; khi hoàn tất ô sẽ tự động đổi màu và hệ thống tính quy chuẩn số giờ.'}
+            </span>
           </div>
 
-          {/* SECTION HEADER: B. NGHIÊN CỨU KHOA HỌC (NCKH) - EXACTLY MATCHING IMAGE */}
+          {/* SECTION HEADER: B. NGHIÊN CỨU KHOA HỌC (NCKH) - DYNAMIC MATCHING TAB */}
           <div className="border-t-2 border-black pt-1 mb-0.5">
             <h3 className="text-[13px] font-bold text-red-600 uppercase tracking-wide">
-              B. NGHIÊN CỨU KHOA HỌC (NCKH)
+              {tabInfo.sectionTitle}
             </h3>
           </div>
 
@@ -780,8 +926,8 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
               </thead>
 
               <tbody>
-                {/* 10 ROWS (1 TO 10) - EXACTLY MATCHING IMAGE */}
-                {nckhRows.map((row, index) => {
+                {/* DYNAMIC ROWS FILTERED TO ACTIVE TAB */}
+                {displayedRows.map((row, index) => {
                   const val = typeof row.soGioQuyChuan === 'number'
                     ? row.soGioQuyChuan
                     : parseFloat(String(row.soGioQuyChuan).replace(',', '.'));
@@ -931,7 +1077,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
 
                   {/* Gray Cell: Tổng số giờ nghiên cứu khoa học spanning col 2 & 3 */}
                   <td colSpan={2} className="px-3 py-1 text-center font-bold text-black border border-black bg-[#bfbfbf]">
-                    Tổng số giờ nghiên cứu khoa học
+                    {tabInfo.totalLabel}
                   </td>
 
                   {/* Yellow Cell: Total Hours or '-' */}
@@ -943,14 +1089,25 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                   <td colSpan={2} className="border border-black bg-white"></td>
                 </tr>
 
-                {/* FOOTER ROW 2: MỨC ĐỘ HOÀN THÀNH BÀI BÁO QUỐC TẾ - EXACTLY MATCHING IMAGE */}
+                {/* FOOTER ROW 2: MỨC ĐỘ HOÀN THÀNH DYNAMIC */}
                 <tr className="h-[28px] relative">
+                  {/* Empty checkbox cell */}
+                  {Boolean(onToggleSelectRow) && (
+                    <td className="border border-black bg-white print:hidden"></td>
+                  )}
+
                   {/* Empty TT cell with border */}
                   <td className="border border-black bg-white"></td>
 
-                  {/* Gray Cell: Mức độ hoàn thành bài báo quốc tế spanning col 2 & 3 */}
+                  {/* Gray Cell: Dynamic completion label spanning col 2 & 3 */}
                   <td colSpan={2} className="px-3 py-1 text-center font-bold text-black border border-black bg-[#bfbfbf]">
-                    Mức độ hoàn thành bài báo quốc tế
+                    {activeNckhTab === 'bai_bao'
+                      ? 'Mức độ hoàn thành bài báo quốc tế'
+                      : activeNckhTab === 'seminar'
+                      ? 'Mức độ hoàn thành báo cáo Seminar'
+                      : activeNckhTab === 'de_tai'
+                      ? 'Mức độ hoàn thành đề tài NCKH'
+                      : 'Mức độ hoàn thành nhiệm vụ NCKH'}
                   </td>
 
                   {/* Yellow Cell with interactive Dropdown: "Không hoàn thành" / "Hoàn thành" */}
