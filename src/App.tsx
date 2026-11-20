@@ -384,7 +384,33 @@ export default function App() {
       .then((data) => {
         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
           try {
-            localStorage.setItem('tdu_roles_state_v3', JSON.stringify(data.data));
+            const cached = localStorage.getItem('tdu_roles_state_v3');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const updated = parsed.map((r: any) => {
+                  const fromApi = data.data.find(
+                    (d: any) =>
+                      d.code?.toLowerCase() === r.code?.toLowerCase() ||
+                      d.name?.toLowerCase() === r.name?.toLowerCase() ||
+                      String(d.id) === String(r.id)
+                  );
+                  if (fromApi && Array.isArray(fromApi.members)) {
+                    return {
+                      ...r,
+                      members: fromApi.members,
+                      disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
+                    };
+                  }
+                  return {
+                    ...r,
+                    members: Array.isArray(r.members) ? r.members : [],
+                    disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
+                  };
+                });
+                localStorage.setItem('tdu_roles_state_v3', JSON.stringify(updated));
+              }
+            }
           } catch {}
 
           const adminRole = data.data.find(

@@ -679,7 +679,29 @@ export const SystemRoleGroupPage: React.FC = () => {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Chuẩn hóa và bảo đảm mọi RoleItem luôn có đầy đủ các thuộc tính bắt buộc
+          return INITIAL_ROLES.map((initRole) => {
+            const found = parsed.find(
+              (p: any) =>
+                p.code?.toLowerCase() === initRole.code?.toLowerCase() ||
+                p.id === initRole.id ||
+                String(p.id) === String(initRole.id) ||
+                p.name?.toLowerCase() === initRole.name?.toLowerCase()
+            );
+            if (!found) return initRole;
+            return {
+              ...initRole,
+              ...found,
+              id: initRole.id, // Giữ ID chuẩn (quan_tri_vien_he_thong,...)
+              dotColor: found.dotColor || initRole.dotColor || '#2563eb',
+              badgeBg: found.badgeBg || initRole.badgeBg || '#eff6ff',
+              badgeText: found.badgeText || initRole.badgeText || '#2563eb',
+              members: Array.isArray(found.members) ? found.members : initRole.members || [],
+              disabledPermissions: Array.isArray(found.disabledPermissions)
+                ? found.disabledPermissions
+                : initRole.disabledPermissions || [],
+            };
+          });
         }
       }
     } catch {}
@@ -698,18 +720,23 @@ export const SystemRoleGroupPage: React.FC = () => {
                 (d: any) =>
                   d.code?.toLowerCase() === r.code?.toLowerCase() ||
                   d.name?.toLowerCase() === r.name?.toLowerCase() ||
-                  d.id === r.id
+                  String(d.id) === String(r.id)
               );
-              if (fromApi && Array.isArray(fromApi.members) && fromApi.members.length > 0) {
+              if (fromApi && Array.isArray(fromApi.members)) {
                 // Hợp nhất thành viên từ API với thành viên hiện tại (tránh ghi đè mất thành viên)
                 const apiCodes = new Set(fromApi.members.map((m: any) => m.code?.toLowerCase()));
-                const localExtra = r.members.filter((m) => !apiCodes.has(m.code?.toLowerCase()));
+                const localExtra = (r.members || []).filter((m) => !apiCodes.has(m.code?.toLowerCase()));
                 return {
                   ...r,
                   members: [...fromApi.members, ...localExtra],
+                  disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
                 };
               }
-              return r;
+              return {
+                ...r,
+                members: Array.isArray(r.members) ? r.members : [],
+                disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
+              };
             });
             try {
               localStorage.setItem('tdu_roles_state_v3', JSON.stringify(merged));
@@ -747,7 +774,7 @@ export const SystemRoleGroupPage: React.FC = () => {
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
 
   const selectedRole = useMemo(
-    () => roles.find((r) => r.id === selectedRoleId) || roles[0],
+    () => roles.find((r) => r.id === selectedRoleId) || roles[0] || INITIAL_ROLES[0],
     [roles, selectedRoleId]
   );
 
@@ -758,16 +785,17 @@ export const SystemRoleGroupPage: React.FC = () => {
 
   // Danh sách thành viên trong vai trò được lọc theo ô tìm kiếm
   const filteredRoleMembers = useMemo(() => {
-    if (!roleMemberSearch.trim()) return selectedRole.members;
+    const members = Array.isArray(selectedRole?.members) ? selectedRole.members : [];
+    if (!roleMemberSearch.trim()) return members;
     const q = roleMemberSearch.toLowerCase().trim();
-    return selectedRole.members.filter(
+    return members.filter(
       (m) =>
-        m.name.toLowerCase().includes(q) ||
-        m.code.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q) ||
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.code && m.code.toLowerCase().includes(q)) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
         (m.unit && m.unit.toLowerCase().includes(q))
     );
-  }, [selectedRole.members, roleMemberSearch]);
+  }, [selectedRole?.members, roleMemberSearch]);
 
   // Danh sách module được lọc theo ô tìm kiếm
   const filteredModuleCatalog = useMemo(() => {
@@ -778,6 +806,7 @@ export const SystemRoleGroupPage: React.FC = () => {
 
   // Check if a sub-permission is enabled for the selected role
   const isPermEnabled = (permId: string) => {
+    if (!selectedRole || !Array.isArray(selectedRole.disabledPermissions)) return true;
     return !selectedRole.disabledPermissions.includes(permId);
   };
 
@@ -786,12 +815,13 @@ export const SystemRoleGroupPage: React.FC = () => {
     setRoles((prev) =>
       prev.map((role) => {
         if (role.id !== selectedRole.id) return role;
-        const exists = role.disabledPermissions.includes(permId);
+        const curDisabled = Array.isArray(role.disabledPermissions) ? role.disabledPermissions : [];
+        const exists = curDisabled.includes(permId);
         return {
           ...role,
           disabledPermissions: exists
-            ? role.disabledPermissions.filter((id) => id !== permId)
-            : [...role.disabledPermissions, permId],
+            ? curDisabled.filter((id) => id !== permId)
+            : [...curDisabled, permId],
         };
       })
     );
@@ -805,7 +835,8 @@ export const SystemRoleGroupPage: React.FC = () => {
     setRoles((prev) =>
       prev.map((role) => {
         if (role.id !== selectedRole.id) return role;
-        const nextDisabled = new Set(role.disabledPermissions);
+        const curDisabled = Array.isArray(role.disabledPermissions) ? role.disabledPermissions : [];
+        const nextDisabled = new Set(curDisabled);
         if (allEnabled) {
           allIds.forEach((id) => nextDisabled.add(id));
         } else {
@@ -827,7 +858,8 @@ export const SystemRoleGroupPage: React.FC = () => {
     setRoles((prev) =>
       prev.map((role) => {
         if (role.id !== selectedRole.id) return role;
-        const nextDisabled = new Set(role.disabledPermissions);
+        const curDisabled = Array.isArray(role.disabledPermissions) ? role.disabledPermissions : [];
+        const nextDisabled = new Set(curDisabled);
         if (allEnabled) {
           allIds.forEach((id) => nextDisabled.add(id));
         } else {
@@ -843,9 +875,20 @@ export const SystemRoleGroupPage: React.FC = () => {
 
   // 1. Lưu thay đổi phân quyền vào CSDL MySQL (bảng vai_tro_quyen)
   const handleSavePermissions = async () => {
+    const curDisabled = Array.isArray(selectedRole.disabledPermissions) ? selectedRole.disabledPermissions : [];
     const enabledPermissions = ALL_PERMISSION_IDS.filter(
-      (id) => !selectedRole.disabledPermissions.includes(id)
+      (id) => !curDisabled.includes(id)
     );
+
+    try {
+      await fetch(`/api/roles/${selectedRole.id}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabledPermissions }),
+      });
+    } catch (err) {
+      console.warn('Could not save permissions to MySQL:', err);
+    }
 
     try {
       await fetch(`/api/roles/${selectedRole.id}/permissions`, {
@@ -1035,12 +1078,14 @@ export const SystemRoleGroupPage: React.FC = () => {
     ];
 
     const dataRows = roles.map((r, idx) => {
-      const activePermCount = ALL_PERMISSION_IDS.filter((id) => !r.disabledPermissions.includes(id)).length;
+      const curDisabled = Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [];
+      const curMembers = Array.isArray(r.members) ? r.members : [];
+      const activePermCount = ALL_PERMISSION_IDS.filter((id) => !curDisabled.includes(id)).length;
       return [
         idx + 1,
         r.code,
         r.name,
-        r.members.length,
+        curMembers.length,
         `${activePermCount}/${ALL_PERMISSION_IDS.length} quyền`,
         r.dotColor,
         r.description,
@@ -1050,7 +1095,7 @@ export const SystemRoleGroupPage: React.FC = () => {
     const summaryRow = [
       `TỔNG CỘNG (${roles.length} vai trò)`,
       '', '',
-      roles.reduce((s, r) => s + r.members.length, 0),
+      roles.reduce((s, r) => s + (Array.isArray(r.members) ? r.members.length : 0), 0),
       '', '', ''
     ];
 
@@ -1494,12 +1539,13 @@ export const SystemRoleGroupPage: React.FC = () => {
                 return role.name.toLowerCase().includes(q) || role.code.toLowerCase().includes(q);
               })
               .map((role) => {
-                const isSelected = role.id === selectedRole.id;
+                const isSelected = selectedRole && role.id === selectedRole.id;
+                const memCount = (role.members || []).length;
                 return (
                   <button
                     key={role.id}
                     onClick={() => setSelectedRoleId(role.id)}
-                    title={`${role.name} (${role.members.length} thành viên)`}
+                    title={`${role.name} (${memCount} thành viên)`}
                     className={`w-full text-left px-2.5 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer relative ${
                       isSelected
                         ? 'bg-[#eff6ff] text-[#1d4ed8] font-semibold shadow-2xs'
@@ -1514,7 +1560,7 @@ export const SystemRoleGroupPage: React.FC = () => {
                     {/* Colored status dot */}
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: role.dotColor }}
+                      style={{ backgroundColor: role.dotColor || '#2563eb' }}
                     />
 
                     {/* Role Name */}
@@ -1528,7 +1574,7 @@ export const SystemRoleGroupPage: React.FC = () => {
                           : 'bg-slate-100 text-slate-500'
                       }`}
                     >
-                      {role.members.length}
+                      {memCount}
                     </span>
                   </button>
                 );
@@ -1547,25 +1593,25 @@ export const SystemRoleGroupPage: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: selectedRole.badgeBg }}
+                  style={{ backgroundColor: selectedRole?.badgeBg || '#eff6ff' }}
                 >
                   <span
                     className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: selectedRole.badgeText }}
+                    style={{ backgroundColor: selectedRole?.badgeText || '#2563eb' }}
                   />
                 </div>
                 <span
                   className="text-[12.5px] font-bold uppercase tracking-wide"
-                  style={{ color: selectedRole.badgeText }}
+                  style={{ color: selectedRole?.badgeText || '#2563eb' }}
                 >
-                  {selectedRole.code}
+                  {selectedRole?.code || ''}
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="text-[13px] font-semibold text-slate-800">
-                  {selectedRole.name}
+                  {selectedRole?.name || ''}
                 </span>
                 <span className="text-[11.5px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full border border-slate-200">
-                  {selectedRole.members.length} thành viên
+                  {(selectedRole?.members || []).length} thành viên
                 </span>
               </div>
 
@@ -1576,7 +1622,7 @@ export const SystemRoleGroupPage: React.FC = () => {
                   setIsAddMemberModalOpen(true);
                 }}
                 className="h-[32px] px-3.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563eb] text-[12px] font-medium flex items-center gap-1.5 cursor-pointer border border-blue-200/80 transition-colors shadow-2xs"
-                title={`Thêm mới thành viên vào vai trò ${selectedRole.name}`}
+                title={`Thêm mới thành viên vào vai trò ${selectedRole?.name || ''}`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>+ Thêm mới</span>
@@ -1975,7 +2021,7 @@ export const SystemRoleGroupPage: React.FC = () => {
               <div className="max-w-[760px] space-y-3">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <span className="text-[13.5px] font-semibold text-slate-700">
-                    Thành viên thuộc vai trò {selectedRole.name} ({selectedRole.members.length})
+                    Thành viên thuộc vai trò {selectedRole?.name || ''} ({(selectedRole?.members || []).length})
                   </span>
                   <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <div className="relative flex-1 sm:w-[240px]">
@@ -2011,7 +2057,7 @@ export const SystemRoleGroupPage: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-                  {selectedRole.members.length === 0 ? (
+                  {(selectedRole?.members || []).length === 0 ? (
                     <div className="py-8 text-center text-[12.5px] text-slate-400">
                       Chưa có thành viên nào trong vai trò này.
                     </div>

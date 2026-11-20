@@ -45,6 +45,7 @@ router.get('/', async (_req: Request, res: Response) => {
           unit: m.unit || 'Đại học Tây Đô',
         })),
         enabledPermissions: perms.map((p: any) => p.ma_quyen),
+        disabledPermissions: [],
       });
     }
 
