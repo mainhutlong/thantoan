@@ -1400,6 +1400,14 @@ export const SystemRoleGroupPage: React.FC = () => {
   };
 
   const handleRemoveMember = (mem: { id: string; name: string; code: string; unit: string; email: string }) => {
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xóa thành viên "${mem.name}" (${mem.code || mem.email}) khỏi vai trò "${selectedRole?.name || 'này'}" không?`
+      )
+    ) {
+      return;
+    }
+
     // 1. Cập nhật state & lưu cache toàn bộ roles
     setRoles((prev) => {
       const nextRoles = prev.map((r) =>

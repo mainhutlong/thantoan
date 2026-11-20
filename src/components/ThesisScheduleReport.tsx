@@ -360,6 +360,11 @@ export const ThesisScheduleReport: React.FC<ThesisScheduleReportProps> = ({
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
+    const target = thesisRows[index];
+    const rowDesc = target?.tenDeTai ? `đề tài "${target.tenDeTai}"` : `dòng số ${index + 1}`;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng đồ án / khóa luận ${rowDesc} không?`)) {
+      return;
+    }
     const updated = thesisRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));
     setThesisRows(updated);
   };

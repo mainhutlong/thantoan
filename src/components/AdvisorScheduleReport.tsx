@@ -353,6 +353,11 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
+    const target = advisorRows[index];
+    const rowDesc = target?.lopCVHT ? `lớp "${target.lopCVHT}"` : `dòng số ${index + 1}`;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng phân công cố vấn học tập ${rowDesc} không?`)) {
+      return;
+    }
     const updated = advisorRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));
     setAdvisorRows(updated);
   };

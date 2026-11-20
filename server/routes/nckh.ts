@@ -441,11 +441,26 @@ router.delete('/:category/:id', async (req, res) => {
 
 /**
  * DELETE /api/nckh/lecturer/:maGV
- * Xóa toàn bộ dữ liệu NCKH của một giảng viên
+ * Xóa dữ liệu NCKH của một giảng viên (hỗ trợ xóa theo từng phân mục qua query ?category=bai_bao|seminar|de_tai)
  */
 router.delete('/lecturer/:maGV', async (req, res) => {
   try {
     const { maGV } = req.params;
+    const { category } = req.query;
+
+    if (category === 'bai_bao') {
+      await pool.query('DELETE FROM nckh_bai_bao WHERE ma_giang_vien = ?', [maGV]);
+      return res.json({ success: true, message: `Đã xóa bài báo NCKH của giảng viên ${maGV}` });
+    }
+    if (category === 'seminar') {
+      await pool.query('DELETE FROM nckh_seminar WHERE ma_giang_vien = ?', [maGV]);
+      return res.json({ success: true, message: `Đã xóa seminar NCKH của giảng viên ${maGV}` });
+    }
+    if (category === 'de_tai') {
+      await pool.query('DELETE FROM nckh_de_tai WHERE ma_giang_vien = ?', [maGV]);
+      return res.json({ success: true, message: `Đã xóa đề tài NCKH của giảng viên ${maGV}` });
+    }
+
     await pool.query('DELETE FROM nckh_bai_bao WHERE ma_giang_vien = ?', [maGV]);
     await pool.query('DELETE FROM nckh_seminar WHERE ma_giang_vien = ?', [maGV]);
     await pool.query('DELETE FROM nckh_de_tai WHERE ma_giang_vien = ?', [maGV]);

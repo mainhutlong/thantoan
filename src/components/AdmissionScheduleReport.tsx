@@ -343,6 +343,11 @@ export const AdmissionScheduleReport: React.FC<AdmissionScheduleReportProps> = (
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
+    const target = admissionRows[index];
+    const rowDesc = target?.noiDung ? `"${target.noiDung}"` : `dòng số ${index + 1}`;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng kê khai tuyển sinh ${rowDesc} không?`)) {
+      return;
+    }
     const updated = admissionRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));
     setAdmissionRows(updated);
   };

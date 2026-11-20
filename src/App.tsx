@@ -1001,37 +1001,64 @@ export default function App() {
     if (!target) return;
     const deptName =
       selectedDepartment === 'nckh'
-        ? 'Nghiên cứu khoa học'
+        ? nckhTab === 'bai_bao'
+          ? 'Bài báo khoa học'
+          : nckhTab === 'seminar'
+          ? 'Báo cáo Seminar'
+          : nckhTab === 'de_tai'
+          ? 'Đề tài NCKH'
+          : 'Nghiên cứu khoa học'
         : selectedDepartment === 'khao_thi'
         ? 'Khảo thí'
         : selectedDepartment === 'dao_tao'
         ? 'Giờ giảng'
+        : selectedDepartment === 'do_an'
+        ? 'Đồ án & Khóa luận'
+        : selectedDepartment === 'tuyen_sinh'
+        ? 'Tuyển sinh'
+        : selectedDepartment === 'co_van_hoc_tap'
+        ? 'Cố vấn học tập'
+        : selectedDepartment === 'cong_tac_khac'
+        ? 'Công tác khác'
         : 'nhiệm vụ này';
+
     if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa dữ liệu ${deptName} của giảng viên ${target.hoTen} (${target.maGV}) khỏi hệ thống?`
+      !window.confirm(
+        `XÁC NHẬN XÓA: Bạn có chắc chắn muốn xóa dữ liệu [${deptName}] của giảng viên ${target.hoTen} (${target.maGV}) khỏi hệ thống không?\n\nThao tác này sẽ xóa bản ghi khỏi hệ thống và không thể hoàn tác.`
       )
     ) {
-      const maGV = target.maGV;
-      if (selectedDepartment === 'nckh' && maGV) {
-        try {
-          await fetch(`/api/nckh/lecturer/${maGV}`, { method: 'DELETE' });
-        } catch (err) {
-          console.warn('Lỗi khi xóa dữ liệu NCKH của GV trên DB:', err);
-        }
-      }
-      setTeachingList((prev) =>
-        prev.filter((item) => {
-          if (selectedDepartment !== 'all') {
-            return !(item.maGV === maGV && item.phongBanQuanLy === selectedDepartment);
-          }
-          return maGV ? item.maGV !== maGV : item.id !== id;
-        })
-      );
-      setSelectedIds((prev) =>
-        prev.filter((item) => (maGV ? item !== maGV : item !== id))
-      );
+      return;
     }
+
+    const maGV = target.maGV;
+    if (selectedDepartment === 'nckh' && maGV) {
+      try {
+        const deleteUrl =
+          nckhTab !== 'all'
+            ? `/api/nckh/lecturer/${maGV}?category=${nckhTab}`
+            : `/api/nckh/lecturer/${maGV}`;
+        await fetch(deleteUrl, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Lỗi khi xóa dữ liệu NCKH của GV trên DB:', err);
+      }
+    }
+    setTeachingList((prev) =>
+      prev.filter((item) => {
+        if (selectedDepartment === 'nckh' && nckhTab !== 'all') {
+          if (item.maGV === maGV && item.phongBanQuanLy === 'nckh') {
+            return !matchesNckhCategory(item, nckhTab);
+          }
+          return true;
+        }
+        if (selectedDepartment !== 'all') {
+          return !(item.maGV === maGV && item.phongBanQuanLy === selectedDepartment);
+        }
+        return maGV ? item.maGV !== maGV : item.id !== id;
+      })
+    );
+    setSelectedIds((prev) =>
+      prev.filter((item) => (maGV ? item !== maGV : item !== id))
+    );
   };
 
   const handleRefresh = () => {
@@ -1126,41 +1153,62 @@ export default function App() {
     if (selectedDepartment !== 'all') {
       const deptName =
         selectedDepartment === 'nckh'
-          ? 'Nghiên cứu khoa học'
+          ? nckhTab === 'bai_bao'
+            ? 'Bài báo khoa học'
+            : nckhTab === 'seminar'
+            ? 'Báo cáo Seminar'
+            : nckhTab === 'de_tai'
+            ? 'Đề tài NCKH'
+            : 'Nghiên cứu khoa học'
           : selectedDepartment === 'khao_thi'
           ? 'Khảo thí'
           : selectedDepartment === 'dao_tao'
-          ? 'Đào tạo'
+          ? 'Đào tạo (Giờ giảng)'
+          : selectedDepartment === 'do_an'
+          ? 'Đồ án & Khóa luận'
+          : selectedDepartment === 'tuyen_sinh'
+          ? 'Tuyển sinh'
+          : selectedDepartment === 'co_van_hoc_tap'
+          ? 'Cố vấn học tập'
+          : selectedDepartment === 'cong_tac_khac'
+          ? 'Công tác khác'
           : selectedDepartment;
       if (
-        window.confirm(
-          `Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của chuyên mục [${deptName}] trong đợt này để nhập lại từ đầu?`
+        !window.confirm(
+          `CẢNH BÁO XÓA TOÀN BỘ: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của chuyên mục [${deptName}] trong đợt này để nhập lại từ đầu không?\n\nThao tác này sẽ làm sạch hoàn toàn dữ liệu của chuyên mục này và không thể hoàn tác.`
         )
       ) {
-        if (selectedDepartment === 'nckh') {
-          try {
-            const clearUrl = nckhTab !== 'all' ? `/api/nckh/clear?category=${nckhTab}` : '/api/nckh/clear';
-            await fetch(clearUrl, { method: 'DELETE' });
-          } catch (err) {
-            console.warn('Lỗi khi xóa bảng NCKH DB:', err);
-          }
+        return;
+      }
+
+      if (selectedDepartment === 'nckh') {
+        try {
+          const clearUrl = nckhTab !== 'all' ? `/api/nckh/clear?category=${nckhTab}` : '/api/nckh/clear';
+          await fetch(clearUrl, { method: 'DELETE' });
+        } catch (err) {
+          console.warn('Lỗi khi xóa bảng NCKH DB:', err);
         }
-        setTeachingList((prev) => {
-          if (selectedDepartment === 'nckh' && nckhTab !== 'all') {
-            return prev.filter((r) => {
-              if (r.phongBanQuanLy !== 'nckh') return true;
-              return !matchesNckhCategory(r, nckhTab);
-            });
-          }
-          return prev.filter((r) => r.phongBanQuanLy !== selectedDepartment);
-        });
-        setSelectedIds([]);
       }
+      setTeachingList((prev) => {
+        if (selectedDepartment === 'nckh' && nckhTab !== 'all') {
+          return prev.filter((r) => {
+            if (r.phongBanQuanLy !== 'nckh') return true;
+            return !matchesNckhCategory(r, nckhTab);
+          });
+        }
+        return prev.filter((r) => r.phongBanQuanLy !== selectedDepartment);
+      });
+      setSelectedIds([]);
     } else {
-      if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của tất cả các khối để làm lại từ đầu?')) {
-        setTeachingList([]);
-        setSelectedIds([]);
+      if (
+        !window.confirm(
+          'CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của tất cả các khối để làm lại từ đầu không?\n\nToàn bộ dữ liệu bảng thanh toán thù lao hiện tại sẽ bị xóa sạch.'
+        )
+      ) {
+        return;
       }
+      setTeachingList([]);
+      setSelectedIds([]);
     }
   };
 

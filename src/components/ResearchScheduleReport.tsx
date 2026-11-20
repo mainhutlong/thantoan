@@ -311,6 +311,13 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   const handleRemoveFile = (displayedIndex: number) => {
     const target = displayedRows[displayedIndex];
     if (!target) return;
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn gỡ bỏ file minh chứng "${target.tenFileMinhChung || 'này'}" không?`
+      )
+    ) {
+      return;
+    }
     setNckhRows((prev) => {
       const idx = prev.findIndex((r) => r.id === target.id);
       if (idx === -1) return prev;
@@ -322,6 +329,20 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
         dungLuongFile: undefined,
       };
       return copy;
+    });
+  };
+
+  // Handle delete NCKH row
+  const handleDeleteRow = (displayedIndex: number) => {
+    const target = displayedRows[displayedIndex];
+    if (!target) return;
+    const desc = target.noiDung ? `"${target.noiDung}"` : `dòng số ${target.tt}`;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa bản ghi NCKH ${desc} không?`)) {
+      return;
+    }
+    setNckhRows((prev) => {
+      const filtered = prev.filter((r) => r.id !== target.id);
+      return filtered.map((r, i) => ({ ...r, tt: i + 1 }));
     });
   };
 
@@ -1045,18 +1066,38 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             )}
+                            {isEditable && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRow(index)}
+                                className="p-0.5 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                title="Xóa dòng bản ghi NCKH này"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         ) : isEditable && Boolean(row.noiDung.trim()) ? (
-                          <label className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-[#005325] text-[11px] font-medium border border-dashed border-slate-300 hover:border-[#005325] transition-colors cursor-pointer">
-                            <Upload className="w-3 h-3 text-slate-500" />
-                            <span>Tải lên</span>
-                            <input
-                              type="file"
-                              accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(index, e)}
-                            />
-                          </label>
+                          <div className="flex items-center justify-center gap-1">
+                            <label className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-[#005325] text-[11px] font-medium border border-dashed border-slate-300 hover:border-[#005325] transition-colors cursor-pointer">
+                              <Upload className="w-3 h-3 text-slate-500" />
+                              <span>Tải lên</span>
+                              <input
+                                type="file"
+                                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                                className="hidden"
+                                onChange={(e) => handleFileUpload(index, e)}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRow(index)}
+                              className="p-0.5 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                              title="Xóa dòng bản ghi NCKH này"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-slate-400 text-[11px] italic">Chưa có</span>
                         )}

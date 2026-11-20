@@ -399,6 +399,11 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
+    const target = examRows[index];
+    const rowDesc = target?.tenHocPhan ? `học phần "${target.tenHocPhan}"` : `dòng số ${index + 1}`;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng kê khai khảo thí ${rowDesc} không?`)) {
+      return;
+    }
     const updated = examRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));
     setExamRows(updated);
   };
