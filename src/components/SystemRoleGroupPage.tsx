@@ -759,7 +759,12 @@ export const SystemRoleGroupPage: React.FC = () => {
                   description: fromApi.description || r.description,
                   dotColor: fromApi.dotColor || r.dotColor,
                   members: [...apiMembers, ...localExtra],
-                  disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
+                  disabledPermissions:
+                    Array.isArray(fromApi.disabledPermissions) && fromApi.disabledPermissions.length > 0
+                      ? fromApi.disabledPermissions
+                      : Array.isArray(r.disabledPermissions)
+                      ? r.disabledPermissions
+                      : [],
                 };
               }
               return {
@@ -866,9 +871,12 @@ export const SystemRoleGroupPage: React.FC = () => {
 
   // Toggle single permission
   const handleTogglePerm = (permId: string) => {
-    setRoles((prev) =>
-      prev.map((role) => {
-        if (role.id !== selectedRole.id) return role;
+    setRoles((prev) => {
+      const next = prev.map((role) => {
+        const isMatch =
+          role.id === selectedRole.id ||
+          (role.code && selectedRole.code && role.code.toLowerCase() === selectedRole.code.toLowerCase());
+        if (!isMatch) return role;
         const curDisabled = Array.isArray(role.disabledPermissions) ? role.disabledPermissions : [];
         const exists = curDisabled.includes(permId);
         return {
@@ -877,8 +885,12 @@ export const SystemRoleGroupPage: React.FC = () => {
             ? curDisabled.filter((id) => id !== permId)
             : [...curDisabled, permId],
         };
-      })
-    );
+      });
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   // Toggle entire section
@@ -886,9 +898,12 @@ export const SystemRoleGroupPage: React.FC = () => {
     const allIds = section.items.map((i) => i.id);
     const allEnabled = allIds.every((id) => isPermEnabled(id));
 
-    setRoles((prev) =>
-      prev.map((role) => {
-        if (role.id !== selectedRole.id) return role;
+    setRoles((prev) => {
+      const next = prev.map((role) => {
+        const isMatch =
+          role.id === selectedRole.id ||
+          (role.code && selectedRole.code && role.code.toLowerCase() === selectedRole.code.toLowerCase());
+        if (!isMatch) return role;
         const curDisabled = Array.isArray(role.disabledPermissions) ? role.disabledPermissions : [];
         const nextDisabled = new Set(curDisabled);
         if (allEnabled) {
@@ -900,8 +915,12 @@ export const SystemRoleGroupPage: React.FC = () => {
           ...role,
           disabledPermissions: Array.from(nextDisabled),
         };
-      })
-    );
+      });
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   // Toggle entire module (used in Module tab)
@@ -909,9 +928,12 @@ export const SystemRoleGroupPage: React.FC = () => {
     const allIds = mod.sections.flatMap((s) => s.items.map((i) => i.id));
     const allEnabled = allIds.every((id) => isPermEnabled(id));
 
-    setRoles((prev) =>
-      prev.map((role) => {
-        if (role.id !== selectedRole.id) return role;
+    setRoles((prev) => {
+      const next = prev.map((role) => {
+        const isMatch =
+          role.id === selectedRole.id ||
+          (role.code && selectedRole.code && role.code.toLowerCase() === selectedRole.code.toLowerCase());
+        if (!isMatch) return role;
         const curDisabled = Array.isArray(role.disabledPermissions) ? role.disabledPermissions : [];
         const nextDisabled = new Set(curDisabled);
         if (allEnabled) {
@@ -923,8 +945,12 @@ export const SystemRoleGroupPage: React.FC = () => {
           ...role,
           disabledPermissions: Array.from(nextDisabled),
         };
-      })
-    );
+      });
+      try {
+        localStorage.setItem('tdu_roles_state_v3', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   // 1. Lưu thay đổi phân quyền vào CSDL MySQL (bảng vai_tro_quyen)
@@ -935,21 +961,15 @@ export const SystemRoleGroupPage: React.FC = () => {
     );
 
     try {
-      await fetch(`/api/roles/${selectedRole.id}/permissions`, {
+      const res = await fetch(`/api/roles/${selectedRole.id}/permissions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabledPermissions }),
       });
-    } catch (err) {
-      console.warn('Could not save permissions to MySQL:', err);
-    }
-
-    try {
-      await fetch(`/api/roles/${selectedRole.id}/permissions`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabledPermissions }),
-      });
+      const data = await res.json();
+      if (!data?.success) {
+        console.warn('Lỗi từ server khi lưu vai trò:', data?.message);
+      }
     } catch (err) {
       console.warn('Could not save permissions to MySQL:', err);
     }
@@ -1834,13 +1854,20 @@ export const SystemRoleGroupPage: React.FC = () => {
                           </span>
                           <button
                             type="button"
+                            role="switch"
+                            aria-checked={isSectionAllOn}
                             onClick={() => handleToggleSection(section)}
-                            className={`w-[42px] h-[22px] rounded-full transition-colors p-0.5 cursor-pointer flex items-center shrink-0 ${
-                              isSectionAllOn ? 'bg-[#2563eb] justify-end' : 'bg-slate-300 justify-start'
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              isSectionAllOn ? 'bg-blue-600' : 'bg-slate-300'
                             }`}
                             title="Bật / tắt toàn bộ nhóm quyền này"
                           >
-                            <span className="w-[18px] h-[18px] rounded-full bg-white shadow-2xs block" />
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                isSectionAllOn ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
                           </button>
                         </div>
 
@@ -1856,20 +1883,31 @@ export const SystemRoleGroupPage: React.FC = () => {
                               return (
                                 <div
                                   key={item.id}
-                                  className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors"
+                                  onClick={() => handleTogglePerm(item.id)}
+                                  className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                                 >
-                                  <span className="text-[12.5px] font-semibold text-slate-700">
+                                  <span className="text-[12.5px] font-semibold text-slate-700 flex-1">
                                     {item.label}
                                   </span>
 
                                   <button
                                     type="button"
-                                    onClick={() => handleTogglePerm(item.id)}
-                                    className={`w-[42px] h-[22px] rounded-full transition-colors p-0.5 cursor-pointer flex items-center shrink-0 ${
-                                      enabled ? 'bg-[#2563eb] justify-end' : 'bg-slate-300 justify-start'
+                                    role="switch"
+                                    aria-checked={enabled}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTogglePerm(item.id);
+                                    }}
+                                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                      enabled ? 'bg-blue-600' : 'bg-slate-300'
                                     }`}
                                   >
-                                    <span className="w-[18px] h-[18px] rounded-full bg-white shadow-2xs block" />
+                                    <span
+                                      aria-hidden="true"
+                                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                        enabled ? 'translate-x-5' : 'translate-x-0'
+                                      }`}
+                                    />
                                   </button>
                                 </div>
                               );
@@ -2061,7 +2099,8 @@ export const SystemRoleGroupPage: React.FC = () => {
                       return (
                         <div
                           key={mod.id}
-                          className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/60"
+                          onClick={() => handleToggleEntireModule(mod)}
+                          className="px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer select-none"
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="text-slate-500">{mod.icon}</span>
@@ -2069,12 +2108,22 @@ export const SystemRoleGroupPage: React.FC = () => {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleToggleEntireModule(mod)}
-                            className={`w-[42px] h-[22px] rounded-full transition-colors p-0.5 cursor-pointer flex items-center ${
-                              enabled ? 'bg-[#2563eb] justify-end' : 'bg-slate-300 justify-start'
+                            role="switch"
+                            aria-checked={enabled}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleEntireModule(mod);
+                            }}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              enabled ? 'bg-blue-600' : 'bg-slate-300'
                             }`}
                           >
-                            <span className="w-[18px] h-[18px] rounded-full bg-white shadow-2xs block" />
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                enabled ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
                           </button>
                         </div>
                       );

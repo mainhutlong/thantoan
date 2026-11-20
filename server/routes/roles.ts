@@ -7,6 +7,8 @@ const router = Router();
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const [roles]: any = await pool.query('SELECT * FROM vai_tro ORDER BY id ASC');
+    const [allQuyen]: any = await pool.query('SELECT ma_quyen FROM quyen_han');
+    const allPermCodes: string[] = allQuyen.map((q: any) => q.ma_quyen);
 
     const result = [];
     for (const r of roles) {
@@ -29,6 +31,9 @@ router.get('/', async (_req: Request, res: Response) => {
         [r.id]
       );
 
+      const enabledList: string[] = perms.map((p: any) => p.ma_quyen);
+      const disabledList: string[] = allPermCodes.filter((c: string) => !enabledList.includes(c));
+
       result.push({
         id: String(r.id),
         code: r.ma_vai_tro,
@@ -44,8 +49,8 @@ router.get('/', async (_req: Request, res: Response) => {
           email: m.email,
           unit: m.unit || 'Đại học Tây Đô',
         })),
-        enabledPermissions: perms.map((p: any) => p.ma_quyen),
-        disabledPermissions: [],
+        enabledPermissions: enabledList,
+        disabledPermissions: disabledList,
       });
     }
 
