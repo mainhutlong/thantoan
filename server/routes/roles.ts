@@ -93,25 +93,46 @@ router.post('/:roleId/members', async (req: Request, res: Response) => {
     let countAdded = 0;
     for (const item of rawList) {
       let resolvedUserId: number | null = null;
-      const val = typeof item === 'object' ? (item.code || item.email || item.id) : String(item);
+      const rawCode = typeof item === 'object' ? item.code : null;
+      const rawEmail = typeof item === 'object' ? item.email : null;
+      const rawId = typeof item === 'object' ? item.id : item;
 
-      if (/^\d+$/.test(val)) {
-        resolvedUserId = parseInt(val, 10);
-      } else {
-        const cleanVal = val.replace(/^(u-|staff-)/, '');
-        const [u]: any = await pool.query(
-          'SELECT id FROM nguoi_dung WHERE ma_nhan_su = ? OR email = ? OR id = ? LIMIT 1',
-          [val, val, cleanVal]
+      const val = String(rawCode || rawEmail || rawId || '').trim();
+      const cleanVal = String(rawId || val).replace(/^(u-|staff-|user-)/, '');
+
+      // 1. Ưu tiên tìm theo ma_nhan_su hoặc email (tránh nhầm lẫn mã nhân sự dạng số như 01067017 thành ID)
+      let [u]: any = await pool.query(
+        'SELECT id FROM nguoi_dung WHERE (ma_nhan_su IS NOT NULL AND ma_nhan_su != "" AND (ma_nhan_su = ? OR ma_nhan_su = ?)) OR email = ? LIMIT 1',
+        [val, rawCode || val, rawEmail || val]
+      );
+
+      // 2. Nếu chưa tìm thấy và cleanVal là số, kiểm tra theo id bản ghi
+      if (u.length === 0 && /^\d+$/.test(cleanVal)) {
+        const [uById]: any = await pool.query('SELECT id FROM nguoi_dung WHERE id = ? LIMIT 1', [parseInt(cleanVal, 10)]);
+        if (uById.length > 0) u = uById;
+      }
+
+      // 3. Nếu vẫn chưa thấy và item là object, tìm kết hợp tất cả các trường
+      if (u.length === 0 && typeof item === 'object') {
+        const [uObj]: any = await pool.query(
+          'SELECT id FROM nguoi_dung WHERE (ma_nhan_su IS NOT NULL AND ma_nhan_su != "" AND ma_nhan_su = ?) OR email = ? OR id = ? LIMIT 1',
+          [item.code || '', item.email || '', String(item.id || '').replace(/^(u-|staff-|user-)/, '')]
         );
-        if (u.length > 0) resolvedUserId = u[0].id;
+        if (uObj.length > 0) u = uObj;
+      }
+
+      if (u.length > 0) {
+        resolvedUserId = u[0].id;
       }
 
       if (resolvedUserId) {
-        await pool.query(
+        const [result]: any = await pool.query(
           `INSERT IGNORE INTO nguoi_dung_vai_tro (nguoi_dung_id, vai_tro_id) VALUES (?, ?)`,
           [resolvedUserId, targetRoleId]
         );
-        countAdded++;
+        if (result.affectedRows > 0) {
+          countAdded++;
+        }
       }
     }
 
@@ -151,16 +172,21 @@ router.delete('/:roleId/members/:userId', async (req: Request, res: Response) =>
     }
 
     let resolvedUserId: number | null = null;
-    if (/^\d+$/.test(userId)) {
-      resolvedUserId = parseInt(userId, 10);
-    } else {
-      const cleanVal = userId.replace(/^(u-|staff-)/, '');
-      const [u]: any = await pool.query(
-        'SELECT id FROM nguoi_dung WHERE ma_nhan_su = ? OR email = ? OR id = ? LIMIT 1',
-        [userId, userId, cleanVal]
-      );
-      if (u.length > 0) resolvedUserId = u[0].id;
+    const cleanVal = String(userId).trim().replace(/^(u-|staff-|user-)/, '');
+
+    // 1. Tìm theo ma_nhan_su hoặc email trước
+    let [u]: any = await pool.query(
+      'SELECT id FROM nguoi_dung WHERE (ma_nhan_su IS NOT NULL AND ma_nhan_su != "" AND ma_nhan_su = ?) OR email = ? LIMIT 1',
+      [userId, userId]
+    );
+
+    // 2. Nếu không thấy và cleanVal là số thì tìm theo id
+    if (u.length === 0 && /^\d+$/.test(cleanVal)) {
+      const [uById]: any = await pool.query('SELECT id FROM nguoi_dung WHERE id = ? LIMIT 1', [parseInt(cleanVal, 10)]);
+      if (uById.length > 0) u = uById;
     }
+
+    if (u.length > 0) resolvedUserId = u[0].id;
 
     if (targetRoleId && resolvedUserId) {
       await pool.query(
