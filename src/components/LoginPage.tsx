@@ -55,12 +55,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         let role = 'GIANG_VIEN';
         let roleName = 'Giảng viên';
+        let isFallbackAdmin = false;
+        try {
+          const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+          const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+          if (adminMembers.some((m: any) => m.email?.toLowerCase().trim() === email || m.code?.toLowerCase().trim() === found?.maNhanSu?.toLowerCase().trim())) {
+            isFallbackAdmin = true;
+          }
+          const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+          const adminObj = fullRolesCache.find((r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG' || r.id === 1);
+          if (adminObj && Array.isArray(adminObj.members)) {
+            if (adminObj.members.some((m: any) => m.email?.toLowerCase().trim() === email || m.code?.toLowerCase().trim() === found?.maNhanSu?.toLowerCase().trim())) {
+              isFallbackAdmin = true;
+            }
+          }
+        } catch {}
+
         if (
           email === 'mnlong@tdu.edu.vn' ||
           email.includes('mainhutlong') ||
           (found && found.hoTen.toLowerCase().includes('mai nhựt long')) ||
           email === 'lvlinh@tdu.edu.vn' ||
-          (found && found.hoTen.toLowerCase().includes('lê vũ linh'))
+          (found && found.hoTen.toLowerCase().includes('lê vũ linh')) ||
+          email === 'cvdanh@tdu.edu.vn' ||
+          (found && (found.hoTen.toLowerCase().includes('cao văn danh') || found.maNhanSu === '01067017')) ||
+          isFallbackAdmin
         ) {
           role = 'SUPER_ADMIN';
           roleName = 'Quản trị hệ thống';

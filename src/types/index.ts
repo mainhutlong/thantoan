@@ -236,6 +236,8 @@ export interface UserAccount {
   maGV?: string;
   status: 'active' | 'locked';
   lastLogin?: string;
+  roles?: string[];
+  permissions?: string[];
 }
 
 // ==========================================

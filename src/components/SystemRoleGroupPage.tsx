@@ -537,13 +537,16 @@ export const buildInitialRoles = (): RoleItem[] => {
     membersMap[cfg.id] = [];
   }
 
-  // 1. Quản trị viên hệ thống: Thêm tài khoản mnlong và lvlinh
+  // 1. Quản trị viên hệ thống: Thêm tài khoản mnlong, lvlinh và cvdanh
   const adminStaffs = FULL_PERSONNEL_245.filter(
     (p) =>
       p.email?.toLowerCase().trim() === 'mnlong@tdu.edu.vn' ||
       p.hoTen.toLowerCase().includes('mai nhựt long') ||
       p.email?.toLowerCase().trim() === 'lvlinh@tdu.edu.vn' ||
-      p.hoTen.toLowerCase().includes('lê vũ linh')
+      p.hoTen.toLowerCase().includes('lê vũ linh') ||
+      p.email?.toLowerCase().trim() === 'cvdanh@tdu.edu.vn' ||
+      p.hoTen.toLowerCase().includes('cao văn danh') ||
+      p.maNhanSu === '01067017'
   );
   for (const staff of adminStaffs) {
     membersMap['quan_tri_vien_he_thong'].push({

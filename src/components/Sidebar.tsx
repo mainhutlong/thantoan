@@ -35,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeItem,
   onSelectItem,
   pendingFeedbackCount,
+  currentRole,
   selectedDepartment,
   onToggleSidebar,
   currentAccount,
@@ -50,11 +51,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const dept = (currentAccount?.departmentName || '').toLowerCase().trim();
   const chucVu = (currentAccount?.chucVu || currentAccount?.assignedModule || '').toLowerCase().trim();
   const roleType = (currentAccount?.role || '').toLowerCase();
+  const staffCode = (currentAccount?.maGV || '').toLowerCase().trim();
 
-  // 1. Quản trị hệ thống (Toàn quyền) - DUY NHẤT Mai Nhựt Long (mnlong@tdu.edu.vn)
+  // Kiểm tra vai trò Quản trị viên từ local storage & danh sách phân quyền
+  let isCustomSuperAdmin = false;
+  try {
+    const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+    const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+    if (
+      adminMembers.some(
+        (m: any) =>
+          (m.email && m.email.toLowerCase().trim() === email) ||
+          (m.code && m.code.toLowerCase().trim() === staffCode)
+      )
+    ) {
+      isCustomSuperAdmin = true;
+    }
+
+    const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+    const adminRoleObj = fullRolesCache.find(
+      (r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG' || r.id === 1
+    );
+    if (adminRoleObj && Array.isArray(adminRoleObj.members)) {
+      if (
+        adminRoleObj.members.some(
+          (m: any) =>
+            (m.email && m.email.toLowerCase().trim() === email) ||
+            (m.code && m.code.toLowerCase().trim() === staffCode)
+        )
+      ) {
+        isCustomSuperAdmin = true;
+      }
+    }
+  } catch {}
+
+  const userRoles: string[] = (currentAccount as any)?.roles || [];
+
+  // 1. Quản trị hệ thống (Toàn quyền) - mnlong, lvlinh, cvdanh hoặc bất kỳ ai có vai trò admin/QUAN_TRI_VIEN_HE_THONG
   const isSuperAdmin =
     email === 'mnlong@tdu.edu.vn' ||
-    email.includes('mainhutlong');
+    email.includes('mainhutlong') ||
+    email === 'lvlinh@tdu.edu.vn' ||
+    email.includes('lvlinh') ||
+    email === 'cvdanh@tdu.edu.vn' ||
+    staffCode === '01067017' ||
+    currentRole === 'admin' ||
+    roleType === 'admin' ||
+    userRoles.includes('QUAN_TRI_VIEN_HE_THONG') ||
+    userRoles.includes('SUPER_ADMIN') ||
+    isCustomSuperAdmin;
 
   // 2. Phòng Quản lý Đào tạo: Thấy Thanh toán giờ giảng (toàn quyền) & Phản hồi của giảng viên
   const isDaoTao =

@@ -74,14 +74,46 @@ export default function App() {
         const u = JSON.parse(userStr);
         const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
         const uEmail = (u.email || '').toLowerCase().trim();
+        const uCode = (u.maNhanSu || '').toLowerCase().trim();
         const uDonVi = (u.donVi || '').toLowerCase().trim();
         const uChucVu = (u.chucVu || '').toLowerCase().trim();
+
+        let isCustomAdmin = false;
+        try {
+          const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+          const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+          if (
+            adminMembers.some(
+              (m: any) =>
+                (m.email && m.email.toLowerCase().trim() === uEmail) ||
+                (m.code && m.code.toLowerCase().trim() === uCode)
+            )
+          ) {
+            isCustomAdmin = true;
+          }
+          const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+          const adminObj = fullRolesCache.find((r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG' || r.id === 1);
+          if (adminObj && Array.isArray(adminObj.members)) {
+            if (
+              adminObj.members.some(
+                (m: any) =>
+                  (m.email && m.email.toLowerCase().trim() === uEmail) ||
+                  (m.code && m.code.toLowerCase().trim() === uCode)
+              )
+            ) {
+              isCustomAdmin = true;
+            }
+          }
+        } catch {}
 
         if (
           uEmail === 'mnlong@tdu.edu.vn' ||
           uEmail === 'lvlinh@tdu.edu.vn' ||
+          uEmail === 'cvdanh@tdu.edu.vn' ||
+          uCode === '01067017' ||
           roles.includes('QUAN_TRI_VIEN_HE_THONG') ||
-          roles.includes('SUPER_ADMIN')
+          roles.includes('SUPER_ADMIN') ||
+          isCustomAdmin
         ) {
           return 'admin';
         }
@@ -143,6 +175,7 @@ export default function App() {
         const u = JSON.parse(userStr);
         const roles: string[] = Array.isArray(u.roles) ? u.roles : (u.vaiTroCode ? [u.vaiTroCode] : []);
         const uEmail = (u.email || '').toLowerCase().trim();
+        const uCode = (u.maNhanSu || '').toLowerCase().trim();
         let isCustomAdmin = false;
         try {
           const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
@@ -151,10 +184,23 @@ export default function App() {
             adminMembers.some(
               (m: any) =>
                 m.email?.toLowerCase().trim() === uEmail ||
-                m.code?.toLowerCase().trim() === (u.maNhanSu || '').toLowerCase().trim()
+                m.code?.toLowerCase().trim() === uCode
             )
           ) {
             isCustomAdmin = true;
+          }
+          const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+          const adminObj = fullRolesCache.find((r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG' || r.id === 1);
+          if (adminObj && Array.isArray(adminObj.members)) {
+            if (
+              adminObj.members.some(
+                (m: any) =>
+                  m.email?.toLowerCase().trim() === uEmail ||
+                  m.code?.toLowerCase().trim() === uCode
+              )
+            ) {
+              isCustomAdmin = true;
+            }
           }
         } catch {}
 
@@ -166,6 +212,8 @@ export default function App() {
           uEmail === 'mnlong@tdu.edu.vn' ||
           uEmail === 'lvlinh@tdu.edu.vn' ||
           uEmail.includes('lvlinh') ||
+          uEmail === 'cvdanh@tdu.edu.vn' ||
+          uCode === '01067017' ||
           roles.includes('QUAN_TRI_VIEN_HE_THONG') ||
           roles.includes('SUPER_ADMIN') ||
           isCustomAdmin
@@ -221,6 +269,7 @@ export default function App() {
           maGV: u.maNhanSu || 'TDU00128',
           status: 'active',
           lastLogin: new Date().toLocaleString('vi-VN'),
+          roles: mappedRole === 'admin' && !roles.includes('QUAN_TRI_VIEN_HE_THONG') ? [...roles, 'QUAN_TRI_VIEN_HE_THONG'] : roles,
         };
       }
     } catch {}
@@ -328,6 +377,73 @@ export default function App() {
     fetchNckhFromDb();
   }, [fetchNckhFromDb]);
 
+  // Đồng bộ phân quyền từ MySQL Database qua API /api/roles
+  useEffect(() => {
+    fetch('/api/roles')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+          try {
+            localStorage.setItem('tdu_roles_state_v3', JSON.stringify(data.data));
+          } catch {}
+
+          const adminRole = data.data.find(
+            (r: any) =>
+              r.code === 'QUAN_TRI_VIEN_HE_THONG' ||
+              r.id === 1 ||
+              r.id === 'quan_tri_vien_he_thong'
+          );
+          if (adminRole && Array.isArray(adminRole.members)) {
+            const myEmail = (currentAccount?.email || '').toLowerCase().trim();
+            const myCode = (currentAccount?.maGV || '').toLowerCase().trim();
+            const isMemberAdmin = adminRole.members.some(
+              (m: any) =>
+                (m.email && m.email.toLowerCase().trim() === myEmail) ||
+                (m.code && m.code.toLowerCase().trim() === myCode) ||
+                (m.id && String(m.id) === String(currentAccount?.id))
+            );
+            if (isMemberAdmin) {
+              if (currentRole !== 'admin') {
+                setCurrentRole('admin');
+              }
+              setCurrentAccount((prev) => {
+                const existingRoles = (prev as any).roles || [];
+                const updatedRoles = existingRoles.includes('QUAN_TRI_VIEN_HE_THONG')
+                  ? existingRoles
+                  : [...existingRoles, 'QUAN_TRI_VIEN_HE_THONG'];
+                return {
+                  ...prev,
+                  role: 'admin' as any,
+                  roles: updatedRoles,
+                };
+              });
+
+              // Cập nhật tdu_auth_user trong localStorage
+              try {
+                const authStr = localStorage.getItem('tdu_auth_user');
+                if (authStr) {
+                  const authUser = JSON.parse(authStr);
+                  if (
+                    authUser.email?.toLowerCase().trim() === myEmail ||
+                    authUser.maNhanSu?.toLowerCase().trim() === myCode
+                  ) {
+                    const rList = Array.isArray(authUser.roles) ? authUser.roles : [];
+                    if (!rList.includes('QUAN_TRI_VIEN_HE_THONG')) {
+                      authUser.roles = [...rList, 'QUAN_TRI_VIEN_HE_THONG'];
+                      localStorage.setItem('tdu_auth_user', JSON.stringify(authUser));
+                    }
+                  }
+                }
+              } catch {}
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not sync /api/roles on mount:', err);
+      });
+  }, [currentAccount?.email, currentAccount?.maGV]);
+
   // Selected row IDs for bulk actions
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -390,8 +506,45 @@ export default function App() {
     if (!user) return;
     const roles: string[] = Array.isArray(user.roles) ? user.roles : (user.vaiTroCode ? [user.vaiTroCode] : []);
     const emailLower = (user.email || '').toLowerCase().trim();
+    const uCode = (user.maNhanSu || '').toLowerCase().trim();
+
+    let isCustomAdmin = false;
+    try {
+      const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+      const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+      if (
+        adminMembers.some(
+          (m: any) =>
+            m.email?.toLowerCase().trim() === emailLower ||
+            m.code?.toLowerCase().trim() === uCode
+        )
+      ) {
+        isCustomAdmin = true;
+      }
+      const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+      const adminObj = fullRolesCache.find((r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG' || r.id === 1);
+      if (adminObj && Array.isArray(adminObj.members)) {
+        if (
+          adminObj.members.some(
+            (m: any) =>
+              m.email?.toLowerCase().trim() === emailLower ||
+              m.code?.toLowerCase().trim() === uCode
+          )
+        ) {
+          isCustomAdmin = true;
+        }
+      }
+    } catch {}
+
     let mappedRole: UserRole = 'lecturer';
-    if (emailLower === 'mnlong@tdu.edu.vn' || roles.includes('QUAN_TRI_VIEN_HE_THONG') || roles.includes('SUPER_ADMIN')) {
+    if (
+      emailLower === 'mnlong@tdu.edu.vn' ||
+      emailLower === 'cvdanh@tdu.edu.vn' ||
+      uCode === '01067017' ||
+      roles.includes('QUAN_TRI_VIEN_HE_THONG') ||
+      roles.includes('SUPER_ADMIN') ||
+      isCustomAdmin
+    ) {
       mappedRole = 'admin';
     } else if (roles.includes('BAN_GIAM_HIEU') || roles.includes('LANH_DAO_KHOA') || user.vaiTroCode === 'truong_khoa' || user.vaiTroCode === 'truong_phong') {
       mappedRole = 'approver';
@@ -426,6 +579,7 @@ export default function App() {
       maGV: user.maNhanSu || 'TDU00128',
       status: 'active',
       lastLogin: new Date().toLocaleString('vi-VN'),
+      roles: mappedRole === 'admin' && !roles.includes('QUAN_TRI_VIEN_HE_THONG') ? [...roles, 'QUAN_TRI_VIEN_HE_THONG'] : roles,
     };
     setCurrentAccount(matchedAccount);
     setCurrentRole(mappedRole);
@@ -436,7 +590,15 @@ export default function App() {
 
     // Tự động định tuyến ban đầu thông minh theo phân quyền đơn vị
     const deptLower = (user.donVi || '').toLowerCase().trim();
-    const isSuper = emailLower === 'mnlong@tdu.edu.vn';
+    const isSuper =
+      emailLower === 'mnlong@tdu.edu.vn' ||
+      emailLower === 'cvdanh@tdu.edu.vn' ||
+      uCode === '01067017' ||
+      roles.includes('QUAN_TRI_VIEN_HE_THONG') ||
+      roles.includes('SUPER_ADMIN') ||
+      mappedRole === 'admin' ||
+      isCustomAdmin;
+
     const isDaoTao = !isSuper && deptLower.includes('đào tạo');
     const isQLKH = !isSuper && (deptLower.includes('khoa học') || deptLower.includes('qlkh'));
     const isTaiChinh = !isSuper && (deptLower.includes('tài chính') || deptLower.includes('kế hoạch'));
@@ -451,6 +613,8 @@ export default function App() {
       setActiveSidebarItem('tong_thanh_toan');
     } else if (!isSuper) {
       setActiveSidebarItem('tra_cuu_giang_vien');
+    } else {
+      setActiveSidebarItem('trang_chu');
     }
   };
 

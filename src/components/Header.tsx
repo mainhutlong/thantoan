@@ -208,8 +208,46 @@ export const Header: React.FC<HeaderProps> = ({
       }
     }
 
-    // 4. Tài khoản Quản trị viên hệ thống: mnlong và lvlinh
-    if (email === 'mnlong@tdu.edu.vn' || email === 'lvlinh@tdu.edu.vn' || email.includes('lvlinh')) {
+    // 4. Tài khoản Quản trị viên hệ thống: mnlong, lvlinh, cvdanh hoặc người dùng có vai trò admin/QUAN_TRI_VIEN_HE_THONG
+    let isAssignedAdmin = false;
+    try {
+      const customRoles = JSON.parse(localStorage.getItem('tdu_custom_role_members') || '{}');
+      const adminMembers = customRoles['quan_tri_vien_he_thong'] || [];
+      if (
+        adminMembers.some(
+          (m: any) =>
+            (m.email && m.email.toLowerCase().trim() === email) ||
+            (m.code && m.code.toLowerCase().trim() === staffCode)
+        )
+      ) {
+        isAssignedAdmin = true;
+      }
+      const fullRolesCache = JSON.parse(localStorage.getItem('tdu_roles_state_v3') || '[]');
+      const adminObj = fullRolesCache.find(
+        (r: any) => r.id === 'quan_tri_vien_he_thong' || r.code === 'QUAN_TRI_VIEN_HE_THONG' || r.id === 1
+      );
+      if (adminObj && Array.isArray(adminObj.members)) {
+        if (
+          adminObj.members.some(
+            (m: any) =>
+              (m.email && m.email.toLowerCase().trim() === email) ||
+              (m.code && m.code.toLowerCase().trim() === staffCode)
+          )
+        ) {
+          isAssignedAdmin = true;
+        }
+      }
+    } catch {}
+
+    if (
+      email === 'mnlong@tdu.edu.vn' ||
+      email === 'lvlinh@tdu.edu.vn' ||
+      email.includes('lvlinh') ||
+      email === 'cvdanh@tdu.edu.vn' ||
+      staffCode === '01067017' ||
+      currentRole === 'admin' ||
+      isAssignedAdmin
+    ) {
       sessionRoleCodes.add('QUAN_TRI_VIEN_HE_THONG');
       roleTitleMap.set('QUAN_TRI_VIEN_HE_THONG', 'Quản trị viên hệ thống');
       sessionRoleCodes.add('PHONG_CONG_NGHE_THONG_TIN');
@@ -325,7 +363,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
 
     return result;
-  }, [userEmail, userStaffCode, matchedStaff]);
+  }, [userEmail, userStaffCode, matchedStaff, currentRole]);
 
   const currentRoleOption =
     userAssignedRoles.find((r) => r.userRole === currentRole) ||
