@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TeachingRecord, FeedbackRowInfo } from '../types';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   Printer,
   Download,
@@ -56,6 +57,7 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
   onToggleSelectRow,
   onSelectAllRows,
 }) => {
+  const { confirmDelete } = useConfirmDelete();
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
   }, [records, maGV]);
@@ -348,14 +350,21 @@ export const AdvisorScheduleReport: React.FC<AdvisorScheduleReportProps> = ({
     setAdvisorRows([...advisorRows, newRow]);
   };
 
-  const handleDeleteRow = (index: number) => {
+  const handleDeleteRow = async (index: number) => {
     if (advisorRows.length <= 1) {
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
     const target = advisorRows[index];
-    const rowDesc = target?.lopCVHT ? `lớp "${target.lopCVHT}"` : `dòng số ${index + 1}`;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng phân công cố vấn học tập ${rowDesc} không?`)) {
+    const rowDesc = target?.lopCVHT ? `Lớp "${target.lopCVHT}"` : `Dòng số ${index + 1}`;
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa phân công cố vấn',
+      targetName: rowDesc,
+      targetType: target?.khoaNganh || 'Phân công CVHT & Quản lý lớp',
+      message: `Bạn có chắc chắn muốn xóa dòng phân công cố vấn học tập ${rowDesc} không?`,
+      confirmText: 'Xóa phân công',
+    });
+    if (!ok) {
       return;
     }
     const updated = advisorRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));

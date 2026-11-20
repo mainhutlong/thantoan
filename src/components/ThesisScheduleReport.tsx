@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TeachingRecord } from '../types';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   Printer,
   Download,
@@ -50,6 +51,7 @@ export const ThesisScheduleReport: React.FC<ThesisScheduleReportProps> = ({
   onClose,
   academicYear = '2025 - 2026',
 }) => {
+  const { confirmDelete } = useConfirmDelete();
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
   }, [records, maGV]);
@@ -355,14 +357,21 @@ export const ThesisScheduleReport: React.FC<ThesisScheduleReportProps> = ({
     setThesisRows([...thesisRows, newRow]);
   };
 
-  const handleDeleteRow = (index: number) => {
+  const handleDeleteRow = async (index: number) => {
     if (thesisRows.length <= 1) {
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
     const target = thesisRows[index];
-    const rowDesc = target?.tenDeTai ? `đề tài "${target.tenDeTai}"` : `dòng số ${index + 1}`;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng đồ án / khóa luận ${rowDesc} không?`)) {
+    const rowDesc = target?.tenDeTai ? `Đề tài "${target.tenDeTai}"` : `Dòng số ${index + 1}`;
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa đề tài tốt nghiệp',
+      targetName: rowDesc,
+      targetType: target?.vaiTro || 'Đồ án / Khóa luận tốt nghiệp',
+      message: `Bạn có chắc chắn muốn xóa dòng đồ án / khóa luận ${rowDesc} không?`,
+      confirmText: 'Xóa đề tài',
+    });
+    if (!ok) {
       return;
     }
     const updated = thesisRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   Users,
   Search,
@@ -165,6 +166,7 @@ const INITIAL_LECTURERS: LecturerContract[] = [
 ];
 
 export const LecturerProfilesPage: React.FC = () => {
+  const { confirmDelete } = useConfirmDelete();
   const [lecturers, setLecturers] = useState<LecturerContract[]>(INITIAL_LECTURERS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFaculty, setSelectedFaculty] = useState('all');
@@ -250,10 +252,17 @@ export const LecturerProfilesPage: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa hồ sơ giảng viên này?')) {
-      setLecturers((prev) => prev.filter((l) => l.id !== id));
-    }
+  const handleDelete = async (id: string) => {
+    const target = lecturers.find((l) => l.id === id);
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa hồ sơ giảng viên',
+      targetName: target?.hoTen || `Mã GV: ${target?.maGV || id}`,
+      targetType: target ? `${target.khoaBoMon} · ${target.hocHamHocVi}` : 'Hồ sơ giảng viên',
+      message: 'Bạn có chắc chắn muốn xóa hồ sơ giảng viên này khỏi danh sách?',
+      confirmText: 'Xóa giảng viên',
+    });
+    if (!ok) return;
+    setLecturers((prev) => prev.filter((l) => l.id !== id));
   };
 
   const handleExportExcel = () => {

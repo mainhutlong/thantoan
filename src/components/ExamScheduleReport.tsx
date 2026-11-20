@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TeachingRecord, FeedbackRowInfo } from '../types';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   Printer,
   Download,
@@ -62,6 +63,7 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
   onToggleSelectRow,
   onSelectAllRows,
 }) => {
+  const { confirmDelete } = useConfirmDelete();
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
   }, [records, maGV]);
@@ -394,14 +396,21 @@ export const ExamScheduleReport: React.FC<ExamScheduleReportProps> = ({
     setExamRows([...examRows, newRow]);
   };
 
-  const handleDeleteRow = (index: number) => {
+  const handleDeleteRow = async (index: number) => {
     if (examRows.length <= 1) {
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
     const target = examRows[index];
-    const rowDesc = target?.tenHocPhan ? `học phần "${target.tenHocPhan}"` : `dòng số ${index + 1}`;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng kê khai khảo thí ${rowDesc} không?`)) {
+    const rowDesc = target?.tenHocPhan ? `Học phần "${target.tenHocPhan}"` : `Dòng số ${index + 1}`;
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa nhiệm vụ khảo thí',
+      targetName: rowDesc,
+      targetType: target?.maLopHocPhan ? `Lớp ${target.maLopHocPhan} · Đợt ${target.dotThi}` : 'Nhiệm vụ khảo thí & coi thi',
+      message: `Bạn có chắc chắn muốn xóa dòng kê khai khảo thí ${rowDesc} không?`,
+      confirmText: 'Xóa khảo thí',
+    });
+    if (!ok) {
       return;
     }
     const updated = examRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));

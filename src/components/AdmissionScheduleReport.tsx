@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
 import { saveWorkbookToFile, stripAcademicTitle } from '../utils/excelTemplateGenerator';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 
 export interface AdmissionScheduleRow {
   id: string;
@@ -55,6 +56,7 @@ export const AdmissionScheduleReport: React.FC<AdmissionScheduleReportProps> = (
   onToggleSelectRow,
   onSelectAllRows,
 }) => {
+  const { confirmDelete } = useConfirmDelete();
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
   }, [records, maGV]);
@@ -338,16 +340,21 @@ export const AdmissionScheduleReport: React.FC<AdmissionScheduleReportProps> = (
     setAdmissionRows([...admissionRows, newRow]);
   };
 
-  const handleDeleteRow = (index: number) => {
+  const handleDeleteRow = async (index: number) => {
     if (admissionRows.length <= 1) {
       alert('Bảng kê cần tối thiểu 1 dòng dữ liệu.');
       return;
     }
     const target = admissionRows[index];
-    const rowDesc = target?.noiDung ? `"${target.noiDung}"` : `dòng số ${index + 1}`;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa dòng kê khai tuyển sinh ${rowDesc} không?`)) {
-      return;
-    }
+    const ok = await confirmDelete({
+      title: 'Xóa dòng kê khai tuyển sinh',
+      targetName: target?.noiDung || `Dòng số ${index + 1}`,
+      targetType: `${target?.diaBan || ''} · ${target?.vaiTro || ''}`,
+      message: 'Bạn có chắc chắn muốn xóa dòng hoạt động tuyển sinh này khỏi bảng kê không?',
+      confirmText: 'Xóa dòng',
+    });
+    if (!ok) return;
+
     const updated = admissionRows.filter((_, i) => i !== index).map((r, i) => ({ ...r, tt: i + 1 }));
     setAdmissionRows(updated);
   };

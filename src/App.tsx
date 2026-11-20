@@ -38,6 +38,7 @@ import { SystemAuditLogPage } from './components/SystemAuditLogPage';
 import { UserProfileView } from './components/UserProfileView';
 import { TduSsoLoginModal } from './components/TduSsoLoginModal';
 import { LoginPage } from './components/LoginPage';
+import { useConfirmDelete } from './context/ConfirmDialogContext';
 import { INITIAL_VBCC_DATA, INITIAL_TEACHING_DATA, INITIAL_ACCOUNTS } from './data/mockData';
 import {
   VbccRecord,
@@ -54,6 +55,7 @@ import {
 } from './types';
 
 export default function App() {
+  const { confirmDelete } = useConfirmDelete();
   // App Mode & Persona Role
   const appMode: AppMode = 'teaching_payment';
   // Authentication gate state
@@ -1022,11 +1024,16 @@ export default function App() {
         ? 'Công tác khác'
         : 'nhiệm vụ này';
 
-    if (
-      !window.confirm(
-        `XÁC NHẬN XÓA: Bạn có chắc chắn muốn xóa dữ liệu [${deptName}] của giảng viên ${target.hoTen} (${target.maGV}) khỏi hệ thống không?\n\nThao tác này sẽ xóa bản ghi khỏi hệ thống và không thể hoàn tác.`
-      )
-    ) {
+    const ok = await confirmDelete({
+      title: `Xác nhận xóa dữ liệu [${deptName}]`,
+      targetName: `${target.hoTen} (${target.maGV})`,
+      targetType: deptName,
+      message: `Bạn có chắc chắn muốn xóa bản ghi thù lao ${deptName} của giảng viên này khỏi hệ thống không?`,
+      dangerNotice: 'Thao tác này sẽ xóa bản ghi khỏi hệ thống và không thể hoàn tác.',
+      confirmText: 'Xóa bản ghi',
+    });
+
+    if (!ok) {
       return;
     }
 
@@ -1173,11 +1180,16 @@ export default function App() {
           : selectedDepartment === 'cong_tac_khac'
           ? 'Công tác khác'
           : selectedDepartment;
-      if (
-        !window.confirm(
-          `CẢNH BÁO XÓA TOÀN BỘ: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của chuyên mục [${deptName}] trong đợt này để nhập lại từ đầu không?\n\nThao tác này sẽ làm sạch hoàn toàn dữ liệu của chuyên mục này và không thể hoàn tác.`
-        )
-      ) {
+      const ok = await confirmDelete({
+        title: `Làm sạch chuyên mục [${deptName}]`,
+        targetName: `Chuyên mục: ${deptName}`,
+        targetType: 'Toàn bộ chuyên mục',
+        message: `Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của chuyên mục [${deptName}] trong đợt này để nhập lại từ đầu không?`,
+        dangerNotice: 'CẢNH BÁO: Toàn bộ dữ liệu của chuyên mục này sẽ bị xóa sạch và không thể hoàn tác.',
+        confirmText: 'Đồng ý xóa toàn bộ',
+      });
+
+      if (!ok) {
         return;
       }
 
@@ -1200,11 +1212,16 @@ export default function App() {
       });
       setSelectedIds([]);
     } else {
-      if (
-        !window.confirm(
-          'CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của tất cả các khối để làm lại từ đầu không?\n\nToàn bộ dữ liệu bảng thanh toán thù lao hiện tại sẽ bị xóa sạch.'
-        )
-      ) {
+      const ok = await confirmDelete({
+        title: 'Làm sạch toàn bộ bảng thanh toán',
+        targetName: 'Tất cả các khối / chuyên mục',
+        targetType: 'Thao tác nguy hiểm',
+        message: 'Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của tất cả các khối để làm lại từ đầu không?',
+        dangerNotice: 'CẢNH BÁO: Toàn bộ dữ liệu bảng thanh toán hiện tại sẽ bị xóa sạch hoàn toàn.',
+        confirmText: 'Đồng ý xóa toàn bộ',
+      });
+
+      if (!ok) {
         return;
       }
       setTeachingList([]);

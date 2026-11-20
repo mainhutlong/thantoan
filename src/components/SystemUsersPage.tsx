@@ -29,6 +29,7 @@ import {
   ChevronsRight
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import { createStyledWorksheet, saveWorkbookToFile, TemplateColumn } from '../utils/excelTemplateGenerator';
 import { SystemUserProfile } from '../types';
 import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
@@ -106,6 +107,7 @@ const parseAcademicTitle = (raw: string): { hocHam: string; hocVi: string } => {
 export const INITIAL_SYSTEM_USERS: SystemUserProfile[] = FULL_PERSONNEL_245;
 
 export const SystemUsersPage: React.FC = () => {
+  const { confirmDelete } = useConfirmDelete();
   const [users, setUsers] = useState<SystemUserProfile[]>(() => {
     try {
       const saved = localStorage.getItem('tdu_system_users_v2');
@@ -370,17 +372,27 @@ export const SystemUsersPage: React.FC = () => {
   };
 
   // Delete user
-  const handleDeleteUser = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa hồ sơ nhân sự này khỏi hệ thống?')) {
-      setUsers((prev) => prev.filter((u) => u.id !== id));
-      setSelectedUserIds((prev) => prev.filter((uid) => uid !== id));
+  const handleDeleteUser = async (id: string): Promise<boolean> => {
+    const targetUser = users.find((u) => u.id === id);
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa hồ sơ nhân sự',
+      targetName: targetUser?.hoTen || `Mã NS: ${targetUser?.maNhanSu || id}`,
+      targetType: targetUser ? `Cán bộ (${targetUser.donVi || 'Chưa phân đơn vị'})` : 'Hồ sơ nhân sự',
+      message: 'Bạn có chắc chắn muốn xóa hồ sơ nhân sự này khỏi hệ thống không?',
+      dangerNotice: 'Hồ sơ nhân sự và các dữ liệu liên quan sẽ bị xóa khỏi hệ thống.',
+      confirmText: 'Xóa nhân sự',
+    });
+    if (!ok) return false;
 
-      try {
-        await fetch(`/api/users/${id}`, { method: 'DELETE' });
-      } catch (err) {
-        console.warn('Lỗi xóa MySQL:', err);
-      }
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+    setSelectedUserIds((prev) => prev.filter((uid) => uid !== id));
+
+    try {
+      await fetch(`/api/users/${id}`, { method: 'DELETE' });
+    } catch (err) {
+      console.warn('Lỗi xóa MySQL:', err);
     }
+    return true;
   };
 
   // Toggle selection for all visible users on current page
@@ -404,20 +416,28 @@ export const SystemUsersPage: React.FC = () => {
   // Delete batch of selected users
   const handleDeleteBatch = async () => {
     if (selectedUserIds.length === 0) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedUserIds.length} cán bộ đã chọn không?`)) {
-      const idsToDelete = [...selectedUserIds];
-      setUsers((prev) => prev.filter((u) => !selectedUserIds.includes(u.id)));
-      setSelectedUserIds([]);
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa nhiều cán bộ',
+      targetName: `${selectedUserIds.length} cán bộ đã chọn`,
+      targetType: 'Xóa hàng loạt nhân sự',
+      message: `Bạn có chắc chắn muốn xóa ${selectedUserIds.length} cán bộ đã chọn không?`,
+      dangerNotice: 'Hành động này sẽ xóa vĩnh viễn các hồ sơ đã chọn và không thể hoàn tác.',
+      confirmText: `Xóa ${selectedUserIds.length} cán bộ`,
+    });
+    if (!ok) return;
 
-      try {
-        await fetch('/api/users/batch-delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: idsToDelete }),
-        });
-      } catch (err) {
-        console.warn('Lỗi xóa batch MySQL:', err);
-      }
+    const idsToDelete = [...selectedUserIds];
+    setUsers((prev) => prev.filter((u) => !selectedUserIds.includes(u.id)));
+    setSelectedUserIds([]);
+
+    try {
+      await fetch('/api/users/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+    } catch (err) {
+      console.warn('Lỗi xóa batch MySQL:', err);
     }
   };
 
@@ -680,15 +700,23 @@ export const SystemUsersPage: React.FC = () => {
   };
 
   // Clear all users from state and storage
-  const handleClearAllUsers = () => {
+  const handleClearAllUsers = async () => {
     if (users.length === 0) return;
-    if (window.confirm(`CẢNH BÁO: Bạn có chắc chắn muốn xóa toàn bộ ${users.length} cán bộ trong danh sách hiện tại không? Thao tác này sẽ làm sạch hoàn toàn dữ liệu nhân sự cũ.`)) {
-      setUsers([]);
-      try {
-        localStorage.removeItem('tdu_system_users_v2');
-      } catch (err) {
-        console.error(err);
-      }
+    const ok = await confirmDelete({
+      title: 'CẢNH BÁO: XÓA TOÀN BỘ DANH SÁCH CÁN BỘ',
+      targetName: `Toàn bộ ${users.length} cán bộ`,
+      targetType: 'Làm sạch cơ sở dữ liệu nhân sự',
+      message: `Bạn có chắc chắn muốn xóa toàn bộ ${users.length} cán bộ trong danh sách hiện tại không? Thao tác này sẽ làm sạch hoàn toàn dữ liệu nhân sự cũ.`,
+      dangerNotice: 'HÀNH ĐỘNG NGUY HIỂM: Toàn bộ danh sách cán bộ, giảng viên và nhân viên sẽ bị xóa trắng.',
+      confirmText: 'Xóa toàn bộ cán bộ',
+    });
+    if (!ok) return;
+
+    setUsers([]);
+    try {
+      localStorage.removeItem('tdu_system_users_v2');
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -2449,9 +2477,9 @@ export const SystemUsersPage: React.FC = () => {
               <div className="bg-white border-t border-slate-200 px-8 py-4.5 flex items-center justify-between shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm(`Bạn có chắc chắn muốn xóa hồ sơ cán bộ "${drawerUser.hoTen}" không?`)) {
-                      handleDeleteUser(drawerUser.id);
+                  onClick={async () => {
+                    const success = await handleDeleteUser(drawerUser.id);
+                    if (success) {
                       handleCloseDrawer();
                     }
                   }}

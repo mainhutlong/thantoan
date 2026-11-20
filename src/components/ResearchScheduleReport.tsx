@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TeachingRecord, FeedbackRowInfo } from '../types';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   Printer,
   Download,
@@ -72,6 +73,7 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   nckhTab = 'all',
   onSelectNckhTab,
 }) => {
+  const { confirmDelete } = useConfirmDelete();
   // Find lecturer info
   const lecturerRecords = useMemo(() => {
     return records.filter((r) => r.maGV === maGV);
@@ -308,14 +310,17 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   };
 
   // Handle remove file proof
-  const handleRemoveFile = (displayedIndex: number) => {
+  const handleRemoveFile = async (displayedIndex: number) => {
     const target = displayedRows[displayedIndex];
     if (!target) return;
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn gỡ bỏ file minh chứng "${target.tenFileMinhChung || 'này'}" không?`
-      )
-    ) {
+    const ok = await confirmDelete({
+      title: 'Xác nhận gỡ bỏ file minh chứng',
+      targetName: target.tenFileMinhChung || 'File đính kèm',
+      targetType: 'Minh chứng NCKH',
+      message: `Bạn có chắc chắn muốn gỡ bỏ file minh chứng "${target.tenFileMinhChung || 'này'}" không?`,
+      confirmText: 'Gỡ bỏ file',
+    });
+    if (!ok) {
       return;
     }
     setNckhRows((prev) => {
@@ -333,11 +338,18 @@ export const ResearchScheduleReport: React.FC<ResearchScheduleReportProps> = ({
   };
 
   // Handle delete NCKH row
-  const handleDeleteRow = (displayedIndex: number) => {
+  const handleDeleteRow = async (displayedIndex: number) => {
     const target = displayedRows[displayedIndex];
     if (!target) return;
-    const desc = target.noiDung ? `"${target.noiDung}"` : `dòng số ${target.tt}`;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa bản ghi NCKH ${desc} không?`)) {
+    const desc = target.noiDung ? `"${target.noiDung}"` : `Dòng số ${target.tt}`;
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa bản ghi NCKH',
+      targetName: desc,
+      targetType: target.theLoai || 'Hoạt động NCKH',
+      message: `Bạn có chắc chắn muốn xóa bản ghi NCKH ${desc} không?`,
+      confirmText: 'Xóa bản ghi',
+    });
+    if (!ok) {
       return;
     }
     setNckhRows((prev) => {

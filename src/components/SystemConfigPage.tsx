@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   Sliders,
   Calendar,
@@ -112,6 +113,7 @@ export const SystemConfigPage: React.FC<SystemConfigPageProps> = ({
   onToggleLockPeriod: propOnToggleLockPeriod,
   onDeletePeriod: propOnDeletePeriod,
 }) => {
+  const { confirmDelete } = useConfirmDelete();
   const [config, setConfig] = useState<SystemConfiguration>(INITIAL_SYSTEM_CONFIG);
   const [activeTab, setActiveTab] = useState<'period' | 'quota' | 'rates' | 'security' | 'job_duties'>('period');
   const [isSaved, setIsSaved] = useState(false);
@@ -233,12 +235,19 @@ export const SystemConfigPage: React.FC<SystemConfigPageProps> = ({
     setTimeout(() => setIsSaved(false), 2500);
   };
 
-  const handleDeleteDuty = (id: string, code: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa Mã CV "${code}" khỏi danh mục cấu hình?`)) {
-      setJobDuties((prev) => prev.filter((d) => d.id !== id).map((d, idx) => ({ ...d, stt: idx + 1 })));
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2500);
-    }
+  const handleDeleteDuty = async (id: string, code: string) => {
+    const duty = jobDuties.find((d) => d.id === id);
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa Mã công việc',
+      targetName: `[${code}] ${duty?.tenCV || ''}`,
+      targetType: duty?.nhomCV || 'Mã định mức CV',
+      message: `Bạn có chắc chắn muốn xóa Mã CV "${code}" khỏi danh mục cấu hình?`,
+      confirmText: 'Xóa Mã CV',
+    });
+    if (!ok) return;
+    setJobDuties((prev) => prev.filter((d) => d.id !== id).map((d, idx) => ({ ...d, stt: idx + 1 })));
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2500);
   };
 
   const handleToggleDutyStatus = (id: string) => {
@@ -249,12 +258,19 @@ export const SystemConfigPage: React.FC<SystemConfigPageProps> = ({
     );
   };
 
-  const handleResetDuties = () => {
-    if (window.confirm('Khôi phục toàn bộ danh mục Mã CV về 26 mục chuẩn theo Quy chế chi tiêu TDU?')) {
-      setJobDuties(INITIAL_JOB_DUTIES);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2500);
-    }
+  const handleResetDuties = async () => {
+    const ok = await confirmDelete({
+      title: 'Khôi phục danh mục Mã CV',
+      targetName: '26 mục chuẩn Quy chế chi tiêu TDU',
+      targetType: 'Cấu hình hệ thống',
+      message: 'Khôi phục toàn bộ danh mục Mã CV về 26 mục chuẩn theo Quy chế chi tiêu TDU?',
+      dangerNotice: 'Tất cả các mã công việc tùy biến hoặc mới thêm sẽ bị hoàn tác về mặc định.',
+      confirmText: 'Khôi phục mặc định',
+    });
+    if (!ok) return;
+    setJobDuties(INITIAL_JOB_DUTIES);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2500);
   };
 
   const handleExportDutiesExcel = () => {
@@ -415,17 +431,24 @@ export const SystemConfigPage: React.FC<SystemConfigPageProps> = ({
     }
   };
 
-  const handleDeletePeriod = (id: string) => {
+  const handleDeletePeriod = async (id: string) => {
     if (id === activePeriodId) {
       alert('Không thể xóa đợt thanh toán đang là đợt hiện hành!');
       return;
     }
-    if (window.confirm('Bạn có chắc chắn muốn xóa đợt thanh toán này khỏi danh mục?')) {
-      if (propOnDeletePeriod) {
-        propOnDeletePeriod(id);
-      } else {
-        setInternalPeriods((prev) => prev.filter((p) => p.id !== id));
-      }
+    const targetPeriod = periodsList.find((p) => p.id === id);
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa đợt thanh toán',
+      targetName: targetPeriod?.name || id,
+      targetType: `Năm học ${targetPeriod?.academicYear || ''} · ${targetPeriod?.semester || ''}`,
+      message: 'Bạn có chắc chắn muốn xóa đợt thanh toán này khỏi danh mục?',
+      confirmText: 'Xóa đợt',
+    });
+    if (!ok) return;
+    if (propOnDeletePeriod) {
+      propOnDeletePeriod(id);
+    } else {
+      setInternalPeriods((prev) => prev.filter((p) => p.id !== id));
     }
   };
 
@@ -479,12 +502,19 @@ export const SystemConfigPage: React.FC<SystemConfigPageProps> = ({
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  const handleReset = () => {
-    if (window.confirm('Khôi phục toàn bộ thông số cấu hình về giá trị mặc định của Trường ĐH Tây Đô?')) {
-      setConfig(INITIAL_SYSTEM_CONFIG);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2500);
-    }
+  const handleReset = async () => {
+    const ok = await confirmDelete({
+      title: 'Khôi phục thông số cấu hình',
+      targetName: 'Thông số chuẩn Trường ĐH Tây Đô',
+      targetType: 'Cấu hình hệ thống',
+      message: 'Khôi phục toàn bộ thông số cấu hình về giá trị mặc định của Trường ĐH Tây Đô?',
+      dangerNotice: 'Các thay đổi về định mức giờ chuẩn, đơn giá và cấu hình sẽ được đưa về giá trị ban đầu.',
+      confirmText: 'Khôi phục cấu hình',
+    });
+    if (!ok) return;
+    setConfig(INITIAL_SYSTEM_CONFIG);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2500);
   };
 
   return (

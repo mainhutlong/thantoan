@@ -23,6 +23,7 @@ import * as XLSX from 'xlsx';
 import { createStyledWorksheet, saveWorkbookToFile, TemplateColumn } from '../utils/excelTemplateGenerator';
 import { RoleGroupPermission } from '../types';
 import { FULL_PERSONNEL_245 } from '../data/fullPersonnel245';
+import { useConfirmDelete } from '../context/ConfirmDialogContext';
 import {
   IconGiangDay,
   IconNghienCuuKH,
@@ -673,6 +674,7 @@ const DEFAULT_STAFF_CANDIDATES: StaffCandidate[] = FULL_PERSONNEL_245.map((p) =>
 }));
 
 export const SystemRoleGroupPage: React.FC = () => {
+  const { confirmDelete } = useConfirmDelete();
   const [roles, setRoles] = useState<RoleItem[]>(() => {
     try {
       const cached = localStorage.getItem('tdu_roles_state_v3');
@@ -1005,11 +1007,16 @@ export const SystemRoleGroupPage: React.FC = () => {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa vai trò "${selectedRole.name}" không? Thao tác này sẽ xóa vai trò cùng liên kết phân quyền và thành viên trong CSDL MySQL.`
-      )
-    ) {
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa vai trò hệ thống',
+      targetName: selectedRole.name,
+      targetType: selectedRole.code,
+      message: `Bạn có chắc chắn muốn xóa vai trò "${selectedRole.name}" không?`,
+      dangerNotice: 'Thao tác này sẽ xóa vai trò cùng toàn bộ liên kết phân quyền và thành viên trong CSDL MySQL.',
+      confirmText: 'Xóa vai trò',
+    });
+
+    if (!ok) {
       return;
     }
 
@@ -1399,12 +1406,17 @@ export const SystemRoleGroupPage: React.FC = () => {
     setTimeout(() => setSavedToast(false), 2500);
   };
 
-  const handleRemoveMember = (mem: { id: string; name: string; code: string; unit: string; email: string }) => {
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa thành viên "${mem.name}" (${mem.code || mem.email}) khỏi vai trò "${selectedRole?.name || 'này'}" không?`
-      )
-    ) {
+  const handleRemoveMember = async (mem: { id: string; name: string; code: string; unit: string; email: string }) => {
+    const ok = await confirmDelete({
+      title: 'Xác nhận xóa thành viên',
+      targetName: `${mem.name} (${mem.code || mem.email})`,
+      targetType: selectedRole?.name || 'Vai trò',
+      message: `Bạn có chắc chắn muốn gỡ bỏ thành viên này khỏi vai trò "${selectedRole?.name}" không?`,
+      dangerNotice: 'Thành viên sẽ mất các quyền truy cập thuộc vai trò này sau khi xóa.',
+      confirmText: 'Xóa khỏi vai trò',
+    });
+
+    if (!ok) {
       return;
     }
 
