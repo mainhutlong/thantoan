@@ -387,32 +387,58 @@ export default function App() {
         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
           try {
             const cached = localStorage.getItem('tdu_roles_state_v3');
+            let parsed: any[] = [];
             if (cached) {
-              const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const updated = parsed.map((r: any) => {
-                  const fromApi = data.data.find(
-                    (d: any) =>
-                      d.code?.toLowerCase() === r.code?.toLowerCase() ||
-                      d.name?.toLowerCase() === r.name?.toLowerCase() ||
-                      String(d.id) === String(r.id)
-                  );
-                  if (fromApi && Array.isArray(fromApi.members)) {
-                    return {
-                      ...r,
-                      members: fromApi.members,
-                      disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
-                    };
-                  }
-                  return {
-                    ...r,
-                    members: Array.isArray(r.members) ? r.members : [],
-                    disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
-                  };
-                });
-                localStorage.setItem('tdu_roles_state_v3', JSON.stringify(updated));
-              }
+              try {
+                parsed = JSON.parse(cached);
+              } catch {}
             }
+            if (!Array.isArray(parsed)) parsed = [];
+
+            // 1. Cập nhật các vai trò hiện có trong parsed
+            const updated = parsed.map((r: any) => {
+              const fromApi = data.data.find(
+                (d: any) =>
+                  d.code?.toLowerCase() === r.code?.toLowerCase() ||
+                  d.name?.toLowerCase() === r.name?.toLowerCase() ||
+                  String(d.id) === String(r.id)
+              );
+              if (fromApi) {
+                const apiMembers = Array.isArray(fromApi.members) ? fromApi.members : [];
+                return {
+                  ...r,
+                  name: fromApi.name || r.name,
+                  members: apiMembers,
+                  disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
+                };
+              }
+              return r;
+            });
+
+            // 2. Tự động bổ sung các vai trò từ MySQL nếu chưa có trong parsed
+            data.data.forEach((d: any) => {
+              const alreadyExists = updated.some(
+                (u: any) =>
+                  u.code?.toLowerCase() === d.code?.toLowerCase() ||
+                  String(u.id) === String(d.id) ||
+                  u.name?.toLowerCase() === d.name?.toLowerCase()
+              );
+              if (!alreadyExists) {
+                updated.push({
+                  id: String(d.id),
+                  name: d.name,
+                  code: d.code,
+                  description: d.description || `Nhóm vai trò ${d.name} trên hệ thống TDU.`,
+                  dotColor: d.dotColor || '#2563eb',
+                  badgeBg: d.badgeBg || '#eff6ff',
+                  badgeText: d.badgeText || '#2563eb',
+                  members: Array.isArray(d.members) ? d.members : [],
+                  disabledPermissions: Array.isArray(d.disabledPermissions) ? d.disabledPermissions : [],
+                });
+              }
+            });
+
+            localStorage.setItem('tdu_roles_state_v3', JSON.stringify(updated));
           } catch {}
 
           const adminRole = data.data.find(

@@ -681,8 +681,8 @@ export const SystemRoleGroupPage: React.FC = () => {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Chuẩn hóa và bảo đảm mọi RoleItem luôn có đầy đủ các thuộc tính bắt buộc
-          return INITIAL_ROLES.map((initRole) => {
+          // 1. Chuẩn hóa các vai trò mặc định
+          const initialMapped = INITIAL_ROLES.map((initRole) => {
             const found = parsed.find(
               (p: any) =>
                 p.code?.toLowerCase() === initRole.code?.toLowerCase() ||
@@ -704,6 +704,30 @@ export const SystemRoleGroupPage: React.FC = () => {
                 : initRole.disabledPermissions || [],
             };
           });
+
+          // 2. Bảo toàn tất cả các vai trò bổ sung (custom roles / DB roles như "Mới")
+          const initCodes = new Set(INITIAL_ROLES.map((r) => r.code?.toLowerCase()));
+          const initIds = new Set(INITIAL_ROLES.map((r) => String(r.id)));
+          const extraRoles: RoleItem[] = parsed
+            .filter(
+              (p: any) =>
+                p &&
+                !initCodes.has(p.code?.toLowerCase()) &&
+                !initIds.has(String(p.id))
+            )
+            .map((p: any) => ({
+              id: String(p.id),
+              name: p.name || 'Vai trò mới',
+              code: p.code || 'ROLE_CUSTOM',
+              dotColor: p.dotColor || '#2563eb',
+              badgeBg: p.badgeBg || '#eff6ff',
+              badgeText: p.badgeText || '#2563eb',
+              description: p.description || '',
+              members: Array.isArray(p.members) ? p.members : [],
+              disabledPermissions: Array.isArray(p.disabledPermissions) ? p.disabledPermissions : [],
+            }));
+
+          return [...initialMapped, ...extraRoles];
         }
       }
     } catch {}
@@ -717,6 +741,7 @@ export const SystemRoleGroupPage: React.FC = () => {
       .then((data) => {
         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
           setRoles((prev) => {
+            // 1. Cập nhật thông tin cho các vai trò đã có
             const merged = prev.map((r) => {
               const fromApi = data.data.find(
                 (d: any) =>
@@ -724,13 +749,16 @@ export const SystemRoleGroupPage: React.FC = () => {
                   d.name?.toLowerCase() === r.name?.toLowerCase() ||
                   String(d.id) === String(r.id)
               );
-              if (fromApi && Array.isArray(fromApi.members)) {
-                // Hợp nhất thành viên từ API với thành viên hiện tại (tránh ghi đè mất thành viên)
-                const apiCodes = new Set(fromApi.members.map((m: any) => m.code?.toLowerCase()));
+              if (fromApi) {
+                const apiMembers = Array.isArray(fromApi.members) ? fromApi.members : [];
+                const apiCodes = new Set(apiMembers.map((m: any) => m.code?.toLowerCase()));
                 const localExtra = (r.members || []).filter((m) => !apiCodes.has(m.code?.toLowerCase()));
                 return {
                   ...r,
-                  members: [...fromApi.members, ...localExtra],
+                  name: fromApi.name || r.name,
+                  description: fromApi.description || r.description,
+                  dotColor: fromApi.dotColor || r.dotColor,
+                  members: [...apiMembers, ...localExtra],
                   disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
                 };
               }
@@ -740,6 +768,30 @@ export const SystemRoleGroupPage: React.FC = () => {
                 disabledPermissions: Array.isArray(r.disabledPermissions) ? r.disabledPermissions : [],
               };
             });
+
+            // 2. Tự động thêm TẤT CẢ các vai trò mới từ CSDL MySQL (như vai trò "Mới" hoặc vai trò do tài khoản khác tạo)
+            data.data.forEach((d: any) => {
+              const alreadyExists = merged.some(
+                (m) =>
+                  m.code?.toLowerCase() === d.code?.toLowerCase() ||
+                  String(m.id) === String(d.id) ||
+                  m.name?.toLowerCase() === d.name?.toLowerCase()
+              );
+              if (!alreadyExists) {
+                merged.push({
+                  id: String(d.id),
+                  name: d.name,
+                  code: d.code,
+                  description: d.description || `Nhóm vai trò ${d.name} trên hệ thống TDU.`,
+                  dotColor: d.dotColor || '#2563eb',
+                  badgeBg: d.badgeBg || '#eff6ff',
+                  badgeText: d.badgeText || d.dotColor || '#2563eb',
+                  members: Array.isArray(d.members) ? d.members : [],
+                  disabledPermissions: Array.isArray(d.disabledPermissions) ? d.disabledPermissions : [],
+                });
+              }
+            });
+
             try {
               localStorage.setItem('tdu_roles_state_v3', JSON.stringify(merged));
             } catch {}
